@@ -1,0 +1,23 @@
+#!/bin/bash
+
+csd=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+cd $csd
+
+rm -r *.egg-info
+
+# python setup.py register
+
+python setup.py sdist
+python setup.py sdist upload
+
+rm -r *.egg-info
+
+# pip install ez --upgrade
+
+# do not use this, seems not working??
+# Although not required, it’s common to locally install your project in “develop” or “editable” mode 
+# while you’re working on it. This allows the project to be both installed and editable in project form.
+# run the following:
+# python setup.py develop
+
+

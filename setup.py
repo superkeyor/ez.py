@@ -67,6 +67,9 @@ setup(
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
+    # for setuptools/distribute, you specify version info with the comparison operators (like ==, >=, or <=).
+    # For example:
+    # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
     # install_requires=['peppercorn'],
 
     # List additional groups of dependencies here (e.g. development dependencies).

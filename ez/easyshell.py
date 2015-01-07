@@ -46,6 +46,7 @@ help(name)/doc(name) # name is a string, Prints the doc string of a module/class
         three double quotes Returns, blabla three double quotes      <-----this is function's doctoring, use implicit
         return sth
 ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
+whos(name),whos() list imported functions/packages
 
 log(file="log.txt", mode='a', status=True) # Prints output to both terminal and a file (log.txt) globally. mode: a=append; w=overwrite
 
@@ -581,6 +582,24 @@ def ver(package_name='python'):
         exec('import ' + package_name, theNameSpace)
         print theNameSpace[package_name].__version__
 version = ver
+
+def who(name=''):
+    """
+    whos(name),whos() list imported functions/packages
+    """
+    import inspect
+    caller = inspect.currentframe().f_back
+    theList = eval('dir('+ name + ')', caller.f_locals)
+    theList = sorted(theList)
+    theNameSpace = name if name != '' else 'Current'
+    print theNameSpace + ' namespace has the following existing functions/modules:'
+    # theString = ''
+    # for i in range(0,len(theList)):
+    #     sep = '\n' if i % 3 else '\t'
+    #     theString = theString + theList[i] + sep
+    theString = '\n'.join(theList)
+    print theString
+whos = who
 
 # def sedawk(path, regex=".*", search=None, replace=None, recursion=True):
 #     """Searches and replaces the matched content in every file with regular expression."""

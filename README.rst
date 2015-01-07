@@ -58,6 +58,7 @@ help(name)/doc(name) # name is a string, Prints the doc string of a module/class
         three double quotes Returns, blabla three double quotes      <-----this is function's doctoring, use implicit
         return sth
 ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
+whos(name),whos() list imported functions/packages
 
 log(file="log.txt", mode='a', status=True) # Prints output to both terminal and a file (log.txt) globally. mode: a=append; w=overwrite
 

@@ -92,10 +92,17 @@ content = GetClip()   # Read out content from current clipboard and assign to a 
 
 
 
-Mail(to, subject, body, attach=None)
-AddEvent(event)     on DATE at TIME for DURATION in PLACE
+To avoid typing email password each time, place a file named pygmailconfig.py with
+EMAIL = 'someone@gmail.com'
+PASSWORD = 'abcdefghik'
+in the site-packages/ez folder
+The functions will no longer need email/password and become like this
+Mail(to, subject, body, attach=None), AddEvent(event), Sheet(fileName)
 
-Sheet(fileName)
+Mail([EMAIL, PASSWORD, ] to, subject, body, attach=None)
+AddEvent([EMAIL, PASSWORD, ] event)     on DATE at TIME for DURATION in PLACE
+
+Sheet([EMAIL, PASSWORD, ] fileName)
     returns a sheet object representing "Sheet 1"
 
     your google account doesn't have to the owner of this sheet, as long as you can edit it.

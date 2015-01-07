@@ -9,13 +9,15 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
+packages = find_packages()
+packages.append('ez.timezone.pytz')
 setup(
     name='ez',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/development.html#single-sourcing-the-version
-    version='1.0.1',
+    version='1.1.1',
 
     description='easy stuff',
     long_description=long_description,
@@ -27,7 +29,7 @@ setup(
     # find_packages uses fnmatchcase for its exclude filtering. You can test if your exclusion pattern matches a package name as follows:
     # >>> from fnmatch import fnmatchcase
     # >>> fnmatchcase('my.package.name.tests', 'tests')    False
-    packages=find_packages(),
+    packages=packages,
 
     # package_data is a low-down, dirty lie. It is only used when building binary packages (python setup.py bdist ...) 
     # but not when building source packages (python setup.py sdist ...)

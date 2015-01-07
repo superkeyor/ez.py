@@ -530,10 +530,11 @@ def which(name_no_prefix):
     """
     name without package name, i.e., ez.help --> help
     which(name), Prints where a module is and in which module a function is.
-    which('python') returns which python is being used."""
+    which('python') returns which python is being used and version info."""
     if name_no_prefix == 'python':
         from distutils.sysconfig import get_python_lib
         print get_python_lib()
+        print (sys.version)
     else:
         try:
             print sys.modules[name_no_prefix]

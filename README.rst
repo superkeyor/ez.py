@@ -1,7 +1,15 @@
 ez
 =========
 jerryzhujian9 at gmail [\/dot/\] com
+Tested under python 2.7
+To see your python version
+in terminal: python -V
+or in python: import sys; print (sys.version)
 
+To read the latest help info:
+import ez; ez.help('ez')
+
+=========
 Easy stuff, including interaction with linux, mac, windows shells.  Very simple to use, similar to shell commands themselves!
 
 This module is for easy interaction with linux, Mac OS X, Windows shell.

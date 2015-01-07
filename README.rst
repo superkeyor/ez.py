@@ -1,5 +1,6 @@
 ez
 =========
+jerryzhujian9 at gmail [\/dot/\] com
 
 Easy stuff, including interaction with linux, mac, windows shells.  Very simple to use, similar to shell commands themselves!
 

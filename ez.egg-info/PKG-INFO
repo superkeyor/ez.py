@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: ez
-Version: 1.0.0
+Version: 1.0.1
 Summary: easy stuff
 Home-page: https://pypi.python.org/pypi/ez
 Author: Jerry
@@ -8,6 +8,7 @@ Author-email: jerryzhujian9@gmail.com
 License: MIT
 Description: ez
         =========
+        jerryzhujian9 at gmail [\/dot/\] com
         
         Easy stuff, including interaction with linux, mac, windows shells.  Very simple to use, similar to shell commands themselves!
         

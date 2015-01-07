@@ -45,6 +45,7 @@ help(name)/doc(name) # name is a string, Prints the doc string of a module/class
     def function(arg):
         three double quotes Returns, blabla three double quotes      <-----this is function's doctoring, use implicit
         return sth
+ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
 
 log(file="log.txt", mode='a', status=True) # Prints output to both terminal and a file (log.txt) globally. mode: a=append; w=overwrite
 
@@ -526,11 +527,12 @@ def beep():
     sys.stdout.write("\a")
     sys.stdout.flush()
 
-def which(name_no_prefix):
+def which(name):
     """
-    name without package name, i.e., ez.help --> help
+    name without or with package name, i.e., ez.help, help
     which(name), Prints where a module is and in which module a function is.
     which('python') returns which python is being used and version info."""
+    name_no_prefix = name.split('.')[-1]
     if name_no_prefix == 'python':
         from distutils.sysconfig import get_python_lib
         print get_python_lib()
@@ -566,6 +568,19 @@ def doc(package_prefixed_name):
     caller = inspect.currentframe().f_back
     print eval(package_prefixed_name + '.__doc__', caller.f_locals)
 help = doc
+
+def ver(package_name='python'):
+    """
+    ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
+    """
+    print package_name + ' version installed:'
+    if package_name == 'python': 
+        print (sys.version)
+    else:
+        theNameSpace = {}
+        exec('import ' + package_name, theNameSpace)
+        print theNameSpace[package_name].__version__
+version = ver
 
 # def sedawk(path, regex=".*", search=None, replace=None, recursion=True):
 #     """Searches and replaces the matched content in every file with regular expression."""

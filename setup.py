@@ -9,6 +9,12 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
+
+theNameSpace = {}
+with open(path.join(here, 'ez', 'packageversion.py'), encoding='utf-8') as f:
+    exec(f.read(), theNameSpace)
+version=theNameSpace['__version__']
+
 packages = find_packages()
 packages.append('ez.timezone.pytz')
 setup(
@@ -17,7 +23,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/development.html#single-sourcing-the-version
-    version='1.1.4',
+    version=version,
 
     description='easy stuff',
     long_description=long_description,

@@ -1,7 +1,9 @@
 #!/bin/bash
 
 csd=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+package=$(basename "$csd")
 cd $csd
+
 
 rm -r dist
 rm -r *.egg-info
@@ -13,7 +15,8 @@ python setup.py sdist upload
 
 rm -r *.egg-info
 
-# pip install xx --upgrade
+/Users/jerry/Library/Enthought/Canopy_64bit/User/bin/pip install $package --upgrade
+/Users/jerry/PyEnv/bin/pip install $package --upgrade
 
 # do not use this, seems not working??
 # Although not required, it’s common to locally install your project in “develop” or “editable” mode 

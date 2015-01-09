@@ -16,7 +16,7 @@ with open(path.join(here, 'ez', 'packageversion.py'), encoding='utf-8') as f:
 version=theNameSpace['__version__']
 
 packages = find_packages()
-packages.append('ez.timezone.pytz')
+# packages.append('ez.timezone.pytz')
 setup(
     name='ez',
 

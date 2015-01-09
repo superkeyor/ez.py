@@ -87,6 +87,7 @@ SetClip(content)   # Copy/Write something to current clipboard
 content = GetClip()   # Read out content from current clipboard and assign to a variable
 
 lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
+keygen(length=8, complexity=3)  # generate a random key
 """
 
 # reference: abspath for ../ ./, expanduser for ~, glob to resolve wildcards, fnmatch.translate wildcards to re
@@ -1051,6 +1052,9 @@ class Moment(object):
     Formats the datetime to a string.
     Converts a datetime-like string to a Moment object.
 
+    Methods:
+    Shift, Format, Transform
+
     Attributes:
         moment, returns the datetime instance
 
@@ -1067,6 +1071,24 @@ class Moment(object):
         minute
         second
         microsecond
+
+    def __init__(self, timezone=None, moment=None):
+        Generates the current datetime in specified timezone, or local naive datetime if omitted, (when moment omitted).
+        Args:
+            timezone is the specified timezone string
+                US timezone:
+                US/Alaska, US/Aleutian, US/Arizona, US/Central, US/East-Indiana, US/Eastern,
+                US/Hawaii, US/Indiana-Starke, US/Michigan, US/Mountain, US/Pacific, US/Pacific-New, US/Samoa
+
+                Use the codes to look up:
+                from pytz import all_timezones
+                print len(all_timezones)
+                for zone in all_timezones:
+                    if 'US' in zone:
+                        print zone
+
+            moment could be naive (without tzinfo) or aware (with tzinfo) datetime
+
     """
     def __init__(self, timezone=None, moment=None):
         """Generates the current datetime in specified timezone, or local naive datetime if omitted, (when moment omitted).
@@ -1232,6 +1254,40 @@ def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
     print 'File counted: %d' % file_count
     print 'Line counted: %d' % line_count
     print 'Done!'
+
+def keygen(length=8, complexity=3):
+    """generate a random key
+    keygen(length=8, complexity=3)
+
+    length: how long is the generated key
+
+    complexity:
+    1 = digits only
+    2 = digits + lowercase  i.e., 'abcdefghijklmnopqrstuvwxyz'
+    3 = digits + uppercase (default)
+    4 = digits + lowercase + uppercase
+    5 = digits + lowercase + uppercase + punctuation
+    6 = digits + lowercase + uppercase + punctuation + whitespace
+    or alternatively, complexity could be a list of chars like, '0123456789abcdefABCDEF'
+    in which case, the key will only be composed of chars from the list
+    """
+    import string
+    import random
+    if complexity == 1:
+        chars = string.digits
+    elif complexity == 2:
+        chars = string.digits + string.ascii_lowercase
+    elif complexity == 3:
+        chars = string.digits + string.ascii_uppercase
+    elif complexity == 4:
+        chars = string.digits + string.ascii_lowercase + string.ascii_uppercase
+    elif complexity == 5:
+        chars = string.digits + string.ascii_lowercase + string.ascii_uppercase + string.punctuation
+    elif complexity == 6:
+        chars = string.digits + string.ascii_lowercase + string.ascii_uppercase + string.punctuation + string.whitespace
+    elif complexity not in [1, 2, 3, 4, 5, 6]:
+        chars = str(complexity)
+    return ''.join(random.choice(chars) for x in range(length))
 
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

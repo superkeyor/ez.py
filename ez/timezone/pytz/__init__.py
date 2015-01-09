@@ -26,7 +26,10 @@ __all__ = [
 import sys, datetime, os.path, gettext
 
 try:
-    from pkg_resources import resource_stream
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from pkg_resources import resource_stream
 except ImportError:
     resource_stream = None
 

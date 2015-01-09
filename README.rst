@@ -99,7 +99,7 @@ SetClip(content)   # Copy/Write something to current clipboard
 content = GetClip()   # Read out content from current clipboard and assign to a variable
 
 lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
-
+keygen(length=8, complexity=3)  # generate a random key
 
 
 

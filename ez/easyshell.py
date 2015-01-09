@@ -85,6 +85,8 @@ Moment(timezone)    # Generates the current datetime in specified timezone, or l
 
 SetClip(content)   # Copy/Write something to current clipboard
 content = GetClip()   # Read out content from current clipboard and assign to a variable
+
+lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
 """
 
 # reference: abspath for ../ ./, expanduser for ~, glob to resolve wildcards, fnmatch.translate wildcards to re
@@ -1195,6 +1197,43 @@ class Moment(object):
 
 from pyperclip import copy as SetClip
 from pyperclip import paste as GetClip
+
+
+def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
+    """Counts lines of codes, counting empty lines as well.
+    lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True)
+    """
+
+    # modified from https://liangsun.org/posts/python-code-for-counting-loclines-of-code/
+    # Created by Liang Sun <i@liangsun.org> in 2012
+    # This code is for Python 2.x
+    COUNT_EMPTY_LINE = True
+
+    def read_line_count(fname):
+        count = 0
+        for line in open(fname).readlines():
+            if COUNT_EMPTY_LINE or len(line.strip()) > 0:
+                count += 1
+        return count
+
+    line_count = 0
+    file_count = 0
+    files = fls(path,pattern) if recursive else ls(path,pattern)
+    for file in files:
+        try:
+            file_count += 1
+            c = read_line_count(file)
+            print "%s : %d" % (os.path.basename(file), c)
+            line_count += c
+        except:
+            pass
+    
+    print '-----------------------------'
+    print 'File counted: %d' % file_count
+    print 'Line counted: %d' % line_count
+    print 'Done!'
+
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

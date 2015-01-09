@@ -98,6 +98,7 @@ Moment(timezone)    # Generates the current datetime in specified timezone, or l
 SetClip(content)   # Copy/Write something to current clipboard
 content = GetClip()   # Read out content from current clipboard and assign to a variable
 
+lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
 
 
 

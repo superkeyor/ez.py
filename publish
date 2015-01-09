@@ -3,6 +3,7 @@
 csd=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd $csd
 
+rm -r dist
 rm -r *.egg-info
 
 # python setup.py register
@@ -12,7 +13,7 @@ python setup.py sdist upload
 
 rm -r *.egg-info
 
-# pip install ez --upgrade
+# pip install xx --upgrade
 
 # do not use this, seems not working??
 # Although not required, it’s common to locally install your project in “develop” or “editable” mode 

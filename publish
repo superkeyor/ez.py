@@ -4,6 +4,7 @@ csd=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 package=$(basename "$csd")
 cd $csd
 
+python $csd/$package/prepublish.py
 
 rm -r dist
 rm -r *.egg-info

@@ -2,6 +2,8 @@ import os, sys
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, MODULE_PATH)
 
+# __doc__ at the bottom
+
 import atom
 import atom.data    #essential to pygcal
 import gdata

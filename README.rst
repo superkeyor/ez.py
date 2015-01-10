@@ -1,22 +1,12 @@
-ez
-=========
-jerryzhujian9 at gmail [\/dot/\] com
+
+This module is for easy interaction with linux, Mac OS X, Windows shell.
+=============================================
+jerryzhujian9_at_gmail.com
 Tested under python 2.7
 To see your python version
 in terminal: python -V
 or in python: import sys; print (sys.version)
-
-To read the latest help info:
-import ez; ez.help('ez')
-
-=========
-Easy stuff, including interaction with linux, mac, windows shells.  Very simple to use, similar to shell commands themselves!
-
-This module is for easy interaction with linux, Mac OS X, Windows shell.
-Usage:
-1) import
-
-2) type commands
+=============================================
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.
 
@@ -27,7 +17,7 @@ pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
 parentdir(path) # Returns the parent directory of a path.
 joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.
-join(sep,string1,string2) # Glues together strings with sep.  Supports vectorization.
+join(sep,string1,string2) # Glues together strings with sep. Supports vectorization.
 splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
 
@@ -101,6 +91,8 @@ content = GetClip()   # Read out content from current clipboard and assign to a 
 
 lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
 keygen(length=8, complexity=3)  # generate a random key
+
+
 
 
 

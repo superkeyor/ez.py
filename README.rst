@@ -27,6 +27,7 @@ pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
 parentdir(path) # Returns the parent directory of a path.
 joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.
+join(sep,string1,string2) # Glues together strings with sep.  Supports vectorization.
 splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
 

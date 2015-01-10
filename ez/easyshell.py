@@ -1,7 +1,6 @@
 __author__ = "jerryzhujian9@gmail.com"
 
-__doc__ = """
-This module is for easy interaction with linux, Mac OS X, Windows shell.
+__doc__ = """This module is for easy interaction with linux, Mac OS X, Windows shell.
 =============================================
 jerryzhujian9_at_gmail.com
 Tested under python 2.7
@@ -9,6 +8,10 @@ To see your python version
 in terminal: python -V
 or in python: import sys; print (sys.version)
 =============================================
+Install:
+https://pypi.python.org/pypi/ez
+pip install ez
+
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.
 

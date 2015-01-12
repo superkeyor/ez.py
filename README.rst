@@ -68,11 +68,11 @@ clear(module, recursive=False)
 
 num(string)
 isempty(s)
-Randomize(x) # Sets a randomization seed.
-RandomizeArray(list=[])    # Shuffles a list in place.
-Random(a,b) # Returns a random integer N such that a <= N <= b.
-RandomChoice(seq) # Returns a random element from sequence
-Permute(iterable=[]) # Returns permutations in a list
+Randomize(x), randomize(x) # Sets a randomization seed.
+RandomizeArray(list=[])   randomizearray(list=[])  # Shuffles a list in place.
+Random(a,b) random(a,b) # Returns a random integer N such that a <= N <= b.
+RandomChoice(seq), randomchoice(seq) # Returns a random element from sequence
+Permute(iterable=[]) permute(iterable=[]) # Returns permutations in a list
 
 unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in original order
     note: setdiff(seq1,seq2) may not be equal to setdiff(seq2,seq1)
@@ -90,8 +90,8 @@ duplicate(seq) # returns a list of duplicated elements in original order
 JDict() # Jerry's dictionary, customized ordered dictionary class with convient attributes and methods, see help(JDict)
 Moment(timezone)    # Generates the current datetime in specified timezone, or local naive datetime if omitted.
 
-SetClip(content)   # Copy/Write something to current clipboard
-content = GetClip()   # Read out content from current clipboard and assign to a variable
+SetClip(content), setclip(content)   # Copy/Write something to current clipboard
+content = GetClip(), content = getclip()   # Read out content from current clipboard and assign to a variable
 
 lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
 keygen(length=8, complexity=3)  # generate a random key

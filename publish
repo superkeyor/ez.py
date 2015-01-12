@@ -25,4 +25,6 @@ rm -r *.egg-info
 # run the following:
 # python setup.py develop
 
-
+git add -A 
+git commit -m 'update' 
+git push origin master 

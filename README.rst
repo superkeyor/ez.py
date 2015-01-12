@@ -72,6 +72,7 @@ Randomize(x) # Sets a randomization seed.
 RandomizeArray(list=[])    # Shuffles a list in place.
 Random(a,b) # Returns a random integer N such that a <= N <= b.
 RandomChoice(seq) # Returns a random element from sequence
+Permute(iterable=[]) # Returns permutations in a list
 
 unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in original order
     note: setdiff(seq1,seq2) may not be equal to setdiff(seq2,seq1)

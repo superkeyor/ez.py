@@ -107,7 +107,10 @@ in the site-packages/ez folder
 The functions will no longer need email/password and become like this
 Mail(to, subject, body, attach=None), AddEvent(event), Sheet(fileName)
 
-Mail([EMAIL, PASSWORD, ] to, subject, body, attach=None)
+Mail([EMAIL, PASSWORD, ] to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None)
+        to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
+        reply_to: 'a@a.com'
+        attachment: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
 AddEvent([EMAIL, PASSWORD, ] event)     on DATE at TIME for DURATION in PLACE
 
 Sheet([EMAIL, PASSWORD, ] fileName)

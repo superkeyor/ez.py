@@ -639,13 +639,13 @@ def who(name=''):
     theList = eval('dir('+ name + ')', caller.f_locals)
     theList = sorted(theList)
     theNameSpace = name if name != '' else 'Current'
-    print theNameSpace + ' namespace has the following existing functions/modules:'
-    # theString = ''
-    # for i in range(0,len(theList)):
-    #     sep = '\n' if i % 3 else '\t'
-    #     theString = theString + theList[i] + sep
-    theString = '\n'.join(theList)
-    print theString
+    print theNameSpace + ' namespace has the following existing functions/modules:\n'
+    # http://stackoverflow.com/questions/19863388/modify-print-function-for-multiple-columns-python
+    def pretty_print(theList, ncols):
+        columns = len(theList)//200+ncols
+        lines = ("".join(s.ljust(20) for s in theList[i:i+columns-1])+theList[i:i+columns][-1] for i in range(0, len(theList), columns))
+        return "\n".join(lines)
+    print pretty_print(theList,4)
 whos = who
 
 # def sedawk(path, regex=".*", search=None, replace=None, recursion=True):

@@ -130,7 +130,9 @@ def fullpath(path):
 
 def csd():
     """(),Returns current script directory, i.e. the directory where the running script is."""
-    return os.path.split(os.path.abspath(sys.argv[0]))[0]
+    path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+    # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
+    return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
 def csf():
     """(),Returns current script name, i.e. the name of the running script."""

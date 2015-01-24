@@ -235,6 +235,24 @@ except ImportError:
 mail = Mail
 addevent = AddEvent
 
+def Mail2(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None):
+    """Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None)
+    to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
+    reply_to: 'a@a.com'
+    attachment: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
+    """
+    return pygmail.Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None)
+def AddEvent2(EMAIL, PASSWORD, event):
+    """AddEvent(EMAIL, PASSWORD, event)     on DATE at TIME for DURATION in PLACE"""
+    return pygcal.AddEvent(EMAIL, PASSWORD, event)
+def Sheet2(EMAIL, PASSWORD, fileName):
+    """Sheet(EMAIL, PASSWORD, fileName)
+    """
+    return pygsheet.Sheet(EMAIL, PASSWORD, fileName)
+mail2 = Mail2
+addevent2 = AddEvent2
+
+
 __doc__ = """
 To avoid typing email password each time, place a file named pygmailconfig.py with
 EMAIL = 'someone@gmail.com'

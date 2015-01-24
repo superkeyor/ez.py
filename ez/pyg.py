@@ -97,6 +97,8 @@ try:
 
                 :param row_data:
                     A dictionary containing row data.
+                    each dict key maps to a column name, if the key/column name does not exist, it will be ignore
+                    if an existing column name is not included in the keys, that column will not be update (i.e. remain unchanged)
                 :return:
                     A row dictionary for the inserted row.
 
@@ -204,6 +206,8 @@ except ImportError:
 
                 :param row_data:
                     A dictionary containing row data.
+                    each dict key maps to a column name, if the key/column name does not exist, it will be ignore
+                    if an existing column name is not included in the keys, that column will not be update (i.e. remain unchanged)
                 :return:
                     A row dictionary for the inserted row.
 

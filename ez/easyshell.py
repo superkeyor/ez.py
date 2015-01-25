@@ -616,8 +616,6 @@ def doc(package_prefixed_name):
     """
     import inspect
     caller = inspect.currentframe().f_back
-    package_name = package_prefixed_name.split('.')[-1]
-    eval('import '+ package_name, caller.f_locals)
     print eval(package_prefixed_name + '.__doc__', caller.f_locals)
 help = doc
 

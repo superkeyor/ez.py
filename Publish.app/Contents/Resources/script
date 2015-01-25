@@ -8,7 +8,7 @@ then
     parentdir="$(dirname "$parentdir")"
     csd="$(dirname "$parentdir")"
 else
-    csd=csd
+    csd=$csd
 fi
 # hack app done
 package=$(basename "$csd")

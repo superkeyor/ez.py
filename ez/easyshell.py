@@ -172,7 +172,7 @@ def joinpath(*args):
             arg = args[j]
             if type(arg) in [str]:
                 args[j] = [arg]*length
-        
+
         results = []
         for i in range(0,length):
             result = ''
@@ -204,7 +204,7 @@ def join(sep='',*args):
             arg = args[j]
             if type(arg) in [str]:
                 args[j] = [arg]*length
-        
+
         results = []
         for i in range(0,length):
             # a bit tricy because of result + = result and .join
@@ -258,7 +258,7 @@ def ls(path="./", regex=".*", full=True):
             path, pattern = os.path.split(path)
             pattern_regex = fnmatch.translate(pattern)
         return path, pattern_regex
-    
+
     path = fullpath(path)
     pattern_regex = regex
     path, pattern_regex = _ListingParse(path, pattern_regex)
@@ -407,7 +407,7 @@ def rm(path):
         for p in path:
             rm(p)
         return
-    
+
     if not path: return  # rm('')
     path = fullpath(path)
     paths = glob.glob(path)
@@ -616,6 +616,8 @@ def doc(package_prefixed_name):
     """
     import inspect
     caller = inspect.currentframe().f_back
+    package_name = package_prefixed_name.split('.')[-1]
+    eval('import '+ package_name, caller.f_locals)
     print eval(package_prefixed_name + '.__doc__', caller.f_locals)
 help = doc
 
@@ -624,7 +626,7 @@ def ver(package_name='python'):
     ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
     """
     print package_name + ' version installed:'
-    if package_name == 'python': 
+    if package_name == 'python':
         print (sys.version)
     else:
         theNameSpace = {}
@@ -781,7 +783,7 @@ def regexp(string, pattern, method='find'):
     (text, '\w+ly') --> ['carefully', 'quickly']
     if not match, returns []
     """
-    # re.match() checks for a match only at the beginning of the string, 
+    # re.match() checks for a match only at the beginning of the string,
     # while re.search() checks for a match anywhere in the string
     import re
     if method == 'find':
@@ -811,7 +813,7 @@ def regexpi(string, pattern, method='find'):
     (text, '\w+ly') --> ['carefully', 'quickly']
     if not match, returns []
     """
-    # re.match() checks for a match only at the beginning of the string, 
+    # re.match() checks for a match only at the beginning of the string,
     # while re.search() checks for a match anywhere in the string
     import re
     if method == 'find':
@@ -830,7 +832,7 @@ def regexprep(string, pattern, replace, count=0):
     """(string, pattern, replace, count=0)
     ('Baked Beans And Spam', '\sAnd\s', ' & ') --> 'Baked Beans & Spam'
 
-    count: maximum number of pattern occurrences to be replaced; count must be a non-negative integer. 
+    count: maximum number of pattern occurrences to be replaced; count must be a non-negative integer.
     If omitted or zero, all occurrences will be replaced
     """
     return re.sub(pattern, replace, string, count=count)
@@ -840,7 +842,7 @@ def regexprepi(string, pattern, replace, count=0):
     (string, pattern, replace, count=0)
     ('Baked Beans And Spam', '\sAND\s', ' & ') --> 'Baked Beans & Spam'
 
-    count: maximum number of pattern occurrences to be replaced; count must be a non-negative integer. 
+    count: maximum number of pattern occurrences to be replaced; count must be a non-negative integer.
     If omitted or zero, all occurrences will be replaced
     """
     return re.sub(pattern, replace, string, count=count, flags=re.IGNORECASE)
@@ -968,7 +970,7 @@ def union(seq1,seq2):
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
     duplicate(seq) # returns a list of duplicated elements in original order
-    """    
+    """
     from orderedset import OrderedSet
     return list(OrderedSet(seq1) | OrderedSet(seq2))
 
@@ -987,7 +989,7 @@ def intersect(seq1,seq2):
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
     duplicate(seq) # returns a list of duplicated elements in original order
-    """    
+    """
     from orderedset import OrderedSet
     return list(OrderedSet(seq1) & OrderedSet(seq2))
 
@@ -1006,7 +1008,7 @@ def setdiff(seq1,seq2):
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
     duplicate(seq) # returns a list of duplicated elements in original order
-    """    
+    """
     from orderedset import OrderedSet
     return list(OrderedSet(seq1) - OrderedSet(seq2))
 
@@ -1028,7 +1030,7 @@ def duplicate(seq):
     # e.g.
     # a = [1,5,2,3,2,1,5,6,5,5,5]
     # duplicate(a) # yields [2, 1, 5]
-    """    
+    """
     from orderedset import OrderedSet
     seen = OrderedSet()
     seen_add = seen.add
@@ -1073,7 +1075,7 @@ class JDict(OrderedDict):
         c.update({'k1': {'k13':{'k131':'v'}}, 'k2': {'k21': ['v']}}); print c
 
         d.update({'k1': JDict({'k11': 'v'})}); print d
-        d.update({'k1': JDict({'k11': 'v11', 'k12': 'v12'})}); print d   
+        d.update({'k1': JDict({'k11': 'v11', 'k12': 'v12'})}); print d
     """
     def __init__(self, theDict={}):
         OrderedDict.__init__(self, theDict)
@@ -1154,7 +1156,7 @@ class Moment(object):
         Args:
             timezone is the specified timezone string
                 US timezone:
-                US/Alaska, US/Aleutian, US/Arizona, US/Central, US/East-Indiana, US/Eastern, 
+                US/Alaska, US/Aleutian, US/Arizona, US/Central, US/East-Indiana, US/Eastern,
                 US/Hawaii, US/Indiana-Starke, US/Michigan, US/Mountain, US/Pacific, US/Pacific-New, US/Samoa
 
                 Use the codes to look up:
@@ -1241,22 +1243,22 @@ class Moment(object):
 
                     %a      Sun, Mon, ..., Sat (en_US);
                     %A      Sunday, Monday, ..., Saturday (en_US);
-                    %w      0 is Sunday and 6 is Saturday.   0, 1, ..., 6     
-                    %d      01, 02, ..., 31      
+                    %w      0 is Sunday and 6 is Saturday.   0, 1, ..., 6
+                    %d      01, 02, ..., 31
                     %b      Jan, Feb, ..., Dec (en_US);
                     %B      January, February, ..., December (en_US);
-                    %m      01, 02, ..., 12      
-                    %y      Year    00, 01, ..., 99      
-                    %Y      Year    1970, 1988, 2001, 2013   
-                    %H      Hour (24-hour clock)    00, 01, ..., 23      
-                    %I      Hour (12-hour clock)    01, 02, ..., 12      
+                    %m      01, 02, ..., 12
+                    %y      Year    00, 01, ..., 99
+                    %Y      Year    1970, 1988, 2001, 2013
+                    %H      Hour (24-hour clock)    00, 01, ..., 23
+                    %I      Hour (12-hour clock)    01, 02, ..., 12
                     %p      AM, PM (en_US);
-                    %M      Minute 00, 01, ..., 59      
+                    %M      Minute 00, 01, ..., 59
                     %S      Second 00, 01, ..., 59
                     %f      Microsecond     000000, 000001, ..., 999999
                     %z      UTC offset in the form +HHMM or -HHMM   (empty), +0000, -0400, +1030
                     %Z      Time zone name  (empty), UTC, EST, CST
-                    %j      Day of the year     001, 002, ..., 366   
+                    %j      Day of the year     001, 002, ..., 366
                     %U      Week number of the year (Sunday as the first day of the week)
                     %W      Week number of the year (Monday as the first day of the week)
                     %c      Locale's appropriate date and time representation.  Tue Aug 16 21:30:00 1988 (en_US);
@@ -1309,7 +1311,7 @@ def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
             line_count += c
         except:
             pass
-    
+
     print '-----------------------------'
     print 'File counted: %d' % file_count
     print 'Line counted: %d' % line_count

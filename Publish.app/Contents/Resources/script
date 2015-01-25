@@ -14,7 +14,8 @@ fi
 package=$(basename "$csd")
 cd $csd
 
-python $csd/$package/prepublish.py
+# fallback for wxpython
+python $csd/$package/prepublish.py || pythonw $csd/$package/prepublish.py
 
 rm -r dist
 rm -r *.egg-info

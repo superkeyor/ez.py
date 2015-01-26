@@ -1274,13 +1274,6 @@ class Moment(object):
         moment = datetime.datetime.strptime(datetimeString, datetimeFormat)
         return Moment(timezone=timezone, moment=moment)
 
-
-from pyperclip import copy as SetClip
-from pyperclip import copy as setclip
-from pyperclip import paste as GetClip
-from pyperclip import paste as getclip
-
-
 def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
     """Counts lines of codes, counting empty lines as well.
     lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True)

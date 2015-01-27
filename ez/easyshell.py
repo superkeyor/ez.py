@@ -671,7 +671,7 @@ whos = who
 #             with open(file, 'w') as fileHandler: fileHandler.write(content)
 #             print "Updated " + file
 
-def setlog(file="log.txt", mode='a', status=True):
+def SetLog(file="log.txt", mode='a', status=True):
     """
     log(file="log.txt", mode='a', status=True)
     Prints output to both terminal and a file (log.txt) globally.
@@ -717,7 +717,8 @@ def setlog(file="log.txt", mode='a', status=True):
             sys.stdout.off()
         except AttributeError:
             pass
-log = setlog
+log = SetLog
+setlog = SetLog
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # print directory tree structure starts

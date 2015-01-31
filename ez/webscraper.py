@@ -130,13 +130,13 @@ class Scraper(object):
         return self.html
         # return self
 
-    def xpath(self, xpath, first=False):
+    def xpath(self, xpath_pattern, first=False):
         if first==False:
-            result = self._doc.search(xpath) if xpath else [self.html]
+            result = self._doc.search(xpath_pattern) if xpath_pattern else [self.html]
             result = [common.to_ascii(re.sub(r'\n|\r', '', r)) for r in result]
             return result
         else:
-            result = self._doc.get(xpath) if xpath else self.html
+            result = self._doc.get(xpath_pattern) if xpath_pattern else self.html
             result = common.to_ascii(re.sub(r'\n|\r', '', result))
             return result
 

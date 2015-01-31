@@ -64,7 +64,6 @@ Sample:
 
     for i in range(1,16):
         first.open("http://www.51voa.com/"+COL_NAME+"_"+str(i)+".html")
-        rawLists = first.search("//li")
         lists = rawLists.split("|")
         for item in lists:
             if "/Voa_English_Learning/" in item:
@@ -135,7 +134,7 @@ class Scraper(object):
 
         output = open(COL_NAME+".txt", 'w')
 
-        for i in range(1,16):
+        for i in range(1,3):
             first = Scraper("http://www.51voa.com/"+COL_NAME+"_"+str(i)+".html")
             lists = first.xpath("//li")
             for item in lists:
@@ -187,7 +186,7 @@ class Scraper(object):
                         
                     def OnLoaded(self, evt):
                         if(not self.browser or self.browser.IsBusy()): return
-                        self.pagetext = self.browser.GetPageText()
+                        self.pagetext = str(self.browser.GetPageText())
                         self.app.ExitMainLoop()
                  
                 self.html = Render(self.url).pagetext()

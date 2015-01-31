@@ -273,7 +273,6 @@ Sample:
 
     for i in range(1,16):
         first.open("http://www.51voa.com/"+COL_NAME+"_"+str(i)+".html")
-        rawLists = first.search("//li")
         lists = rawLists.split("|")
         for item in lists:
             if "/Voa_English_Learning/" in item:

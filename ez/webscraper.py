@@ -219,28 +219,31 @@ class Scraper(object):
             return result
 
 if __name__ == "__main__":
-    import time
-    COL_NAME = "Words_And_Idioms"
-
-    output = open(COL_NAME+".txt", 'w')
-
-    for i in range(1,2):
-        first = Scraper("http://www.51voa.com/"+COL_NAME+"_"+str(i)+".html")
-        time.sleep(1)
-        lists = first.xpath("//li")
-        for item in lists:
-            if "/Voa_English_Learning/" in item:
-                temp = Scraper(item)
-                time.sleep(1)
-                link = "http://www.51voa.com"+temp.xpath("/@href",1)
-                second = Scraper(link)
-                time.sleep(1)
-                try:
-                    download = re.search("/.*/.*mp3", second.html).group(0)
-                except:
-                    download = "missing"
-                print >> output, "http://stream.51voa.com"+download
-                output.flush()
+    a = Scraper('http://www.zhupsy.com',1)
+    print a.html
+    
+#    import time
+#    COL_NAME = "Words_And_Idioms"
+#
+#    output = open(COL_NAME+".txt", 'w')
+#
+#    for i in range(1,2):
+#        first = Scraper("http://www.51voa.com/"+COL_NAME+"_"+str(i)+".html")
+#        time.sleep(1)
+#        lists = first.xpath("//li")
+#        for item in lists:
+#            if "/Voa_English_Learning/" in item:
+#                temp = Scraper(item)
+#                time.sleep(1)
+#                link = "http://www.51voa.com"+temp.xpath("/@href",1)
+#                second = Scraper(link)
+#                time.sleep(1)
+#                try:
+#                    download = re.search("/.*/.*mp3", second.html).group(0)
+#                except:
+#                    download = "missing"
+#                print >> output, "http://stream.51voa.com"+download
+#                output.flush()
     
     # # / = root, // = all, [] = constriction, @ = attributes
 

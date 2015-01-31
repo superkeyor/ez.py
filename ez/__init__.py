@@ -8,7 +8,8 @@ from pyperclip import copy as SetClip
 from pyperclip import copy as setclip
 from pyperclip import paste as GetClip
 from pyperclip import paste as getclip
+from webscraper import Scraper
+from webscraper import __doc__ as doc3
+__doc__ = doc1 + '\n\n\n\n' + doc2 + '\n\n\n\n' + doc3 
 
-__doc__ = doc1 + '\n\n\n\n' + doc2
-
-del doc1, doc2
+del doc1, doc2, doc3

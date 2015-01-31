@@ -15,7 +15,7 @@ class Scraper(object):
     Methods:
         __init__(source, render=False, name=None)
             # source could be url or string code
-            # render requires wx/webkit to parse html (known issue: only works for english website)
+            # render requires wx/webkit to parse html
             # internally update the scraper object's attributes (e.g. url, html)
         xpath(xpath, first=False)    # first=False returns all matched as a list; first=True, first matched as string
 
@@ -63,7 +63,7 @@ class Scraper(object):
 
         output = open(COL_NAME+".txt", 'w')
 
-        for i in range(1,3):
+        for i in range(1,2):
             first = Scraper("http://www.51voa.com/"+COL_NAME+"_"+str(i)+".html")
             lists = first.xpath("//li")
             for item in lists:
@@ -76,7 +76,6 @@ class Scraper(object):
                     except:
                         download = "missing"
                     print >> output, "http://stream.51voa.com"+download
-            output.flush()
     """
 
     def __init__(self, source, render=False, name=None):
@@ -120,7 +119,7 @@ class Scraper(object):
                         self.pagetext = self.browser.GetPageText()
                         self.app.ExitMainLoop()
                  
-                self.html = Render(self.url).pagetext()
+                self.html = Render(self.url).pagetext
                 self._doc = Doc(self.html)
         else:
             self.url = None
@@ -142,40 +141,59 @@ class Scraper(object):
             return result
 
 if __name__ == "__main__":
-    # / = root, // = all, [] = constriction, @ = attributes
+    COL_NAME = "Words_And_Idioms"
 
-    s = Scraper('<div>abc<a class="link">LINK 1</a><div><a>LINK 2</a>def</div>abc</div>ghi<div><a>LINK 3</a>jkl</div>')
+    output = open(COL_NAME+".txt", 'w')
+
+    for i in range(1,2):
+        first = Scraper("http://www.51voa.com/"+COL_NAME+"_"+str(i)+".html")
+        lists = first.xpath("//li")
+        for item in lists:
+            if "/Voa_English_Learning/" in item:
+                temp = Scraper(item)
+                link = "http://www.51voa.com"+temp.xpath("/@href",1)
+                second = Scraper(link)
+                try:
+                    download = re.search("/.*/.*mp3", second.html).group(0)
+                except:
+                    download = "missing"
+                print >> output, "http://stream.51voa.com"+download
+        output.flush()
+    
+    # # / = root, // = all, [] = constriction, @ = attributes
+
+    # s = Scraper('<div>abc<a class="link">LINK 1</a><div><a>LINK 2</a>def</div>abc</div>ghi<div><a>LINK 3</a>jkl</div>')
         
-    print s.xpath('/div/a')
-    # ['LINK 1', 'LINK 3']
+    # print s.xpath('/div/a')
+    # # ['LINK 1', 'LINK 3']
 
-    print s.xpath('/div/a[@class="link"]')
-    # ['LINK 1']
+    # print s.xpath('/div/a[@class="link"]')
+    # # ['LINK 1']
 
-    print s.xpath('/div[1]//a')
-    # ['LINK 1', 'LINK 2']
+    # print s.xpath('/div[1]//a')
+    # # ['LINK 1', 'LINK 2']
 
-    print s.xpath('/div/a/@class')
-    # ['link', '']
+    # print s.xpath('/div/a/@class')
+    # # ['link', '']
 
-    print s.xpath('/div[-1]/a')
-    # ['LINK 3']
+    # print s.xpath('/div[-1]/a')
+    # # ['LINK 3']
 
-    s = Scraper(u'<a href="http://www.google.com" class="flink">google</a>')
-    print s.xpath('//a[@class="flink"]', 1)
-    # 'google'
+    # s = Scraper(u'<a href="http://www.google.com" class="flink">google</a>')
+    # print s.xpath('//a[@class="flink"]', 1)
+    # # 'google'
 
-    # test finding just the first instance for a large amount of content
-    s = Scraper('<div><span>content</span></div>' * 10000)
-    print s.xpath('//span', 1)
-    # 'content'
+    # # test finding just the first instance for a large amount of content
+    # s = Scraper('<div><span>content</span></div>' * 10000)
+    # print s.xpath('//span', 1)
+    # # 'content'
 
-    # test extracting attribute of self closing tag
-    s = Scraper('<div><img src="img.png"></div>')
-    print s.xpath('/div/img/@src', 1)
-    # 'img.png'
+    # # test extracting attribute of self closing tag
+    # s = Scraper('<div><img src="img.png"></div>')
+    # print s.xpath('/div/img/@src', 1)
+    # # 'img.png'
 
-    # test extracting attribute after self closing tag
-    s = Scraper('<div><br><p>content</p></div>')
-    print s.xpath('/div/p')
-    # 'content'
+    # # test extracting attribute after self closing tag
+    # s = Scraper('<div><br><p>content</p></div>')
+    # print s.xpath('/div/p')
+    # # 'content'

@@ -194,6 +194,7 @@ class Scraper(object):
                     def OnLoaded(self, evt):
                         if(not self.browser or self.browser.IsBusy()): return
                         self.pagetext = self.browser.GetPageText()
+                        self.pagetext = common.to_ascii(self.pagetext)
                         self.app.ExitMainLoop()
                  
                 self.html = Render(self.url).pagetext

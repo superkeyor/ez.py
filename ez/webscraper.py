@@ -164,7 +164,8 @@ class Scraper(object):
                 # render javascript with qt webkit
                 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 import wx 
-                import wx.html2 
+                import wx.html2
+                import re
 
                 class Render(wx.Frame):
                     def __init__(self, url): 
@@ -186,7 +187,7 @@ class Scraper(object):
                         
                     def OnLoaded(self, evt):
                         if(not self.browser or self.browser.IsBusy()): return
-                        self.pagetext = str(self.browser.GetPageText())
+                        self.pagetext = common.to_ascii(re.sub(r'\n|\r', '', self.browser.GetPageText()))
                         self.app.ExitMainLoop()
                  
                 self.html = Render(self.url).pagetext()

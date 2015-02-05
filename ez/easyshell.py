@@ -867,12 +867,14 @@ def sprintf(formatString, *args):
     s = sprintf('%02d\n is bigger than\n %02d',[4,3])
     s = sprintf('%02d\n is bigger than\n %02d',(4,3))
     s = sprintf('%s has %03d quote types', language, number)
+    s = sprintf('%s', lanuage)
     
     s = sprintf('{language} has {number:03d} quote types.', theDict) <--auto unpack
     s = sprintf('$language has $number:03d quote types.', theDict)
 
     s = sprintf('{language} has {number:03d} quote types.')          <--auto search
     s = sprintf('$language has $number:03d quote types.')
+    s = sprintf('$language')
     
     longString = '''
     Hello, %s
@@ -908,9 +910,8 @@ def sprintf(formatString, *args):
                 formatString = re.sub('\$(\S+)', r'{\1}', formatString)
                 return formatString.format(**args[0])
         else:
-            return formatString % args
-                
-                
+            # a single string or int
+            return formatString % args         
     else:
         caller = inspect.currentframe().f_back
         if re.search('%\(', formatString):

@@ -858,25 +858,55 @@ def regexprepi(string, pattern, replace, count=0):
 def sprintf(formatString, *args):
     """
     (formatString, *args)
-    *args could be a list, tuple, dictionary
-    04 is bigger than 03
-    sprintf('%02d\n is bigger than\n %02d',4,3)
-    sprintf('%02d\n is bigger than\n %02d',[4,3])
-    sprintf('%02d\n is bigger than\n %02d',(4,3))
-    sprintf('%(language)s has %(number)03d quote types.', {"language": "Python", "number": 2})
+    Examples:
     language = 'Python'; number = 2
-    sprintf('%(language)s has %(number)03d quote types.', locals()) # locals() returns a dictionary
-    """
+    theDict = {"language": "Matlab", "number": 1}
+    
+    # recommended usage (mixing old, new and alternative syntax):    
+    s = sprintf('%02d\n is bigger than\n %02d',4,3)
+    s = sprintf('%02d\n is bigger than\n %02d',[4,3])
+    s = sprintf('%02d\n is bigger than\n %02d',(4,3))
+    s = sprintf('%s has %03d quote types', language, number)
+    
+    s = sprintf('{language} has {number:03d} quote types.', theDict) <--auto unpack
+    s = sprintf('$language has $number:03d quote types.', theDict)
+
+    s = sprintf('{language} has {number:03d} quote types.')          <--auto search
+    s = sprintf('$language has $number:03d quote types.')
+    
+    # -------------------------------------------------------------------------
+    # old syntax:
+    s = sprintf('%02d\n is bigger than\n %02d',4,3)
+    s = sprintf('%02d\n is bigger than\n %02d',[4,3])
+    s = sprintf('%02d\n is bigger than\n %02d',(4,3))
+    s = sprintf('%s has %03d quote types', language, number)
+    
+    s = sprintf('%(language)s has %(number)03d quote types.', {"language": "Python", "number": 2})
+    s = sprintf('%(language)s has %(number)03d quote types.', theDict)
+    s = sprintf('%(language)s has %(number)03d quote types.', locals()) # locals() returns a dictionary
+    s = sprintf('%(language)s has %(number)03d quote types.') # auto get dictionary from locals()
+    """  
     # args is a tuple even when only one arg is passed in
+    import re, inspect
+    
     if len(args) > 1:
         return formatString % args
     elif len(args) == 1:
         if type(args[0]) in [list, tuple]:
             return formatString % tuple(*args)
         elif type(args[0]) in [dict]:
-            return formatString % args[0]
+            if re.search('%\(', formatString):
+                return formatString % args[0]
+            else:
+                formatString = re.sub('\$(\S+)', r'{\1}', formatString)
+                return formatString.format(**args[0])
+    else:
+        caller = inspect.currentframe().f_back
+        if re.search('%\(', formatString):
+            return formatString % caller.f_locals
         else:
-            return formatString % args
+            formatString = re.sub('\$(\S+)', r'{\1}', formatString)
+            return formatString.format(**caller.f_locals)
 
 def sort(*args, **kwargs):
     """wrapper of sorted, passed in list does not change, returns a sorted list"""

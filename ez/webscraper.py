@@ -169,36 +169,41 @@ class Scraper(object):
                 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # render javascript with qt webkit
                 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                import wx 
-                import wx.html2
-                import re
+                try:
+                    import wx 
+                    import wx.html2
+                    import re
 
-                class Render(wx.Frame):
-                    def __init__(self, url): 
-                        self.pagetext = ''
-                        self.app = wx.App()
+                    class Render(wx.Frame):
+                        def __init__(self, url): 
+                            self.pagetext = ''
+                            self.app = wx.App()
 
-                        wx.Frame.__init__(self, None, -1) 
-                        sizer = wx.BoxSizer(wx.VERTICAL)
-                        self.browser = wx.html2.WebView.New(self)
-                        sizer.Add(self.browser, 1, wx.EXPAND, 10) 
-                        self.SetSizer(sizer) 
-                        self.SetSize((700, 700))
+                            wx.Frame.__init__(self, None, -1) 
+                            sizer = wx.BoxSizer(wx.VERTICAL)
+                            self.browser = wx.html2.WebView.New(self)
+                            sizer.Add(self.browser, 1, wx.EXPAND, 10) 
+                            self.SetSizer(sizer) 
+                            self.SetSize((700, 700))
 
-                        self.Bind(wx.html2.EVT_WEBVIEW_LOADED, self.OnLoaded, self.browser)
+                            self.Bind(wx.html2.EVT_WEBVIEW_LOADED, self.OnLoaded, self.browser)
 
-                        self.browser.LoadURL(url)
-                        # self.Show()
-                        self.app.MainLoop()
-                        
-                    def OnLoaded(self, evt):
-                        if(not self.browser or self.browser.IsBusy()): return
-                        self.pagetext = self.browser.GetPageText()
-                        self.pagetext = common.to_ascii(self.pagetext)
-                        self.app.ExitMainLoop()
-                 
-                self.html = Render(self.url).pagetext
-                self._doc = Doc(self.html)
+                            self.browser.LoadURL(url)
+                            # self.Show()
+                            self.app.MainLoop()
+                            
+                        def OnLoaded(self, evt):
+                            if(not self.browser or self.browser.IsBusy()): return
+                            self.pagetext = self.browser.GetPageText()
+                            self.pagetext = common.to_ascii(self.pagetext)
+                            self.app.ExitMainLoop()
+                     
+                    self.html = Render(self.url).pagetext
+                    self._doc = Doc(self.html)
+                except ImportError:
+                    # raise Exception("Does not have the necessary libraries to render the webpage")
+                    self.html = "Does not have the necessary libraries to render the webpage"
+                    self._doc = Doc(self.html)
         else:
             self.url = None
             self.html = source

@@ -39,7 +39,8 @@ cp(source, destination)  # Copies source file(s) or folder to destination. Suppo
 mv(source, destination)  # Moves source file(s) or folder to destination. Supports wildcards, vectorization.
 
 execute(cmd, output=True)    # Executes a bash command with or without capturing shell output
-
+with nooutput():
+    print 'this is will not be printed in stdout'
 pprint() # Pretty prints.
 beep()  # Beeps to notify user.
 which(name) # Prints where a module is and in which module a function is. which('python') returns which python is being used.

@@ -41,7 +41,8 @@ cp(source, destination)  # Copies source file(s) or folder to destination. Suppo
 mv(source, destination)  # Moves source file(s) or folder to destination. Supports wildcards, vectorization.
 
 execute(cmd, output=True)    # Executes a bash command with or without capturing shell output
-
+with nooutput():
+    print 'this is will not be printed in stdout'
 pprint() # Pretty prints.
 beep()  # Beeps to notify user.
 which(name) # Prints where a module is and in which module a function is. which('python') returns which python is being used.
@@ -564,7 +565,7 @@ def execute(cmd, output=True):
     output: whether capture shell output
     """
     if not _DEBUG_MODE:
-        print "Output of command " + cmd + " :"
+        print "Command: " + cmd
         if os.name == 'nt' or platform.system() == 'Windows':
             if output:
                 subprocess.call(cmd, shell=True)
@@ -579,6 +580,24 @@ def execute(cmd, output=True):
     else:
         print "Simulation! The command is " + cmd
         print ""
+
+from contextlib import contextmanager
+@contextmanager
+def nooutput():
+    """Temporarily suppress stdout, stderr in a context
+    with nooutput():
+        print 'this is will not be printed in stdout'
+    """
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        old_stderr = sys.stderr
+        sys.stderr = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
 from pprint import pprint
 
@@ -877,6 +896,8 @@ def sprintf(formatString, *args):
     s = sprintf('$language has $number:03d quote types.')
     s = sprintf('$language')
     
+    s = sprintf('echo "{language} is in $PATH"')                     <--if both {} and $, $PATH will not be replaced
+    
     longString = '''
     Hello, %s
     
@@ -908,7 +929,8 @@ def sprintf(formatString, *args):
             if re.search('%\(', formatString):
                 return formatString % args[0]
             else:
-                formatString = re.sub('\$(\S+)', r'{\1}', formatString)
+                if not re.search('\{.*\}', formatString):
+                    formatString = re.sub('\$(\S+)', r'{\1}', formatString)
                 return formatString.format(**args[0])
         else:
             # a single string or int
@@ -918,7 +940,8 @@ def sprintf(formatString, *args):
         if re.search('%\(', formatString):
             return formatString % caller.f_locals
         else:
-            formatString = re.sub('\$(\S+)', r'{\1}', formatString)
+            if not re.search('\{.*\}', formatString):
+                formatString = re.sub('\$(\S+)', r'{\1}', formatString)
             return formatString.format(**caller.f_locals)
 
 def sort(*args, **kwargs):

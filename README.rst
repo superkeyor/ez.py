@@ -95,6 +95,7 @@ content = GetClip(), content = getclip()   # Read out content from current clipb
 
 lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
 keygen(length=8, complexity=3)  # generate a random key
+hashes(filename): # Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way
 
 isemailvalid(email) # True or False, isEmailValid, IsEmailValid
 

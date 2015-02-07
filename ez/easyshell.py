@@ -97,6 +97,7 @@ content = GetClip(), content = getclip()   # Read out content from current clipb
 
 lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
 keygen(length=8, complexity=3)  # generate a random key
+hashes(filename): # Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way
 
 isemailvalid(email) # True or False, isEmailValid, IsEmailValid
 """
@@ -1396,6 +1397,20 @@ def keygen(length=8, complexity=3):
     elif complexity not in [1, 2, 3, 4, 5, 6]:
         chars = str(complexity)
     return ''.join(random.choice(chars) for x in range(length))
+
+def hashes(filename):
+    """Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way"""
+    import hashlib
+    md5 = hashlib.md5()
+    sha1 = hashlib.sha1()
+    with open(filename, 'rb') as f:
+        for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
+            md5.update(chunk)
+            sha1.update(chunk)
+    # print 'md5 16: ' + md5.digest()   
+    print 'md5 32: ' + md5.hexdigest()
+    # print 'sha1 16: ' + sha1.digest()
+    print 'sha1 32: ' + sha1.hexdigest()
 
 def isemailvalid(email, check_mx=False, verify=False):
     """Indicate whether the given string is a valid email address

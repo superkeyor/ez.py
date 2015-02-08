@@ -99,6 +99,7 @@ keygen(length=8, complexity=3)  # generate a random key
 hashes(filename): # Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way
 
 isemailvalid(email) # True or False, isEmailValid, IsEmailValid
+export(input,output,options,**kwargs): # Convert url, file (html, txt), string to a single pdf
 
 
 

@@ -1587,7 +1587,7 @@ def export(input,output=None,options=None,**kwargs):
             'no-outline': None,
             'image-dpi': 1200,
             'image-quality': 100}
-            If option without value, use None, False or ” for dict value
+            If option without value, use None, False or '' for dict value
             By default, PDFKit will show all wkhtmltopdf output. 
             If you dont want it, you need to pass quiet option: 'quiet': ''
     css = css

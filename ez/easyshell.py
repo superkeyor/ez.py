@@ -385,7 +385,7 @@ def rn(*args):
             os.rename(source,destination)
     else:
         if not os.path.isdir(os.path.dirname(destination)):
-            raise Exception('Destination folder does not exist')
+            raise Exception('Destination parent folder does not exist')
         else:
             os.rename(source,destination)
 

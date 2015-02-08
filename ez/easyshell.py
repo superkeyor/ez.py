@@ -101,6 +101,7 @@ keygen(length=8, complexity=3)  # generate a random key
 hashes(filename): # Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way
 
 isemailvalid(email) # True or False, isEmailValid, IsEmailValid
+export(input,output,options,**kwargs): # Convert url, file (html, txt), string to a single pdf
 """
 
 # reference: abspath for ../ ./, expanduser for ~, glob to resolve wildcards, fnmatch.translate wildcards to re
@@ -1565,6 +1566,58 @@ def isemailvalid(email, check_mx=False, verify=False):
     return True
 isEmailValid = isemailvalid
 IsEmailValid = isemailvalid
+
+def export(input,output=None,options=None,**kwargs):
+    """Convert url, html file, html string to a single pdf
+
+    (input,output,options,**kwargs)
+    input:  could be a list of urls, files, strings
+            url should start with 'http' or 'https'
+            string could be htlm codes
+            html file
+    output: pdf file path, if not provided, use default file name
+    options: default
+            options = {
+            'page-size': 'Letter',
+            'margin-top': '0.75in',
+            'margin-right': '0.75in',
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+            'encoding': "UTF-8",
+            'no-outline': None,
+            'image-dpi': 1200,
+            'image-quality': 100}
+            If option without value, use None, False or ” for dict value
+            By default, PDFKit will show all wkhtmltopdf output. 
+            If you dont want it, you need to pass quiet option: 'quiet': ''
+    css = css
+    see more options at: https://pypi.python.org/pypi/pdfkit
+                         http://wkhtmltopdf.org/usage/wkhtmltopdf.txt
+                         wkhtmltopdf -H
+    
+    wrapper of pdfkit which in turn based on wkhtmltopdf, pyqt
+    """
+    import pdfkit
+    if not output: output = 'Out_' + Moment().datetime + '.pdf'
+    if not options: options = {'page-size': 'Letter',
+                               'margin-top': '0.75in',
+                               'margin-right': '0.75in',
+                               'margin-bottom': '0.75in',
+                               'margin-left': '0.75in',
+                               'encoding': "UTF-8",
+                               'no-outline': None,
+                               'image-dpi': 1200,
+                               'image-quality': 100}
+    if type(input) in [list]: 
+        temp = input[0]
+    else:
+        temp = input
+    if temp.startswith('http'):
+        pdfkit.from_url(input,output,options=options,**kwargs)
+    elif exists(temp):
+        pdfkit.from_file(input,output,options=options,**kwargs)
+    else:
+        pdfkit.from_string(input,output,options=options,**kwargs)
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

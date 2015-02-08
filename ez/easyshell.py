@@ -507,6 +507,7 @@ def mv(source, destination):
     destination parent folder does not have to exist already
     mv('a.txt','folder'), mv('a.txt','folder/a.txt'), mv('a.txt','folder/b.txt')
     mv('a','b')-->get b/a, b now has a as subfolder, regardless of b exists or not
+                  use ez.rn('a','b') to change name a->b
     """
     vectorization = False
     for arg in [source,destination]:

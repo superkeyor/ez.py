@@ -346,7 +346,7 @@ def rn(*args):
     old and new cannot be the same, otherwise error
     note: input could be a list/tuple, vectorization supported
     in case new name exists
-          if old and new both folders, error
+          if old and new both folders, move old to new as subfolder
           if old and new both files, overwrite the new file with old file without prompt
     rn('a','b')-->rename folder a to folder b
     """
@@ -379,7 +379,8 @@ def rn(*args):
     if ext == '':
         # if destination dir exist
         if os.path.isdir(destination):
-            raise Exception('Cannot rename to exising folder name')
+            # raise Exception('Cannot rename to exising folder name')
+            mv(source,destination)
         else:
             os.rename(source,destination)
     else:

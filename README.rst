@@ -20,9 +20,12 @@ pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
 parentdir(path) # Returns the parent directory of a path.
 joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.
-join(sep,string1,string2) # Glues together strings with sep. Supports vectorization.
 splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
+
+join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Supports vectorization.
+sort(array)
+replace(theList,theItem,replacement), remove(theList,theItem)
 
 ls([path[, regex]], full=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
 lsd([path[, regex]], full=True)
@@ -63,7 +66,6 @@ tree([path[, Folder]) # Prints a directory tree structure. Folder=True prints fi
 regexprep(string, pattern, replace, count=0), regexprepi
 
 sprintf(formatString, *args)
-sort()
 iff(expression, result1, result2)
 clear(module, recursive=False)
 

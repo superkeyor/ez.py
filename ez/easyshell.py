@@ -187,38 +187,125 @@ def joinpath(*args):
         return os.path.join(*args)
 
 def join(sep='',*args):
-    """join(sep,string1,string2)
-       Glues together strings with sep. Supports vectorization
-       Returns the joined string, supports vectorization
+    """glue together strings/array with sep
+    1) join('','string1','string2',...)
+    2) Input only supports vectorization
+            join('|',['string1','string2'],['string3','string4'],...) -> [string1|string3,string2|string4]
+    3) numeric/mixed array works too (the built-in '.'.join() only supports string array)
+            join(',',['this','is',1,'array'])
+            join('_',[1,2,2]) >> 1_2_2
     """
+    # len(args) only refers to *args itself
+    # in the case of (sep), len(args) == 0
     assert len(args) >= 1, "Give me more inputs"
-    vectorization = False
-    # to see whether there is an list/tuple input
-    for arg in args:
-        if type(arg) in [list, tuple]:
-            vectorization = True
-            length = len(arg)
-            break
-    if vectorization:
-        # fill arg which is a string
-        # args is by default an unmutable tuple
-        args = list(args)
-        for j in range(0,len(args)):
-            arg = args[j]
-            if type(arg) in [str]:
-                args[j] = [arg]*length
+    if len(args) == 1:
+        theList = args[0]
+        theList = [str(x) for x in theList]
+        return sep.join(theList)
+    else:        
+        vectorization = False
+        # to see whether there is an list/tuple input
+        for arg in args:
+            if type(arg) in [list, tuple]:
+                vectorization = True
+                length = len(arg)
+                break
+        if vectorization:
+            # fill arg which is a string
+            # args is by default an unmutable tuple
+            args = list(args)
+            for j in range(0,len(args)):
+                arg = args[j]
+                if type(arg) in [str]:
+                    args[j] = [arg]*length
+    
+            results = []
+            for i in range(0,length):
+                # a bit tricy because of result + = result and .join
+                result = args[0][i]
+                for j in range(1,len(args)):
+                    result = sep.join([result, args[j][i]])
+                results.append(result)
+            return results
+        else:
+            return sep.join(args)
 
-        results = []
-        for i in range(0,length):
-            # a bit tricy because of result + = result and .join
-            result = args[0][i]
-            for j in range(1,len(args)):
-                result = sep.join([result, args[j][i]])
-            results.append(result)
-        return results
+def replace(theList, theItem, replacement):
+    """replace(theList, theItem, replacement)
+    replace all occurance of theItem in theList with replacement
+    theItem could be a value, e.g., 3, 'cat' or a condition '>3' '!="cat"' or a (lambda) function
+    supports numeric list, string list, or mixed
+    Be careful when theItem is condition and theList is mixed (e.g., 'cat'>3 is true)
+    
+    Returns the changed list and the passed-in list (theList) is also changed.
+    
+    e.g., 
+    replace([0,-1,1],'<0',0)
+    replace([0,-1,1],-1,0)
+    replace([0,-1,1],'!=0',0)
+    replace([0,-1,1],'-1',1)   # <-- will not replace, because -1 and '-1' not the same
+    replace(['c','a','t','cat'],'!="cat"','cat')  #<--notice the quotes around "cat", otherwise report error
+    replace([0,-1,1],lambda x: x<0,0)
+    """
+    # check if it is a function
+    # http://stackoverflow.com/questions/624926/how-to-detect-whether-a-python-variable-is-a-function
+    # http://stackoverflow.com/questions/3655842/how-to-test-whether-a-variable-holds-a-lambda
+    # http://www.diveintopython.net/power_of_introspection/lambda_functions.html
+    if hasattr(theItem,'__call__'):
+        for index, item in enumerate(theList):
+            if theItem(item):   # pass item to the function
+                theList[index] = replacement
     else:
-        return sep.join(args)
+        if type(theItem) not in [str]:
+            cnd = ' == theItem'
+        else:
+            if theItem[0] in ['<','=','!','>']:   # startswith
+                cnd = theItem
+            else:
+                cnd = ' == theItem'
+        for index, item in enumerate(theList):
+            if eval('item' + cnd):
+                theList[index] = replacement
+    return theList
 
+def remove(theList, theItem):
+    """remove(theList, theItem)
+    remove all occurance of theItem in theList
+    theItem could be a value, e.g., 3, 'cat' or a condition '>3' '!="cat"' or a (lambda) function
+    supports numeric list, string list, or mixed
+    Be careful when theItem is condition and theList is mixed (e.g., 'cat'>3 is true)
+    
+    Returns the changed list and the passed-in list (theList) is also changed.
+    
+    e.g., 
+    ([0,-1,1],'<0')
+    ([0,-1,1],-1)
+    ([0,-1,1],'!=0')
+    ([0,-1,1],'-1')   # <-- will not remove, because -1 and '-1' not the same
+    (['c','a','t','cat'],'!="cat"')  #<--notice the quotes around "cat", otherwise report error
+    ([0,-1,1],lambda x: x<0)
+    """
+    # check if it is a function
+    # http://stackoverflow.com/questions/624926/how-to-detect-whether-a-python-variable-is-a-function
+    # http://stackoverflow.com/questions/3655842/how-to-test-whether-a-variable-holds-a-lambda
+    # http://www.diveintopython.net/power_of_introspection/lambda_functions.html
+    if hasattr(theItem,'__call__'):
+        for index, item in enumerate(theList):
+            if theItem(item):   # pass item to the function
+                theList.pop(index)
+    else:
+        if type(theItem) not in [str]:
+            cnd = ' == theItem'
+        else:
+            if theItem[0] in ['<','=','!','>']:   # startswith
+                cnd = theItem
+            else:
+                cnd = ' == theItem'
+        for index, item in enumerate(theList):
+            if eval('item' + cnd):
+                theList.pop(index)
+    return theList
+    
 def splitpath(path):
     """splitpath(path), Split path into [dir, file, ext]. e.g., file=easyshell, ext=.py
     Supports vectorization."""

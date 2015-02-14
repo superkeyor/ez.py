@@ -22,9 +22,12 @@ pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
 parentdir(path) # Returns the parent directory of a path.
 joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.
-join(sep,string1,string2) # Glues together strings with sep. Supports vectorization.
 splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
+
+join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Supports vectorization.
+sort(array)
+replace(theList,theItem,replacement), remove(theList,theItem)
 
 ls([path[, regex]], full=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
 lsd([path[, regex]], full=True)
@@ -65,7 +68,6 @@ tree([path[, Folder]) # Prints a directory tree structure. Folder=True prints fi
 regexprep(string, pattern, replace, count=0), regexprepi
 
 sprintf(formatString, *args)
-sort()
 iff(expression, result1, result2)
 clear(module, recursive=False)
 
@@ -289,10 +291,13 @@ def remove(theList, theItem):
     # http://stackoverflow.com/questions/624926/how-to-detect-whether-a-python-variable-is-a-function
     # http://stackoverflow.com/questions/3655842/how-to-test-whether-a-variable-holds-a-lambda
     # http://www.diveintopython.net/power_of_introspection/lambda_functions.html
+    
+    # list remove,pop can cause index shift
+    # http://stackoverflow.com/questions/497426/deleting-multiple-elements-from-a-list    
     if hasattr(theItem,'__call__'):
         for index, item in enumerate(theList):
             if theItem(item):   # pass item to the function
-                theList.pop(index)
+                theList[index] = '!!!'
     else:
         if type(theItem) not in [str]:
             cnd = ' == theItem'
@@ -303,8 +308,15 @@ def remove(theList, theItem):
                 cnd = ' == theItem'
         for index, item in enumerate(theList):
             if eval('item' + cnd):
-                theList.pop(index)
+                theList[index] = '!!!'
+    
+    for i in range(0,theList.count('!!!')):
+        theList.remove('!!!') # remove
     return theList
+    
+def sort(*args, **kwargs):
+    """wrapper of sorted, passed in list does not change, returns a sorted list"""
+    return sorted(*args, **kwargs)
     
 def splitpath(path):
     """splitpath(path), Split path into [dir, file, ext]. e.g., file=easyshell, ext=.py
@@ -1033,10 +1045,6 @@ def sprintf(formatString, *args):
             if not re.search('\{.*\}', formatString):
                 formatString = re.sub('\$(\S+)', r'{\1}', formatString)
             return formatString.format(**caller.f_locals)
-
-def sort(*args, **kwargs):
-    """wrapper of sorted, passed in list does not change, returns a sorted list"""
-    return sorted(*args, **kwargs)
 
 def iff(expression, result1, result2):
     """iff(expression, result1, result2)"""

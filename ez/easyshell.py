@@ -239,7 +239,7 @@ def replace(theList, theItem, replacement):
     supports numeric list, string list, or mixed
     Be careful when theItem is condition and theList is mixed (e.g., 'cat'>3 is true)
     
-    Returns the changed list and the passed-in list (theList) is also changed.
+    Returns the changed list but the passed-in list is NOT changed.
     
     e.g., 
     replace([0,-1,1],'<0',0)
@@ -249,6 +249,9 @@ def replace(theList, theItem, replacement):
     replace(['c','a','t','cat'],'!="cat"','cat')  #<--notice the quotes around "cat", otherwise report error
     replace([0,-1,1],lambda x: x<0,0)
     """
+    # http://www.python-course.eu/deep_copy.php
+    from copy import deepcopy
+    theList = deepcopy(theList)
     # check if it is a function
     # http://stackoverflow.com/questions/624926/how-to-detect-whether-a-python-variable-is-a-function
     # http://stackoverflow.com/questions/3655842/how-to-test-whether-a-variable-holds-a-lambda
@@ -277,7 +280,7 @@ def remove(theList, theItem):
     supports numeric list, string list, or mixed
     Be careful when theItem is condition and theList is mixed (e.g., 'cat'>3 is true)
     
-    Returns the changed list and the passed-in list (theList) is also changed.
+    Returns the changed list but the passed-in list is NOT changed.
     
     e.g., 
     ([0,-1,1],'<0')
@@ -287,6 +290,9 @@ def remove(theList, theItem):
     (['c','a','t','cat'],'!="cat"')  #<--notice the quotes around "cat", otherwise report error
     ([0,-1,1],lambda x: x<0)
     """
+    # http://www.python-course.eu/deep_copy.php
+    from copy import deepcopy
+    theList = deepcopy(theList)
     # check if it is a function
     # http://stackoverflow.com/questions/624926/how-to-detect-whether-a-python-variable-is-a-function
     # http://stackoverflow.com/questions/3655842/how-to-test-whether-a-variable-holds-a-lambda

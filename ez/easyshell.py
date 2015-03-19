@@ -831,14 +831,14 @@ def SetLog(file="log.txt", mode='a', status=True):
             self.log.write("starts at " + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "\n")
             self.log.flush()
 
-        def flush(self, message):
+        def flush(self):
             self.terminal.flush()
             try:
                 self.log.flush()
             except:  # in case self.log closed
                 pass
             
-        def write(self):
+        def write(self, message):
             self.terminal.write(message)
             self.log.write(message)
             self.log.flush()

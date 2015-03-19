@@ -15,6 +15,10 @@ pip install ez
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.
 
+debug(1/0)
+    # 0 = everything will be actually executed
+    # 1 = simulate operations of cp, mv, execute; other commands will be actually performed.
+          will print out simulated commands, useful for debugging and for counting files when necessary.
 error(msg)
 
 fullpath(path)
@@ -62,7 +66,9 @@ whos(name),whos() list imported functions/packages
 
 log(file="log.txt", mode='a', status=True) # Prints output to both terminal and a file (log.txt) globally. mode: a=append; w=overwrite
 
-tree([path[, Folder]) # Prints a directory tree structure. Folder=True prints files in addition to folders.
+tree([path[, forest=True]) # Prints a directory tree structure. 
+    forest=True (default) prints only folders, i.e., print less to show the big forest
+    forest=False prints files plus folders
 
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi
@@ -114,6 +120,7 @@ _DEBUG_MODE = 0
 def ShellDebug(debugMode=1):
     global _DEBUG_MODE
     _DEBUG_MODE = debugMode
+debug = ShellDebug    
 
 #def ReadConfig(item):
 #    """Read a variable from the config.ini file"""
@@ -852,12 +859,14 @@ setlog = SetLog
 # print directory tree structure starts
 # modified from http://code.activestate.com/recipes/577091/
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-def tree(path='./', F=False):
+def tree(path='./', forest=True):
     """
-    tree([path[, Folder]) # Prints a directory tree structure. Folder=True prints files in addition to folders.
+    tree([path[, forest=True]) # Prints a directory tree structure. 
+    forest=True (default) prints only folders, i.e., print less to show the big forest
+    forest=False prints files plus folders
     """
     import sys, os
-    global PRINT_FILES; PRINT_FILES = F
+    global PRINT_FILES; PRINT_FILES = not forest
     path = os.path.normpath(os.path.abspath(os.path.expanduser(path)))
 
     def walk(root, dirs, files, prefix=''):

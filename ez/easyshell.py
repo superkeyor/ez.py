@@ -1249,6 +1249,9 @@ class JDict(OrderedDict):
     customized ordered dictionary class with convient attributes and methods
 
     Methods:
+    sort([reverse=False])
+        sort the dictionary by key in (reverse) order
+        returns a new sorted JDict, does not modify the original/itself
     update({k:v})
         adds new keys/vals or updates existing keys/vals, cannot delete
         v could be interger, string, list, dictionary
@@ -1305,6 +1308,11 @@ class JDict(OrderedDict):
                 else:
                     # simply update key:newVal
                     prev[key] = newVal
+
+    def sort(self, reverse=False):
+        # self = JDict(sorted(self.items(),reverse=reverse)) will not work, see
+        # http://stackoverflow.com/questions/1216356/
+        return JDict(sorted(self.items(),reverse=reverse))
 
 
 class Moment(object):

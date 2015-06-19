@@ -1097,6 +1097,7 @@ THE_PATH = os.path.join(MODULE_PATH, 'timezone')
 sys.path.insert(1, THE_PATH)
 try:
     import pytz
+    import tzlocal
 except:
     pass
 
@@ -1321,18 +1322,17 @@ class Moment(object):
     Has common datetime attributes as strings.
     Wraps timedelta for easy calling.
     Formats the datetime to a string.
-    Converts a datetime-like string to a Moment object.
-
-    Methods:
-    Shift, Format, Transform
+    Transforms a datetime-like string to a Moment object.
+    Converts to specified timezone
 
     Attributes:
         moment, returns the datetime instance
 
-        (the following all return string)
+        (the following all return string, while ignoring tzinfo)
         datetime, returns the string of date and time
         date, returns the string of the date
         time
+        timezone
         year
         month
         day
@@ -1342,32 +1342,18 @@ class Moment(object):
         minute
         second
         microsecond
-
-    def __init__(self, timezone=None, moment=None):
-        Generates the current datetime in specified timezone, or local naive datetime if omitted, (when moment omitted).
-        Args:
-            timezone is the specified timezone string
-                US timezone:
-                US/Alaska, US/Aleutian, US/Arizona, US/Central, US/East-Indiana, US/Eastern,
-                US/Hawaii, US/Indiana-Starke, US/Michigan, US/Mountain, US/Pacific, US/Pacific-New, US/Samoa
-
-                Use the codes to look up:
-                from pytz import all_timezones
-                print len(all_timezones)
-                for zone in all_timezones:
-                    if 'US' in zone:
-                        print zone
-
-            moment could be naive (without tzinfo) or aware (with tzinfo) datetime
-
     """
     def __init__(self, timezone=None, moment=None):
         """Generates the current datetime in specified timezone, or local naive datetime if omitted, (when moment omitted).
 
         Args:
             timezone is the specified timezone string
+                UTC: Coordinated Universal Time (not a time zone, but a time standard)
+                GMT: Greenwich Mean Time (a time zone)
+                but Moment('UTC').datetime = Moment('GMT').datetime
+
                 US timezone:
-                US/Alaska, US/Aleutian, US/Arizona, US/Central, US/East-Indiana, US/Eastern,
+                US/Alaska, US/Aleutian, US/Arizona, US/Central, US/East-Indiana, US/Eastern, 
                 US/Hawaii, US/Indiana-Starke, US/Michigan, US/Mountain, US/Pacific, US/Pacific-New, US/Samoa
 
                 Use the codes to look up:
@@ -1444,6 +1430,22 @@ class Moment(object):
         datetimeString = self.moment.strftime(datetimeFormat)
         return datetimeString
 
+    def Convert(self, timezone=None):
+        """Convert to a specified timezone.
+        timezone is a specified timezone string, see the class help
+        returns an instance of Moment
+        """
+        # if naive
+        if self.timezone is None:
+            tz = tzlocal.get_localzone()
+            # attach local tz
+            dt = tz.localize(self.moment)
+        else:
+            dt = self.moment
+        timezone = pytz.timezone(timezone)
+        newdt = dt.astimezone(timezone)
+        return Moment(timezone=None, moment=newdt)
+
     @classmethod
     def Transform(cls, datetimeString, datetimeFormat, timezone=None):
         """Transforms a datetime-like string to a Moment object.
@@ -1454,28 +1456,30 @@ class Moment(object):
 
                     %a      Sun, Mon, ..., Sat (en_US);
                     %A      Sunday, Monday, ..., Saturday (en_US);
-                    %w      0 is Sunday and 6 is Saturday.   0, 1, ..., 6
-                    %d      01, 02, ..., 31
+                    %w      0 is Sunday and 6 is Saturday.   0, 1, ..., 6     
+                    %d      01, 02, ..., 31      
                     %b      Jan, Feb, ..., Dec (en_US);
                     %B      January, February, ..., December (en_US);
-                    %m      01, 02, ..., 12
-                    %y      Year    00, 01, ..., 99
-                    %Y      Year    1970, 1988, 2001, 2013
-                    %H      Hour (24-hour clock)    00, 01, ..., 23
-                    %I      Hour (12-hour clock)    01, 02, ..., 12
+                    %m      01, 02, ..., 12      
+                    %y      Year    00, 01, ..., 99      
+                    %Y      Year    1970, 1988, 2001, 2013   
+                    %H      Hour (24-hour clock)    00, 01, ..., 23      
+                    %I      Hour (12-hour clock)    01, 02, ..., 12      
                     %p      AM, PM (en_US);
-                    %M      Minute 00, 01, ..., 59
+                    %M      Minute 00, 01, ..., 59      
                     %S      Second 00, 01, ..., 59
                     %f      Microsecond     000000, 000001, ..., 999999
                     %z      UTC offset in the form +HHMM or -HHMM   (empty), +0000, -0400, +1030
                     %Z      Time zone name  (empty), UTC, EST, CST
-                    %j      Day of the year     001, 002, ..., 366
+                    %j      Day of the year     001, 002, ..., 366   
                     %U      Week number of the year (Sunday as the first day of the week)
                     %W      Week number of the year (Monday as the first day of the week)
                     %c      Locale's appropriate date and time representation.  Tue Aug 16 21:30:00 1988 (en_US);
                     %X      Locale's appropriate date representation.   08/16/88 (None); 08/16/1988 (en_US);
                     %X      Locale's appropriate time representation.   21:30:00 (en_US);
                     %%      A literal '%' character.    %
+            
+            timezone is the specified timezone string, see the class help
 
         Returns:
             a Moment object
@@ -1484,8 +1488,51 @@ class Moment(object):
            None
         """
         # strptime returns naive datetime
-        moment = datetime.datetime.strptime(datetimeString, datetimeFormat)
+        # hack: python 2.7 does not recognize %z
+        # input: 
+        #       datetimeString = 'Thu, 18 Jun 2015 16:52:23 -0400'
+        #       datetimeFormat = '%a, %d %b %Y %H:%M:%S %z'
+        # output: 
+        #       moment (datetime with tzinfo) which is like:
+        #       datetime.datetime(2015, 6, 18, 16, 52, 23, tzinfo=-0400)
+        if '%z' in datetimeFormat:
+            from datetime import timedelta, tzinfo
+            class FixedOffset(tzinfo):
+                """Fixed offset in minutes: `time = utc_time + utc_offset`."""
+                def __init__(self, offset):
+                    self.__offset = timedelta(minutes=offset)
+                    hours, minutes = divmod(offset, 60)
+                    #NOTE: the last part is to remind about deprecated POSIX GMT+h timezones
+                    #  that have the opposite sign in the name;
+                    #  the corresponding numeric value is not used e.g., no minutes
+                    self.__name = '<%+03d%02d>%+d' % (hours, minutes, -hours)
+                def utcoffset(self, dt=None):
+                    return self.__offset
+                def tzname(self, dt=None):
+                    return self.__name
+                def dst(self, dt=None):
+                    return timedelta(0)
+                def __repr__(self):
+                    # offset in minutes
+                    offset = self.utcoffset().total_seconds()/60
+                    sign = '-' if offset < 0 else '+'
+                    # /60.  add .  to get decimal points
+                    return "%s%02d%02d" % (sign, abs(offset) / 60., abs(offset) % 60)
+            import re
+            naive_datetimeString = re.sub('[-+]\d{4}','',datetimeString)
+            naive_dt = datetime.datetime.strptime(naive_datetimeString, datetimeFormat.replace('%z',''))
+            offset_str = re.findall('[-+]\d{4}',datetimeString)[0]
+            offset = int(offset_str[-4:-2])*60 + int(offset_str[-2:])
+            if offset_str[0] == "-":
+                offset = -offset
+            moment = naive_dt.replace(tzinfo=FixedOffset(offset))
+            # print moment
+            # datetime.datetime(2015, 6, 18, 16, 52, 23, tzinfo=-0400)
+        # hack end
+        else:
+            moment = datetime.datetime.strptime(datetimeString, datetimeFormat)
         return Moment(timezone=timezone, moment=moment)
+
 
 def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
     """Counts lines of codes, counting empty lines as well.
@@ -1521,6 +1568,7 @@ def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
     print 'Line counted: %d' % line_count
     print 'Done!'
 
+
 def keygen(length=8, complexity=3):
     """generate a random key
     keygen(length=8, complexity=3)
@@ -1555,6 +1603,7 @@ def keygen(length=8, complexity=3):
         chars = str(complexity)
     return ''.join(random.choice(chars) for x in range(length))
 
+
 def hashes(filename):
     """Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way"""
     import hashlib
@@ -1568,6 +1617,7 @@ def hashes(filename):
     print 'md5 32: ' + md5.hexdigest()
     # print 'sha1 16: ' + sha1.digest()
     print 'sha1 32: ' + sha1.hexdigest()
+
 
 def isemailvalid(email, check_mx=False, verify=False):
     """Indicate whether the given string is a valid email address
@@ -1697,6 +1747,7 @@ def isemailvalid(email, check_mx=False, verify=False):
     return True
 isEmailValid = isemailvalid
 IsEmailValid = isemailvalid
+
 
 def export(input,output=None,options=None,**kwargs):
     """Convert url, html file, html string to a single pdf

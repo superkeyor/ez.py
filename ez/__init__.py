@@ -11,10 +11,5 @@ try:
     from pyperclip import paste as getclip
 except:
     pass    
-from webscraper import Scraper
-from webscraper import __doc__ as doc3
-from webly import *
-from webly import __doc__ as doc4
-
-__doc__ = doc1 + '\n\n\n\n' + doc2 + '\n\n\n\n' + doc3 + '\n\n\n\n' + doc4
-del doc1, doc2, doc3, doc4
+__doc__ = doc1 + '\n\n\n\n' + doc2
+del doc1, doc2

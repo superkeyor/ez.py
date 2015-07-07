@@ -9,7 +9,7 @@ or in python: import sys; print (sys.version)
 Install:
 https://pypi.python.org/pypi/ez
 pip install ez
-requires pdfkit, feedparser
+no dependencies
 
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.
@@ -220,92 +220,3 @@ DeleteRowByIndex(index):
 
 DeleteAllRows():
     Delete All Rows
-
-
-
-
-
-Attributes:
-    name
-    url
-    html    # html code
-Methods:
-    __init__(source, render=False, name=None)
-        # source could be url or string code
-        # render requires wx/webkit to parse html
-        # internally update the scraper object's attributes (e.g. url, html)
-    xpath(xpath, first=False)    # first=False returns all matched as a list; first=True, first matched as string
-
-Examples:
-    / = root, // = all, [] = constriction, @ = attributes
-
-    s = Scraper('<div>abc<a class="link">LINK 1</a><div><a>LINK 2</a>def</div>abc</div>ghi<div><a>LINK 3</a>jkl</div>')
-    
-    print s.xpath('/div/a')
-    # ['LINK 1', 'LINK 3']
-
-    print s.xpath('/div/a[@class="link"]')
-    # ['LINK 1']
-
-    print s.xpath('/div[1]//a')
-    # ['LINK 1', 'LINK 2']
-
-    print s.xpath('/div/a/@class')
-    # ['link', '']
-
-    print s.xpath('/div[-1]/a')
-    # ['LINK 3']
-
-    s = Scraper(u'<a href="http://www.google.com" class="flink">google</a>')
-    print s.xpath('//a[@class="flink"]', 1)
-    # 'google'
-
-    # test finding just the first instance for a large amount of content
-    s = Scraper('<div><span>content</span></div>' * 10000)
-    print s.xpath('//span', 1)
-    # 'content'
-
-    # test extracting attribute of self closing tag
-    s = Scraper('<div><img src="img.png"></div>')
-    print s.xpath('/div/img/@src', 1)
-    # 'img.png'
-
-    # test extracting attribute after self closing tag
-    s = Scraper('<div><br><p>content</p></div>')
-    print s.xpath('/div/p')
-    # 'content'
-
-Sample:
-    import time
-    COL_NAME = "Words_And_Idioms"
-
-    output = open(COL_NAME+".txt", 'w')
-
-    for i in range(1,2):
-        first = Scraper("http://www.51voa.com/"+COL_NAME+"_"+str(i)+".html")
-        time.sleep(1)
-        lists = first.xpath("//li")
-        for item in lists:
-            if "/Voa_English_Learning/" in item:
-                temp = Scraper(item)
-                time.sleep(1)
-                link = "http://www.51voa.com"+temp.xpath("/@href",1)
-                second = Scraper(link)
-                time.sleep(1)
-                try:
-                    download = re.search("/.*/.*mp3", second.html).group(0)
-                except:
-                    download = "missing"
-                print >> output, "http://stream.51voa.com"+download
-                output.flush()
-
-
-
-
-web related functions.
-requires pdfkit, feedparser
-
-json2dict(url)
-rss2list(url)
-ValidEmail(email, check=False, verify=False), validemail: is email format valid
-export(input,output,options,**kwargs): # Convert url, file (html, txt), string to a single pdf

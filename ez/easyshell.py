@@ -11,7 +11,7 @@ or in python: import sys; print (sys.version)
 Install:
 https://pypi.python.org/pypi/ez
 pip install ez
-requires pdfkit, feedparser
+no dependencies
 
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.
@@ -1615,7 +1615,6 @@ def hashes(filename):
     print 'md5 32: ' + md5.hexdigest()
     # print 'sha1 16: ' + sha1.digest()
     print 'sha1 32: ' + sha1.hexdigest()
-
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

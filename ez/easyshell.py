@@ -940,7 +940,7 @@ def regexp(string, pattern, method='find'):
     if not match, returns []
 
     seems like always a good idea to use r'' with regular expression, eg,
-    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(．|.|，)',r'\1|',1)
+    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
     1) special trick:
@@ -1001,7 +1001,7 @@ def regexpi(string, pattern, method='find'):
     if not match, returns []
 
     seems like always a good idea to use r'' with regular expression, eg,
-    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(．|.|，)',r'\1|',1)
+    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
     1) special trick:
@@ -1054,7 +1054,7 @@ def regexprep(string, pattern, replace, count=0):
     If omitted or zero, all occurrences will be replaced
 
     seems like always a good idea to use r'' with regular expression, eg,
-    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(．|.|，)',r'\1|',1)
+    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
     1) special trick:
@@ -1095,7 +1095,7 @@ def regexprepi(string, pattern, replace, count=0):
     If omitted or zero, all occurrences will be replaced
 
     seems like always a good idea to use r'' with regular expression, eg,
-    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(．|.|，)',r'\1|',1)
+    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
     1) special trick:

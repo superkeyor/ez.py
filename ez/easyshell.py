@@ -968,7 +968,7 @@ def regexp(string, pattern, method='find'):
     \d
     \w [a-zA-Z0-9_] 
     \s white space, tab etc
-    \t \r \n
+    \ t \ r \ n
     """
     # re.match() checks for a match only at the beginning of the string,
     # while re.search() checks for a match anywhere in the string
@@ -1029,7 +1029,7 @@ def regexpi(string, pattern, method='find'):
     \d
     \w [a-zA-Z0-9_] 
     \s white space, tab etc
-    \t \r \n    
+    \ t \ r \ n    
     """
     # re.match() checks for a match only at the beginning of the string,
     # while re.search() checks for a match anywhere in the string
@@ -1082,7 +1082,7 @@ def regexprep(string, pattern, replace, count=0):
     \d
     \w [a-zA-Z0-9_] 
     \s white space, tab etc
-    \t \r \n    
+    \ t \ r \ n    
     """
     return re.sub(pattern, replace, string, count=count)
 
@@ -1123,7 +1123,7 @@ def regexprepi(string, pattern, replace, count=0):
     \d
     \w [a-zA-Z0-9_] 
     \s white space, tab etc
-    \t \r \n    
+    \ t \ r \ n    
     """
     return re.sub(pattern, replace, string, count=count, flags=re.IGNORECASE)
 

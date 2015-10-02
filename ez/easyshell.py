@@ -938,6 +938,37 @@ def regexp(string, pattern, method='find'):
     text = "He was carefully disguised but captured quickly by police."
     (text, '\w+ly') --> ['carefully', 'quickly']
     if not match, returns []
+
+    seems like always a good idea to use r'' with regular expression, eg,
+    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(．|.|，)',r'\1|',1)
+
+    python regular expression notes:
+    1) special trick:
+    matching string not starting with my:     ^(?!my)\w+$
+
+    group back reference \1 \2. (Perl is $1 $2)   
+    >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
+        'Bob Joe'
+
+    either or 
+    (img|hdr)
+    note: [ab] either character a or b, only work for single character
+
+    2) general usage:
+    . one character
+    ^ $  start end
+    [^ ] exclude
+    [] include
+    * >= 0
+    + >= 1
+    ? 0 or 1
+    {n} exact n
+    {m,n} m to n
+    {n,} n or more
+    \d
+    \w [a-zA-Z0-9_] 
+    \s white space, tab etc
+    \t \r \n
     """
     # re.match() checks for a match only at the beginning of the string,
     # while re.search() checks for a match anywhere in the string
@@ -968,6 +999,37 @@ def regexpi(string, pattern, method='find'):
     text = "He was carefully disguised but captured quickly by police."
     (text, '\w+ly') --> ['carefully', 'quickly']
     if not match, returns []
+
+    seems like always a good idea to use r'' with regular expression, eg,
+    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(．|.|，)',r'\1|',1)
+
+    python regular expression notes:
+    1) special trick:
+    matching string not starting with my:     ^(?!my)\w+$
+
+    group back reference \1 \2. (Perl is $1 $2)   
+    >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
+        'Bob Joe'
+
+    either or 
+    (img|hdr)
+    note: [ab] either character a or b, only work for single character
+
+    2) general usage:
+    . one character
+    ^ $  start end
+    [^ ] exclude
+    [] include
+    * >= 0
+    + >= 1
+    ? 0 or 1
+    {n} exact n
+    {m,n} m to n
+    {n,} n or more
+    \d
+    \w [a-zA-Z0-9_] 
+    \s white space, tab etc
+    \t \r \n    
     """
     # re.match() checks for a match only at the beginning of the string,
     # while re.search() checks for a match anywhere in the string
@@ -990,6 +1052,37 @@ def regexprep(string, pattern, replace, count=0):
 
     count: maximum number of pattern occurrences to be replaced; count must be a non-negative integer.
     If omitted or zero, all occurrences will be replaced
+
+    seems like always a good idea to use r'' with regular expression, eg,
+    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(．|.|，)',r'\1|',1)
+
+    python regular expression notes:
+    1) special trick:
+    matching string not starting with my:     ^(?!my)\w+$
+
+    group back reference \1 \2. (Perl is $1 $2)   
+    >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
+        'Bob Joe'
+
+    either or 
+    (img|hdr)
+    note: [ab] either character a or b, only work for single character
+
+    2) general usage:
+    . one character
+    ^ $  start end
+    [^ ] exclude
+    [] include
+    * >= 0
+    + >= 1
+    ? 0 or 1
+    {n} exact n
+    {m,n} m to n
+    {n,} n or more
+    \d
+    \w [a-zA-Z0-9_] 
+    \s white space, tab etc
+    \t \r \n    
     """
     return re.sub(pattern, replace, string, count=count)
 
@@ -1000,6 +1093,37 @@ def regexprepi(string, pattern, replace, count=0):
 
     count: maximum number of pattern occurrences to be replaced; count must be a non-negative integer.
     If omitted or zero, all occurrences will be replaced
+
+    seems like always a good idea to use r'' with regular expression, eg,
+    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(．|.|，)',r'\1|',1)
+
+    python regular expression notes:
+    1) special trick:
+    matching string not starting with my:     ^(?!my)\w+$
+
+    group back reference \1 \2. (Perl is $1 $2)   
+    >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
+        'Bob Joe'
+
+    either or 
+    (img|hdr)
+    note: [ab] either character a or b, only work for single character
+
+    2) general usage:
+    . one character
+    ^ $  start end
+    [^ ] exclude
+    [] include
+    * >= 0
+    + >= 1
+    ? 0 or 1
+    {n} exact n
+    {m,n} m to n
+    {n,} n or more
+    \d
+    \w [a-zA-Z0-9_] 
+    \s white space, tab etc
+    \t \r \n    
     """
     return re.sub(pattern, replace, string, count=count, flags=re.IGNORECASE)
 

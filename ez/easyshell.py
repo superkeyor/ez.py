@@ -1098,7 +1098,7 @@ def regexprepi(string, pattern, replace, count=0):
     newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
-    1) special trick:
+    1) special trick: 
     matching string not starting with my:     ^(?!my)\w+$
 
     group back reference \1 \2. (Perl is $1 $2)   

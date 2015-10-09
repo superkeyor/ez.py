@@ -1253,6 +1253,7 @@ def num(s):
     num('3,700')-->ValueError
     num('3a'),num('a3'),-->ValueError
     num('3e4') --> 30000.0
+    num(' '),num('') -->ValueError
     """
     try:
         return int(s)

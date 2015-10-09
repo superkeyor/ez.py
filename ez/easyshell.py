@@ -1247,11 +1247,20 @@ from time import sleep
 
 
 def num(s):
-    """num(s)"""
+    """num(s)
+    num(3),num(3.7)-->3
+    num('3')-->3, num('3.7')-->3.7
+    num('3,700')-->ValueError
+    num('3a'),num('a3'),-->ValueError
+    num('3e4') --> 30000.0
+    """
     try:
         return int(s)
     except ValueError:
-        return float(s)
+        try:
+            return float(s)
+        except ValueError:
+            raise ValueError('argument is not a string of number')
 
 
 def isempty(s):

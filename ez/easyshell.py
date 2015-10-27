@@ -946,7 +946,7 @@ def regexp(string, pattern, method='find'):
     1) special trick:
     matching string not starting with my:     ^(?!my)\w+$
 
-    group back reference \1 \2. (Perl is $1 $2)   
+    group back reference \ 1 \ 2. (Perl is $1 $2)   
     >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
         'Bob Joe'
 

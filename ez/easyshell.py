@@ -965,9 +965,10 @@ def regexp(string, pattern, method='find'):
     {n} exact n
     {m,n} m to n
     {n,} n or more
-    \d
-    \w [a-zA-Z0-9_] 
+    \d  \D = [^0-9]
+    \w [a-zA-Z0-9_]  \W = [^a-zA-Z0-9_]
     \s white space, tab etc
+    letters only [a-zA-Z]
     \ t \ r \ n
     """
     # re.match() checks for a match only at the beginning of the string,
@@ -1026,9 +1027,10 @@ def regexpi(string, pattern, method='find'):
     {n} exact n
     {m,n} m to n
     {n,} n or more
-    \d
-    \w [a-zA-Z0-9_] 
+    \d  \D = [^0-9]
+    \w [a-zA-Z0-9_]  \W = [^a-zA-Z0-9_]
     \s white space, tab etc
+    letters only [a-zA-Z]
     \ t \ r \ n    
     """
     # re.match() checks for a match only at the beginning of the string,
@@ -1079,9 +1081,10 @@ def regexprep(string, pattern, replace, count=0):
     {n} exact n
     {m,n} m to n
     {n,} n or more
-    \d
-    \w [a-zA-Z0-9_] 
+    \d  \D = [^0-9]
+    \w [a-zA-Z0-9_]  \W = [^a-zA-Z0-9_]
     \s white space, tab etc
+    letters only [a-zA-Z]
     \ t \ r \ n    
     """
     return re.sub(pattern, replace, string, count=count)
@@ -1120,9 +1123,10 @@ def regexprepi(string, pattern, replace, count=0):
     {n} exact n
     {m,n} m to n
     {n,} n or more
-    \d
-    \w [a-zA-Z0-9_] 
+    \d  \D = [^0-9]
+    \w [a-zA-Z0-9_]  \W = [^a-zA-Z0-9_]
     \s white space, tab etc
+    letters only [a-zA-Z]
     \ t \ r \ n    
     """
     return re.sub(pattern, replace, string, count=count, flags=re.IGNORECASE)

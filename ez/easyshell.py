@@ -1740,7 +1740,7 @@ def keygen(length=8, complexity=3):
     return ''.join(random.choice(chars) for x in range(length))
 
 
-def hashes(filename):
+def hashes(filename, reference=None):
     """Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way"""
     import hashlib
     md5 = hashlib.md5()
@@ -1749,10 +1749,18 @@ def hashes(filename):
         for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
             md5.update(chunk)
             sha1.update(chunk)
-    # print 'md5 16: ' + md5.digest()   
-    print 'md5 32: ' + md5.hexdigest()
-    # print 'sha1 16: ' + sha1.digest()
-    print 'sha1 32: ' + sha1.hexdigest()
+    if reference:
+        if reference.lower() == md5.hexdigest().lower():
+            print 'md5 32: ' + md5.hexdigest() + ' (matched)!'
+        else:
+            print 'md5 32: ' + md5.hexdigest() + ' (NOT MATCHED)!'
+        if reference.lower() == sha1.hexdigest().lower():
+            print 'sha1 32: ' + sha1.hexdigest() + ' (matched)!'
+        else:
+            print 'sha1 32: ' + sha1.hexdigest() + ' (NOT MATCHED)!'
+    else:
+        print 'md5 32: ' + md5.hexdigest()
+        print 'sha1 32: ' + sha1.hexdigest()
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

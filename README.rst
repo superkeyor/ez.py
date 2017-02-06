@@ -28,6 +28,7 @@ joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorizat
 splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
 
+trim(string,how)
 join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Supports vectorization.
 sort(array)
 replace(theList,theItem,replacement), remove(theList,theItem)

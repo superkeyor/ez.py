@@ -30,7 +30,7 @@ joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorizat
 splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
 
-trim(string,how)
+trim(string,how[,chars])
 join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Supports vectorization.
 sort(array)
 replace(theList,theItem,replacement), remove(theList,theItem)
@@ -199,19 +199,18 @@ def joinpath(*args):
         return os.path.join(*args)
 
 def trim(s, how=4, *args):
-    """Merge Multiple spaces to single space, and remove trailing/leading spaces
-    trim(s, how=4 [,chars)
+    """Merge multiple spaces to single space in the middle, and remove trailing/leading spaces
+    trim(s, how=4 [,chars])
         s: a string 
         how: a num 1=left only; 
                    2=right only; 
                    3=left and right; 
                    4 (default)=left and right and merge middle
-        chars: If chars is given and not None, remove characters in chars instead.
-               (not applicable for middle, ie. how=4)
+        chars: if not given (default), space, horizontal tab, line feed, carriage return
+               if given and not None, remove characters in chars instead
     eg, "Hi        buddy        what's up    Bro"  --> "Hi buddy what's up bro"
-        trim(s,3,'\nx')
+        trim(s,4,'\nx')
         " Hi        buddy        what's up    Bro\nx" --> " Hi        buddy        what's up    Bro"
-    For portability, whitespace is taken as space, horizontal tab, line feed, carriage return.
     """
     if (how==1):
         s = str.lstrip(s,*args)
@@ -220,8 +219,11 @@ def trim(s, how=4, *args):
     elif (how==3):
         s = str.strip(s,*args)
     elif (how==4):
+        chars = args[0]
+        if chars==' ': chars='\s'
+        expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % (chars,chars,chars,chars)
         # http://stackoverflow.com/a/25734388/2292993
-        s = re.sub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", s, count=0)
+        s = re.sub(expression, "", s, count=0)
     return(s)
 
 def join(sep='',*args):

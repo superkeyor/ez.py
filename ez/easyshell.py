@@ -1434,7 +1434,7 @@ class JDict(OrderedDict):
         a.update({'k2':'v'}); print a
         a.update({'k1':'v1', 'k2':'v2'}); print a
 
-        b.update({'k1': ['v1']}); print b
+        b.update({'k1': ['v1']}); print b   # <-- seems no necessary to use ['v1',]
         b.update({'k1': ['v', 'v']}); print b
         b.update({'k2': ['v']}); print b
         b.update({'k1': ['v1'], 'k2': ['v2']}); print b

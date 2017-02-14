@@ -802,10 +802,26 @@ def ver(package_name='python'):
     if package_name == 'python':
         print (sys.version)
     else:
+        # https://docs.python.org/2.7/reference/simple_stmts.html#exec
         theNameSpace = {}
         exec('import ' + package_name, theNameSpace)
         print theNameSpace[package_name].__version__
 version = ver
+
+def evaluate(exp):
+    """
+    evaluate(exp), evaluate a statement or expression, combining python built-in eval() and exec()
+    python eval() only works for expression--returns something, exec() for statement--not returns anything
+    an expression:  x+1,      x = eval('x+1')
+    a statement:    x = x+1   exec('x = x+1')
+    """
+    import inspect
+    caller = inspect.currentframe().f_back
+    try:
+        return eval(exp,caller.f_locals)
+    except SyntaxError:
+        # https://docs.python.org/2.7/reference/simple_stmts.html#exec
+        exec(exp,caller.f_locals)
 
 def who(name=''):
     """

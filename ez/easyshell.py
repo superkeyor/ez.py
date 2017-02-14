@@ -49,6 +49,7 @@ rm(path)    # Deletes a file or folder. Supports wildcards, vectorization.
 cp(source, destination)  # Copies source file(s) or folder to destination. Supports wildcards, vectorization.
 mv(source, destination)  # Moves source file(s) or folder to destination. Supports wildcards, vectorization.
 
+evaluate(exp)
 execute(cmd, output=True)    # Executes a bash command with or without capturing shell output
 with nooutput():
     print 'this is will not be printed in stdout'

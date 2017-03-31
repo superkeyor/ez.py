@@ -469,7 +469,7 @@ def fls(path="./", regex=".*", dotf=False):
         if not dotf:
             # operationally, check if the path root has /.folder
             parts = root.split(os.sep)
-            dotfolders = [part for part in parts if len(part)>=2 and part.startswith('.')]
+            dotfolders = [part for part in parts if len(part)>=2 and part.startswith('.') and part!='..']
             if len(dotfolders)>0: continue
 
         filteredFiles = _FilterList(files, pattern_regex)

@@ -33,9 +33,9 @@ join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Su
 sort(array)
 replace(theList,theItem,replacement), remove(theList,theItem)
 
-ls([path[, regex]], full=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
-lsd([path[, regex]], full=True)
-fls([path[, regex]])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
+ls([path[, regex]], full=True, dotfile=False)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
+lsd([path[, regex]], full=True, dotfolder=False)
+fls([path[, regex, dotf=False]])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
 # the filter only works for short file name not for full file name, i.e. the file name itself not its full path
 # regular expression is case-sensitive
 # usage: ls(); ls(cwd()); ls(cwd(), "\.py$")

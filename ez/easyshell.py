@@ -719,21 +719,63 @@ def lns(source, destination):
 def execute(cmd, output=True):
     """Executes a bash command.
     (cmd, output=True)
-    output: whether capture shell output
+    output: whether print shell output to screen, only affects screen display, does not affect returned values
+    return: ...regardless of output=True/False...
+            returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
+            could be 
+            [], ie, len()=0 --> no output;    
+            [''] --> output empty line;     
+            None --> error occured, see below
+            
+            if error ocurs, returns None (ie, is None), print out the error message to screen
     """
     if not _DEBUG_MODE:
         print "Command: " + cmd
-        if os.name == 'nt' or platform.system() == 'Windows':
-            if output:
-                subprocess.call(cmd, shell=True)
+
+        # https://stackoverflow.com/a/40139101/2292993
+        def _execute_cmd(cmd):
+            if os.name == 'nt' or platform.system() == 'Windows':
+                # set stdin, out, err all to PIPE to get results (other than None) after run the Popen() instance
+                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             else:
-                subprocess.call(cmd, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
-        else:
-            if output:
-                subprocess.call(cmd, shell=True, executable="/bin/bash")    # Use bash; the default is sh
+                # Use bash; the default is sh
+                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+            
+            # the Popen() instance starts running once instantiated (??)
+            # additionally, communicate(), or poll() and wait process to terminate
+            # communicate() accepts optional input as stdin to the pipe (requires setting stdin=subprocess.PIPE above), return out, err as tuple
+            # if communicate(), the results are buffered in memory
+            
+            # Read stdout from subprocess until the buffer is empty !
+            # if error occurs, the stdout is '', which means the below loop is essentially skipped
+            # A prefix of 'b' or 'B' is ignored in Python 2; 
+            # it indicates that the literal should become a bytes literal in Python 3 
+            # (e.g. when code is automatically converted with 2to3).
+            # return iter(p.stdout.readline, b'')
+            for line in iter(p.stdout.readline, b''):
+                # # Windows has \r\n, Unix has \n, Old mac has \r
+                # if line not in ['','\n','\r','\r\n']: # Don't print blank lines
+                    yield line
+            while p.poll() is None:                                                                                                                                        
+                sleep(.1) #Don't waste CPU-cycles
+            # Empty STDERR buffer
+            err = p.stderr.read()
+            if p.returncode != 0:
+                # responsible for logging STDERR 
+                print("Error: " + str(err))
+                yield None
+
+        out = []
+        for line in _execute_cmd(cmd):
+            # error did not occur earlier
+            if line is not None:
+                # trailing comma to avoid a newline (by print itself) being printed
+                if output: print line,
+                out.append(line.strip())
             else:
-                subprocess.call(cmd, shell=True, executable="/bin/bash", stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
-        print ""
+                # error occured earlier
+                out = None
+        return out
     else:
         print "Simulation! The command is " + cmd
         print ""

@@ -730,6 +730,7 @@ def execute(cmd, output=True):
             if error ocurs, returns None (ie, is None), print out the error message to screen
     note: if use this function interactively, one can return _ = execute() to a dummy variable
           alternatively, in ipython, execute(); (add semicolon) to suppress the returned contents
+          seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     if not _DEBUG_MODE:
         print "Command: " + cmd
@@ -738,6 +739,7 @@ def execute(cmd, output=True):
         def _execute_cmd(cmd):
             if os.name == 'nt' or platform.system() == 'Windows':
                 # set stdin, out, err all to PIPE to get results (other than None) after run the Popen() instance
+                # shell=True can do shell pipes, filename wildcards, environment variable expansion, and expansion of ~
                 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             else:
                 # Use bash; the default is sh

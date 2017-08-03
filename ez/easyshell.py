@@ -728,6 +728,8 @@ def execute(cmd, output=True):
             None --> error occured, see below
             
             if error ocurs, returns None (ie, is None), print out the error message to screen
+    note: if use this function interactively, one can return _ = execute() to a dummy variable
+          alternatively, in ipython, execute(); (add semicolon) to suppress the returned contents
     """
     if not _DEBUG_MODE:
         print "Command: " + cmd

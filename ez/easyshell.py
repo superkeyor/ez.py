@@ -722,12 +722,9 @@ def execute(cmd, output=True):
     output: whether print shell output to screen, only affects screen display, does not affect returned values
     return: ...regardless of output=True/False...
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
-            could be 
-            [], ie, len()=0 --> no output;    
-            [''] --> output empty line;     
-            None --> error occured, see below
-            
-            if error ocurs, returns None (ie, is None), print out the error message to screen
+            if error occurs, return None, also always print out the error message to screen
+            if no output or all empty output, return [] 
+               note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
     note: if use this function interactively, one can return _ = execute() to a dummy variable
           alternatively, in ipython, execute(); (add semicolon) to suppress the returned contents
           seems to recognize execute('echo $PATH'), but not alias in .bash_profile
@@ -779,7 +776,16 @@ def execute(cmd, output=True):
             else:
                 # error occured earlier
                 out = None
-        return out
+        # post-process for returning value
+        if out is None:
+            return None
+        else:
+            # https://stackoverflow.com/a/3845453/2292993
+            # filter() check if one or all empty string
+            if len(out)==0 or len(filter(None,out))==0:
+                return []
+            else:
+                return out
     else:
         print "Simulation! The command is " + cmd
         print ""

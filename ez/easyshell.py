@@ -29,6 +29,7 @@ parentdir(path) # Returns the parent directory of a path.
 joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.
 splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
+stepfolder(-1)
 
 trim(string,how[,chars])
 join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Supports vectorization.
@@ -36,7 +37,7 @@ sort(array)
 replace(theList,theItem,replacement), remove(theList,theItem)
 
 ls([path[, regex]], full=True, dotfile=False)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
-lsd([path[, regex]], full=True, dotfolder=False)
+lsd([path[, regex]], full=False, dotfolder=False)
 fls([path[, regex, dotf=False]])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
 # the filter only works for short file name not for full file name, i.e. the file name itself not its full path
 # regular expression is case-sensitive
@@ -145,14 +146,63 @@ def fullpath(path):
     return os.path.normpath(os.path.abspath(os.path.expanduser(path)))
 
 def csd():
-    """(),Returns current script directory, i.e. the directory where the running script is."""
-    path = os.path.split(os.path.abspath(sys.argv[0]))[0]
-    # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
-    return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
+    """(),Returns current script directory, i.e. the directory where the running script is.
+    if in interactive mode, return current working directory
+    """
+    # https://stackoverflow.com/a/22424821/2292993
+    import __main__ as main
+    is_interactive = not hasattr(main, '__file__')
+    if is_interactive:
+        return os.getcwd()
+    else:
+        path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+        # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
+        return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
+
+def stepfolder(step=-1):
+    """
+    folder = stepfolder(step)
+    step: regex of folder, eg '01', if multiple match, return only the first matched
+          integer -1 (default, backward) +2 (forward) 2 (same as +2)
+    folder: target folder path
+    Usage:
+          Under a projFolder, there might be 01Original, 02Slicing, 03Motion...
+          Use this function to go to a specific "step folder"
+    """
+    import __main__ as main
+    is_interactive = not hasattr(main, '__file__')
+    if is_interactive:
+        theCSD = os.getcwd()
+    else:
+        path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+        # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
+        theCSD = os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
+    projFolder = parentdir(theCSD)
+    if isinstance(step,str):
+        folder = lsd(projFolder,step)
+        folder = folder[0]
+        folder = joinpath(projFolder,folder)
+    elif isinstance(step,int):
+        steps = lsd(projFolder,'^\d\d')  # a list of all folders like 01Original, 06Set
+        currentStep = splitpath(theCSD)[1]
+        try:
+            currentStepNum = steps.index(currentStep)
+            targetStep = steps[currentStepNum+step]
+        except:
+            targetStep = currentStep
+        folder = joinpath(projFolder,targetStep)
+    return folder
 
 def csf():
     """(),Returns current script name, i.e. the name of the running script."""
-    path = os.path.abspath(sys.argv[0])
+    import __main__ as main
+    is_interactive = not hasattr(main, '__file__')
+    if is_interactive:
+        path = os.getcwd()
+    else:
+        path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+        # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
+        path =  os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
     dir = os.path.dirname(path)
     ext = os.path.splitext(path)[1]
     file = os.path.basename(path)[0:-len(ext)] if len(ext) != 0 else os.path.basename(path)
@@ -415,8 +465,8 @@ def ls(path="./", regex=".*", full=True, dotfile=False):
     if full: files = [os.path.join(path,file) for file in files]
     return [file for file in files if os.path.isfile(file)]
 
-def lsd(path="./", regex=".*", full=True, dotfolder=False):
-    """lsd([path[, regex]], full=True, dotfolder=False), Returns a list of all (including hidden) folders with their full paths in path, filtered by regular expression."""
+def lsd(path="./", regex=".*", full=False, dotfolder=False):
+    """lsd([path[, regex]], full=False, dotfolder=False), Returns a list of all (including hidden) folders with their (optionally) full paths in path, filtered by regular expression."""
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search

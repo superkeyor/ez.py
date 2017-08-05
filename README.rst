@@ -52,7 +52,7 @@ evaluate(exp)
 execute(cmd, output=True)    # Executes a bash command with or without capturing shell output
 with nooutput():
     print 'this is will not be printed in stdout'
-pprint() # Pretty prints.
+pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
 beep()  # Beeps to notify user.
 which(name) # Prints where a module is and in which module a function is. which('python') returns which python is being used.
 help(name)/doc(name) # name is a string, Prints the doc string of a module/class/function

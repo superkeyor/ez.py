@@ -54,7 +54,7 @@ evaluate(exp)
 execute(cmd, output=True)    # Executes a bash command with or without capturing shell output
 with nooutput():
     print 'this is will not be printed in stdout'
-pprint() # Pretty prints.
+pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
 beep()  # Beeps to notify user.
 which(name) # Prints where a module is and in which module a function is. which('python') returns which python is being used.
 help(name)/doc(name) # name is a string, Prints the doc string of a module/class/function
@@ -766,10 +766,14 @@ def lns(source, destination):
     os.symlink(source, destination)
     print "Symbolic link: " + "->".join([source, destination])
 
-def execute(cmd, output=True):
+def execute(cmd, verbose=3):
     """Executes a bash command.
-    (cmd, output=True)
-    output: whether print shell output to screen, only affects screen display, does not affect returned values
+    (cmd, verbose=2)
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
     return: ...regardless of output=True/False...
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
             if error occurs, return None, also always print out the error message to screen
@@ -780,7 +784,7 @@ def execute(cmd, output=True):
           seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     if not _DEBUG_MODE:
-        print "Command: " + cmd
+        if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
 
         # https://stackoverflow.com/a/40139101/2292993
         def _execute_cmd(cmd):
@@ -813,7 +817,7 @@ def execute(cmd, output=True):
             err = p.stderr.read()
             if p.returncode != 0:
                 # responsible for logging STDERR 
-                print("Error: " + str(err))
+                print "Error: " + str(err)
                 yield None
 
         out = []
@@ -821,7 +825,7 @@ def execute(cmd, output=True):
             # error did not occur earlier
             if line is not None:
                 # trailing comma to avoid a newline (by print itself) being printed
-                if output: print line,
+                if verbose in [2,3]: print line,
                 out.append(line.strip())
             else:
                 # error occured earlier
@@ -837,7 +841,7 @@ def execute(cmd, output=True):
             else:
                 return out
     else:
-        print "Simulation! The command is " + cmd
+        print "Simulation! Execute command: " + cmd
         print ""
 
 from contextlib import contextmanager
@@ -858,7 +862,34 @@ def nooutput():
             sys.stdout = old_stdout
             sys.stderr = old_stderr
 
-from pprint import pprint
+from pprint import pprint as ppprint
+def pprint(text,color='green'):
+    """
+    # color print to terminal (may not work on any terminal)
+    (text,color='Green')
+    color: string, case insentive, out of black, red, green, yellow, blue, magenta, cyan, white
+    """
+    # http://blog.mathieu-leplatre.info/colored-output-in-console-with-python.html
+    color = color.lower()
+    colors = {'black':0, 'red':1, 'green':2, 'yellow':3, 'blue':4, 'magenta':5, 'cyan':6, 'white':7}
+    color = colors[color]
+    def _has_colors(stream):
+        if not hasattr(stream, "isatty"):
+            return False
+        if not stream.isatty():
+            return False # auto color only on TTYs
+        try:
+            import curses
+            curses.setupterm()
+            return curses.tigetnum("colors") > 2
+        except:
+            # guess false in case of error
+            return False
+    if _has_colors(sys.stdout):
+        seq = "\x1b[1;%dm" % (30+color) + text + "\x1b[0m"
+        sys.stdout.write(seq+'\n')
+    else:
+        sys.stdout.write(text+'\n')
 
 def beep():
     """Beeps to notify user."""

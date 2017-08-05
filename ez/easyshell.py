@@ -1304,12 +1304,15 @@ def sprintf(formatString, *args):
     s = sprintf('%s', lanuage)
     
     s = sprintf('{language} has {number:03d} quote types.', theDict) <--auto unpack
-    s = sprintf('$language has $number:03d quote types.', theDict)
-
     s = sprintf('{language} has {number:03d} quote types.')          <--auto search
-    s = sprintf('$language has $number:03d quote types.')
+
+    # the bash $ is not natively supported by python
+    # here I hack it to support the bash style, so that cmd can be directly used by both python and bash
+    # but won't support $number:03d for consistency with bash
+    s = sprintf('$language has $number quote types.', theDict)
+    s = sprintf('$language has $number quote types.')
+    s = sprintf('${language}_ has $number quote types.')
     s = sprintf('$language')
-    
     s = sprintf('echo "{language} is in $PATH"')                     <--if both {} and $, $PATH will not be replaced
     
     longString = '''
@@ -1320,7 +1323,7 @@ def sprintf(formatString, *args):
     s = sprintf(longString, language)
     
     # -------------------------------------------------------------------------
-    # old syntax:
+    # old syntax (still working, though not recommended):
     s = sprintf('%02d\n is bigger than\n %02d',4,3)
     s = sprintf('%02d\n is bigger than\n %02d',[4,3])
     s = sprintf('%02d\n is bigger than\n %02d',(4,3))
@@ -1340,11 +1343,19 @@ def sprintf(formatString, *args):
         if type(args[0]) in [list, tuple]:
             return formatString % tuple(*args)
         elif type(args[0]) in [dict]:
+            # old syntax %()
             if re.search('%\(', formatString):
                 return formatString % args[0]
             else:
-                if not re.search('\{.*\}', formatString):
-                    formatString = re.sub('\$(\S+)', r'{\1}', formatString)
+                # if {}, directly call format(); otherwise replace
+                # \w is [a-zA-Z0-9_] for valid variable naming
+                # the twisted "if not" logic is to skip $PATH replacement when both {} and $ coexist, e.g.
+                # ('echo "{language} is in $PATH"')
+                # replace first ${number}, ${language}_ to {number}, {language}_
+                formatString = re.sub('\$\{(\w+)\}', r'{\1}', formatString)
+                if not re.search('\{\w+\}', formatString):
+                    # replace $number to {number}
+                    formatString = re.sub('\$(\w+)', r'{\1}', formatString)
                 return formatString.format(**args[0])
         else:
             # a single string or int
@@ -1354,8 +1365,9 @@ def sprintf(formatString, *args):
         if re.search('%\(', formatString):
             return formatString % caller.f_locals
         else:
-            if not re.search('\{.*\}', formatString):
-                formatString = re.sub('\$(\S+)', r'{\1}', formatString)
+            formatString = re.sub('\$\{(\w+)\}', r'{\1}', formatString)
+            if not re.search('\{\w+\}', formatString):
+                formatString = re.sub('\$(\w+)', r'{\1}', formatString)
             return formatString.format(**caller.f_locals)
 
 def iff(expression, result1, result2):

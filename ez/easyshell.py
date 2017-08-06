@@ -689,7 +689,7 @@ def cp(source, destination, ignores=None):
                 shutil.copy(source, destination)
                 # print "Copied file: " + "->".join([source, destination])
             else:
-                print "Simulation! Copied file: " + "->".join([source, destination])
+                pprint("Simulation! Copied file: " + "->".join([source, destination]), 'yellow')
         elif os.path.isdir(source):
             if not _DEBUG_MODE:
                 # if destination dir not exist, shutil.copytree will auto create
@@ -702,7 +702,7 @@ def cp(source, destination, ignores=None):
                     shutil.copytree(source, destination)
                 # print "Copied folder: " + "->".join([source, destination])
             else:
-                print "Simulation! Copied folder: " + "->".join([source, destination])
+                pprint("Simulation! Copied folder: " + "->".join([source, destination]), 'yellow')
         # else:
         #     print source + " not copied to " + destination
 
@@ -754,7 +754,7 @@ def mv(source, destination):
             shutil.move(source, destination)
             # print "Moved: " + "->".join([source, destination])
         elif _DEBUG_MODE:
-            print "Simulation! Moved: " + "->".join([source, destination])
+            pprint("Simulation! Moved: " + "->".join([source, destination]), 'yellow')
         # else:
         #     print source + " not moved to " + destination
 
@@ -768,7 +768,7 @@ def lns(source, destination):
 
 def execute2(cmd, verbose=3):
     """Executes a bash command.
-    (cmd, verbose=2)
+    (cmd, verbose=3)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -842,14 +842,15 @@ def execute2(cmd, verbose=3):
             else:
                 return out
     else:
-        print "Simulation! Execute command: " + cmd
+        pprint("Simulation! Execute command: " + cmd, 'yellow')
         print ""
+        return None
 
 def execute(*args, **kwargs):
     """
     a wrapper of execute2(), but does not return the output to a python variable
     Executes a bash command.
-    (cmd, verbose=2)
+    (cmd, verbose=3)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -859,17 +860,48 @@ def execute(*args, **kwargs):
     """
     execute2(*args, **kwargs)
 
-def esp(cmdString):
+def esp(cmdString, *args, **kwargs):
     """
-    Execute a SPrintf
+    Execute a SPrintf, but does not return the output to a python variable
     a shortcut for execute(sprintf(cmdString))
+    (cmdString, verbose=3)
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
     cmd = sprintf(cmdString,caller.f_locals)
-    execute(cmd)
+    execute(cmd, *args, **kwargs)
+
+def esp2(cmdString, *args, **kwargs):
+    """
+    Execute a SPrintf
+    a shortcut for execute2(sprintf(cmdString))
+    return: ...regardless of output=True/False...
+        returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
+        if error occurs, return None, also always print out the error message to screen
+        if no output or all empty output, return [] 
+           note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
+    (cmdString, verbose=3)
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    """
+    # # caller's caller
+    # caller = inspect.currentframe().f_back.f_back
+    import inspect
+    caller = inspect.currentframe().f_back
+    cmd = sprintf(cmdString,caller.f_locals)
+    return execute2(cmd, *args, **kwargs)
 
 from contextlib import contextmanager
 @contextmanager
@@ -893,7 +925,7 @@ from pprint import pprint as ppprint
 def pprint(text,color='green'):
     """
     # color print to terminal (may not work on any terminal)
-    (text,color='Green')
+    (text,color='green')
     color: string, case insentive, out of black, red, green, yellow, blue, magenta, cyan, white
     """
     # http://blog.mathieu-leplatre.info/colored-output-in-console-with-python.html

@@ -51,7 +51,7 @@ cp(source, destination)  # Copies source file(s) or folder to destination. Suppo
 mv(source, destination)  # Moves source file(s) or folder to destination. Supports wildcards, vectorization.
 
 evaluate(exp)
-execute(cmd, output=True)    # Executes a bash command with or without capturing shell output
+execute(cmd, verbose=3)    # Executes a bash command
 with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
@@ -766,7 +766,7 @@ def lns(source, destination):
     os.symlink(source, destination)
     print "Symbolic link: " + "->".join([source, destination])
 
-def execute(cmd, verbose=3):
+def execute2(cmd, verbose=3):
     """Executes a bash command.
     (cmd, verbose=2)
     verbose: any screen display here does not affect returned values
@@ -781,6 +781,7 @@ def execute(cmd, verbose=3):
                note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
     note: if use this function interactively, one can return _ = execute() to a dummy variable
           alternatively, in ipython, execute(); (add semicolon) to suppress the returned contents
+          or use execute(), which does not return the output to a python variable
           seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     if not _DEBUG_MODE:
@@ -843,6 +844,32 @@ def execute(cmd, verbose=3):
     else:
         print "Simulation! Execute command: " + cmd
         print ""
+
+def execute(*args, **kwargs):
+    """
+    a wrapper of execute2(), but does not return the output to a python variable
+    Executes a bash command.
+    (cmd, verbose=2)
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    """
+    execute2(*args, **kwargs)
+
+def esp(cmdString):
+    """
+    Execute a SPrintf
+    a shortcut for execute(sprintf(cmdString))
+    """
+    # # caller's caller
+    # caller = inspect.currentframe().f_back.f_back
+    import inspect
+    caller = inspect.currentframe().f_back
+    cmd = sprintf(cmdString,caller.f_locals)
+    execute(cmd)
 
 from contextlib import contextmanager
 @contextmanager
@@ -1344,8 +1371,11 @@ def sprintf(formatString, *args):
     s = sprintf('$language has $number quote types.')
     s = sprintf('${language}_ has $number quote types.')
     s = sprintf('$language')
-    s = sprintf('echo "{language} is in $PATH"')                     <--if both {} and $, $PATH will not be replaced
-    
+    s = sprintf('$PATH')  # <--existing env variables (eg, $PATH) will not be replaced
+                          # <--but ${PATH} will be replaced with python variable PATH
+
+    # better do not mix different styles, ie, %s $var {var} when formating  <--except ${var}
+
     longString = '''
     Hello, %s
     
@@ -1378,15 +1408,14 @@ def sprintf(formatString, *args):
             if re.search('%\(', formatString):
                 return formatString % args[0]
             else:
-                # if {}, directly call format(); otherwise replace
                 # \w is [a-zA-Z0-9_] for valid variable naming
-                # the twisted "if not" logic is to skip $PATH replacement when both {} and $ coexist, e.g.
-                # ('echo "{language} is in $PATH"')
                 # replace first ${number}, ${language}_ to {number}, {language}_
                 formatString = re.sub('\$\{(\w+)\}', r'{\1}', formatString)
-                if not re.search('\{\w+\}', formatString):
-                    # replace $number to {number}
-                    formatString = re.sub('\$(\w+)', r'{\1}', formatString)
+                # not replace $varible existing in os.environ, but ${varible} was replaced above
+                rs = re.findall('\$(\w+)', formatString)    
+                for r in rs:
+                    if r not in os.environ:
+                        formatString = re.sub('\$('+r+')', r'{\1}', formatString)
                 return formatString.format(**args[0])
         else:
             # a single string or int
@@ -1397,8 +1426,10 @@ def sprintf(formatString, *args):
             return formatString % caller.f_locals
         else:
             formatString = re.sub('\$\{(\w+)\}', r'{\1}', formatString)
-            if not re.search('\{\w+\}', formatString):
-                formatString = re.sub('\$(\w+)', r'{\1}', formatString)
+            rs = re.findall('\$(\w+)', formatString)    
+            for r in rs:
+                if r not in os.environ:
+                    formatString = re.sub('\$('+r+')', r'{\1}', formatString)
             return formatString.format(**caller.f_locals)
 
 def iff(expression, result1, result2):
@@ -1416,7 +1447,6 @@ def clear(module, recursive=False):
     else:
         if module in sys.modules:
             del(sys.modules[module])
-
 
 import os, sys
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -1450,7 +1480,6 @@ permute = Permute
 
 from time import sleep
 
-
 def num(s):
     """num(s)
     num(3),num(3.7)-->3
@@ -1468,7 +1497,6 @@ def num(s):
         except ValueError:
             raise ValueError('argument is not a string of number')
 
-
 def isempty(s):
     """isempty(s), None, numpy.nan return True"""
     try:
@@ -1476,7 +1504,6 @@ def isempty(s):
     except TypeError:
         # None, numpy.nan
         return True
-
 
 def unique(seq):
     """
@@ -1496,7 +1523,6 @@ def unique(seq):
     from orderedset import OrderedSet
     return list(OrderedSet(seq))
 
-
 def union(seq1,seq2):
     """
     unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in original order
@@ -1514,7 +1540,6 @@ def union(seq1,seq2):
     """
     from orderedset import OrderedSet
     return list(OrderedSet(seq1) | OrderedSet(seq2))
-
 
 def intersect(seq1,seq2):
     """
@@ -1534,7 +1559,6 @@ def intersect(seq1,seq2):
     from orderedset import OrderedSet
     return list(OrderedSet(seq1) & OrderedSet(seq2))
 
-
 def setdiff(seq1,seq2):
     """
     unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in original order
@@ -1552,7 +1576,6 @@ def setdiff(seq1,seq2):
     """
     from orderedset import OrderedSet
     return list(OrderedSet(seq1) - OrderedSet(seq2))
-
 
 def duplicate(seq):
     """
@@ -1579,7 +1602,6 @@ def duplicate(seq):
     seen_twice = OrderedSet( x for x in seq if x in seen or seen_add(x) )
     # turn the set into a list (as requested)
     return list( seen_twice )
-
 
 from collections import OrderedDict
 class JDict(OrderedDict):
@@ -1651,7 +1673,6 @@ class JDict(OrderedDict):
         # self = JDict(sorted(self.items(),reverse=reverse)) will not work, see
         # http://stackoverflow.com/questions/1216356/
         return JDict(sorted(self.items(),reverse=reverse))
-
 
 class Moment(object):
     """A datetime like class, but with convenient attributes and methods
@@ -1870,7 +1891,6 @@ class Moment(object):
             moment = datetime.datetime.strptime(datetimeString, datetimeFormat)
         return Moment(timezone=timezone, moment=moment)
 
-
 def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
     """Counts lines of codes, counting empty lines as well.
     lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True)
@@ -1905,7 +1925,6 @@ def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
     print 'Line counted: %d' % line_count
     print 'Done!'
 
-
 def keygen(length=8, complexity=3):
     """generate a random key
     keygen(length=8, complexity=3)
@@ -1939,7 +1958,6 @@ def keygen(length=8, complexity=3):
     elif complexity not in [1, 2, 3, 4, 5, 6]:
         chars = str(complexity)
     return ''.join(random.choice(chars) for x in range(length))
-
 
 def hashes(filename, reference=None):
     """Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way"""

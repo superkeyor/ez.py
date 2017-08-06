@@ -49,7 +49,7 @@ cp(source, destination)  # Copies source file(s) or folder to destination. Suppo
 mv(source, destination)  # Moves source file(s) or folder to destination. Supports wildcards, vectorization.
 
 evaluate(exp)
-execute(cmd, output=True)    # Executes a bash command with or without capturing shell output
+execute(cmd, verbose=3)    # Executes a bash command
 with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures

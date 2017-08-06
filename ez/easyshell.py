@@ -1403,8 +1403,8 @@ def sprintf(formatString, *args):
     s = sprintf('$language has $number quote types.')
     s = sprintf('${language}_ has $number quote types.')
     s = sprintf('$language')
-    s = sprintf('$PATH')  # <--existing env variables (eg, $PATH) will not be replaced
-                          # <--but ${PATH} will be replaced with python variable PATH
+    s = sprintf('$PATH')    # <--existing env variables (eg, $PATH) will not be replaced but kept as is (for later bash)
+    s = sprintf('${PATH}')  # <--existing env variables (eg, ${PATH}) will not be replaced but kept as is (for later bash)
 
     # better do not mix different styles, ie, %s $var {var} when formating  <--except ${var}
 
@@ -1442,13 +1442,22 @@ def sprintf(formatString, *args):
             else:
                 # \w is [a-zA-Z0-9_] for valid variable naming
                 # replace first ${number}, ${language}_ to {number}, {language}_
-                formatString = re.sub('\$\{(\w+)\}', r'{\1}', formatString)
+                ### but not replace ${PATH}
+                rs = re.findall('\$\{(\w+)\}', formatString)
+                for r in rs:    
+                    if r not in os.environ:
+                        formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
+                    else:
+                        ### trick the later .format() function ${PATH}   ->   |___|PATH|__|
+                        formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
                 # not replace $varible existing in os.environ, but ${varible} was replaced above
                 rs = re.findall('\$(\w+)', formatString)    
                 for r in rs:
                     if r not in os.environ:
                         formatString = re.sub('\$('+r+')', r'{\1}', formatString)
-                return formatString.format(**args[0])
+                formatString = formatString.format(**args[0])
+                ### replace back env variable |___|PATH|__|  -->  ${PATH}
+                return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
         else:
             # a single string or int
             return formatString % args         
@@ -1457,12 +1466,19 @@ def sprintf(formatString, *args):
         if re.search('%\(', formatString):
             return formatString % caller.f_locals
         else:
-            formatString = re.sub('\$\{(\w+)\}', r'{\1}', formatString)
+            rs = re.findall('\$\{(\w+)\}', formatString)
+            for r in rs:    
+                if r not in os.environ:
+                    formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
+                else:
+                    # trick the later .format() function ${PATH}->|___|PATH|__|
+                    formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
             rs = re.findall('\$(\w+)', formatString)    
             for r in rs:
                 if r not in os.environ:
                     formatString = re.sub('\$('+r+')', r'{\1}', formatString)
-            return formatString.format(**caller.f_locals)
+            formatString = formatString.format(**caller.f_locals)
+            return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
 
 def iff(expression, result1, result2):
     """iff(expression, result1, result2)"""

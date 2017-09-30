@@ -84,7 +84,7 @@ tree([path[, forest=True]) # Prints a directory tree structure.
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi
 
-sprintf(formatString, *args)
+sprintf(formatString, *args, **kwargs)
 iff(expression, result1, result2)
 clear(module, recursive=False)
 
@@ -769,7 +769,7 @@ def lns(source, destination):
     os.symlink(source, destination)
     print "Symbolic link: " + "->".join([source, destination])
 
-def execute2(cmd, verbose=3):
+def execute2(cmd, verbose=3, save=None):
     """Executes a bash command.
     (cmd, verbose=3)
     verbose: any screen display here does not affect returned values
@@ -777,6 +777,7 @@ def execute2(cmd, verbose=3):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite)
     return: ...regardless of output=True/False...
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
             if error occurs, return None, also always print out the error message to screen
@@ -789,7 +790,9 @@ def execute2(cmd, verbose=3):
     """
     if not _DEBUG_MODE:
         if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
-
+        if save: 
+            with open(save, 'a') as tmp:
+                tmp.write(cmd)
         # https://stackoverflow.com/a/40139101/2292993
         def _execute_cmd(cmd):
             if os.name == 'nt' or platform.system() == 'Windows':
@@ -859,6 +862,7 @@ def execute(*args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     execute2(*args, **kwargs)
@@ -905,6 +909,72 @@ def esp2(cmdString, *args, **kwargs):
     caller = inspect.currentframe().f_back
     cmd = sprintf(cmdString,caller.f_locals)
     return execute2(cmd, *args, **kwargs)
+
+def espR(cmdString, *args, **kwargs):
+    """
+    write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
+    Execute a SPrintf, but does not return the output to a python variable
+    a shortcut for execute(sprintf(cmdString))
+    (cmdString, verbose=3)
+    cmdString: R codes
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    """
+    # # caller's caller
+    # caller = inspect.currentframe().f_back.f_back
+    import inspect
+    caller = inspect.currentframe().f_back
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=1)
+
+    import tempfile
+    # create temp file with specified suffix
+    fd, path = tempfile.mkstemp(suffix='.R')
+    try:
+        with os.fdopen(fd, 'w') as tmp:
+            tmp.write(cmd)
+        execute('Rscript --no-save --no-restore ' + path, *args, **kwargs)
+    # delete it when it is done
+    finally:
+        os.remove(path)
+
+def espR2(cmdString, *args, **kwargs):
+    """
+    write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
+    Execute a SPrintf    
+    a shortcut for execute2(sprintf(cmdString))
+    return: ...regardless of output=True/False...
+        returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
+        if error occurs, return None, also always print out the error message to screen
+        if no output or all empty output, return [] 
+           note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
+    (cmdString, verbose=3)
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    """
+    # # caller's caller
+    # caller = inspect.currentframe().f_back.f_back
+    import inspect
+    caller = inspect.currentframe().f_back
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=1)
+
+    import tempfile
+    # create temp file with specified suffix
+    fd, path = tempfile.mkstemp(suffix='.R')
+    try:
+        with os.fdopen(fd, 'w') as tmp:
+            tmp.write(cmd)
+        return execute2('Rscript --no-save --no-restore ' + path, *args, **kwargs)
+    # delete it when it is done (can still delete after return)
+    finally:
+        os.remove(path)
 
 from contextlib import contextmanager
 @contextmanager
@@ -1382,9 +1452,11 @@ def regexprepi(string, pattern, replace, count=0):
     """
     return re.sub(pattern, replace, string, count=count, flags=re.IGNORECASE)
 
-def sprintf(formatString, *args):
+def sprintf(formatString, *args, **kwargs):
     """
-    (formatString, *args)
+    note: if specify skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
+
+    (formatString, *args, **kwargs)
     Examples:
     language = 'Python'; number = 2
     theDict = {"language": "Matlab", "number": 1}
@@ -1394,7 +1466,7 @@ def sprintf(formatString, *args):
     s = sprintf('%02d\n is bigger than\n %02d',[4,3])
     s = sprintf('%02d\n is bigger than\n %02d',(4,3))
     s = sprintf('%s has %03d quote types', language, number)
-    s = sprintf('%s', lanuage)
+    s = sprintf('%s', language)
     
     s = sprintf('{language} has {number:03d} quote types.', theDict) <--auto unpack
     s = sprintf('{language} has {number:03d} quote types.')          <--auto search
@@ -1443,24 +1515,28 @@ def sprintf(formatString, *args):
             if re.search('%\(', formatString):
                 return formatString % args[0]
             else:
-                # \w is [a-zA-Z0-9_] for valid variable naming
-                # replace first ${number}, ${language}_ to {number}, {language}_
-                ### but not replace ${PATH}
-                rs = re.findall('\$\{(\w+)\}', formatString)
-                for r in rs:    
-                    if r not in os.environ:
-                        formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
-                    else:
-                        ### trick the later .format() function ${PATH}   ->   |___|PATH|__|
-                        formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
-                # not replace $varible existing in os.environ, but ${varible} was replaced above
-                rs = re.findall('\$(\w+)', formatString)    
-                for r in rs:
-                    if r not in os.environ:
-                        formatString = re.sub('\$('+r+')', r'{\1}', formatString)
-                formatString = formatString.format(**args[0])
-                ### replace back env variable |___|PATH|__|  -->  ${PATH}
-                return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
+                # kwargs is {}
+                if not kwargs:
+                    # \w is [a-zA-Z0-9_] for valid variable naming
+                    # replace first ${number}, ${language}_ to {number}, {language}_
+                    ### but not replace ${PATH}
+                    rs = re.findall('\$\{(\w+)\}', formatString)
+                    for r in rs:    
+                        if r not in os.environ:
+                            formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
+                        else:
+                            ### trick the later .format() function ${PATH}   ->   |___|PATH|__|
+                            formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
+                    # not replace $varible existing in os.environ, but ${varible} was replaced above
+                    rs = re.findall('\$(\w+)', formatString)    
+                    for r in rs:
+                        if r not in os.environ:
+                            formatString = re.sub('\$('+r+')', r'{\1}', formatString)
+                    formatString = formatString.format(**args[0])
+                    ### replace back env variable |___|PATH|__|  -->  ${PATH}
+                    return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
+                elif 'skipdollar' in kwargs.keys():
+                    return formatString
         else:
             # a single string or int
             return formatString % args         
@@ -1469,19 +1545,22 @@ def sprintf(formatString, *args):
         if re.search('%\(', formatString):
             return formatString % caller.f_locals
         else:
-            rs = re.findall('\$\{(\w+)\}', formatString)
-            for r in rs:    
-                if r not in os.environ:
-                    formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
-                else:
-                    # trick the later .format() function ${PATH}->|___|PATH|__|
-                    formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
-            rs = re.findall('\$(\w+)', formatString)    
-            for r in rs:
-                if r not in os.environ:
-                    formatString = re.sub('\$('+r+')', r'{\1}', formatString)
-            formatString = formatString.format(**caller.f_locals)
-            return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
+            if not kwargs:
+                rs = re.findall('\$\{(\w+)\}', formatString)
+                for r in rs:    
+                    if r not in os.environ:
+                        formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
+                    else:
+                        # trick the later .format() function ${PATH}->|___|PATH|__|
+                        formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
+                rs = re.findall('\$(\w+)', formatString)    
+                for r in rs:
+                    if r not in os.environ:
+                        formatString = re.sub('\$('+r+')', r'{\1}', formatString)
+                formatString = formatString.format(**caller.f_locals)
+                return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
+            elif 'skipdollar' in kwargs.keys():
+                return formatString
 
 def iff(expression, result1, result2):
     """iff(expression, result1, result2)"""

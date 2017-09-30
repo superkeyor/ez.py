@@ -82,7 +82,7 @@ tree([path[, forest=True]) # Prints a directory tree structure.
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi
 
-sprintf(formatString, *args)
+sprintf(formatString, *args, **kwargs)
 iff(expression, result1, result2)
 clear(module, recursive=False)
 

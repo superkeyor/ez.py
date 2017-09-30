@@ -791,9 +791,7 @@ def execute2(cmd, verbose=3, save=None, *args, **kwargs):
     """
     if not _DEBUG_MODE:
         if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
-        if save: 
-            with open(save, 'a') as tmp:
-                tmp.write(cmd+'\n')
+
         # https://stackoverflow.com/a/40139101/2292993
         def _execute_cmd(cmd):
             if os.name == 'nt' or platform.system() == 'Windows':
@@ -838,7 +836,13 @@ def execute2(cmd, verbose=3, save=None, *args, **kwargs):
             else:
                 # error occured earlier
                 out = None
+        
         # post-process for returning value
+        # save if run successfully
+        if save: 
+            with open(save, 'a') as tmp:
+                tmp.write(cmd+'\n')
+
         if out is None:
             return None
         else:
@@ -915,7 +919,7 @@ def esp2(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
     return execute2(cmd,verbose=verbose,save=save,*args,**kwargs)
 
-def espR(cmdString, *args, **kwargs):
+def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf, but does not return the output to a python variable
@@ -928,17 +932,14 @@ def espR(cmdString, *args, **kwargs):
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite)
+    if skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals,skipdollar=1)
-
-    if save: 
-        with open(save, 'a') as tmp:
-            tmp.write(cmd+'\n')
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
 
     import tempfile
     # create temp file with specified suffix
@@ -946,12 +947,19 @@ def espR(cmdString, *args, **kwargs):
     try:
         with os.fdopen(fd, 'w') as tmp:
             tmp.write(cmd)
-        execute('Rscript --no-save --no-restore ' + path, *args, **kwargs)
+        # not save this command line
+        execute('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
+
+        # but save R source code if run successfully
+        if save: 
+            with open(save, 'a') as tmp:
+                tmp.write(cmd+'\n')
     # delete it when it is done
+    # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
     finally:
         os.remove(path)
 
-def espR2(cmdString, *args, **kwargs):
+def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf    
@@ -968,17 +976,14 @@ def espR2(cmdString, *args, **kwargs):
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite)
+    if skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals,skipdollar=1)
-
-    if save: 
-        with open(save, 'a') as tmp:
-            tmp.write(cmd+'\n')
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
     
     import tempfile
     # create temp file with specified suffix
@@ -986,10 +991,18 @@ def espR2(cmdString, *args, **kwargs):
     try:
         with os.fdopen(fd, 'w') as tmp:
             tmp.write(cmd)
-        return execute2('Rscript --no-save --no-restore ' + path, *args, **kwargs)
+        # not save this command line
+        result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
+
+        # but save R source code if run successfully
+        if save: 
+            with open(save, 'a') as tmp:
+                tmp.write(cmd+'\n')
     # delete it when it is done (can still delete after return)
+    # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
     finally:
         os.remove(path)
+    return result
 
 from contextlib import contextmanager
 @contextmanager

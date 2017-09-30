@@ -770,7 +770,7 @@ def lns(source, destination):
     os.symlink(source, destination)
     print "Symbolic link: " + "->".join([source, destination])
 
-def execute2(cmd, verbose=3, save=None):
+def execute2(cmd, verbose=3, save=None, *args, **kwargs):
     """Executes a bash command.
     (cmd, verbose=3, save=None)
     verbose: any screen display here does not affect returned values
@@ -793,7 +793,7 @@ def execute2(cmd, verbose=3, save=None):
         if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
         if save: 
             with open(save, 'a') as tmp:
-                tmp.write(cmd)
+                tmp.write(cmd+'\n')
         # https://stackoverflow.com/a/40139101/2292993
         def _execute_cmd(cmd):
             if os.name == 'nt' or platform.system() == 'Windows':
@@ -853,7 +853,7 @@ def execute2(cmd, verbose=3, save=None):
         print ""
         return None
 
-def execute(*args, **kwargs):
+def execute(cmd, verbose=3, save=None, *args, **kwargs):
     """
     a wrapper of execute2(), but does not return the output to a python variable
     Executes a bash command.
@@ -866,9 +866,9 @@ def execute(*args, **kwargs):
     save: None, or a file path to save the cmd (append to the file, not overwrite)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
-    execute2(*args, **kwargs)
+    execute2(cmd,verbose=verbose,save=save,*args,**kwargs)
 
-def esp(cmdString, *args, **kwargs):
+def esp(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
     """
     Execute a SPrintf, but does not return the output to a python variable
     a shortcut for execute(sprintf(cmdString))
@@ -879,16 +879,17 @@ def esp(cmdString, *args, **kwargs):
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite)
+    if skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals)
-    execute(cmd, *args, **kwargs)
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=None)
+    execute(cmd,verbose=verbose,save=save,*args,**kwargs)
 
-def esp2(cmdString, *args, **kwargs):
+def esp2(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
     """
     Execute a SPrintf
     a shortcut for execute2(sprintf(cmdString))
@@ -904,14 +905,15 @@ def esp2(cmdString, *args, **kwargs):
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite)
+    if skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals)
-    return execute2(cmd, *args, **kwargs)
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=None)
+    return execute2(cmd,verbose=verbose,save=save,*args,**kwargs)
 
 def espR(cmdString, *args, **kwargs):
     """
@@ -925,6 +927,7 @@ def espR(cmdString, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
@@ -932,6 +935,10 @@ def espR(cmdString, *args, **kwargs):
     import inspect
     caller = inspect.currentframe().f_back
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=1)
+
+    if save: 
+        with open(save, 'a') as tmp:
+            tmp.write(cmd+'\n')
 
     import tempfile
     # create temp file with specified suffix
@@ -960,6 +967,7 @@ def espR2(cmdString, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
@@ -968,6 +976,10 @@ def espR2(cmdString, *args, **kwargs):
     caller = inspect.currentframe().f_back
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=1)
 
+    if save: 
+        with open(save, 'a') as tmp:
+            tmp.write(cmd+'\n')
+    
     import tempfile
     # create temp file with specified suffix
     fd, path = tempfile.mkstemp(suffix='.R')
@@ -1518,8 +1530,12 @@ def sprintf(formatString, *args, **kwargs):
             if re.search('%\(', formatString):
                 return formatString % args[0]
             else:
-                # kwargs is {}
-                if not kwargs:
+                # kwargs is {} if not specified
+                try:
+                    if kwargs['skipdollar']!=1: kwargs.pop('skipdollar')
+                except:
+                    pass
+                if 'skipdollar' not in kwargs.keys():
                     # \w is [a-zA-Z0-9_] for valid variable naming
                     # replace first ${number}, ${language}_ to {number}, {language}_
                     ### but not replace ${PATH}
@@ -1538,7 +1554,7 @@ def sprintf(formatString, *args, **kwargs):
                     formatString = formatString.format(**args[0])
                     ### replace back env variable |___|PATH|__|  -->  ${PATH}
                     return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
-                elif 'skipdollar' in kwargs.keys():
+                elif kwargs['skipdollar']==1:
                     return formatString
         else:
             # a single string or int
@@ -1548,7 +1564,11 @@ def sprintf(formatString, *args, **kwargs):
         if re.search('%\(', formatString):
             return formatString % caller.f_locals
         else:
-            if not kwargs:
+            try:
+                if kwargs['skipdollar']!=1: kwargs.pop('skipdollar')
+            except:
+                pass
+            if 'skipdollar' not in kwargs.keys():
                 rs = re.findall('\$\{(\w+)\}', formatString)
                 for r in rs:    
                     if r not in os.environ:
@@ -1562,7 +1582,7 @@ def sprintf(formatString, *args, **kwargs):
                         formatString = re.sub('\$('+r+')', r'{\1}', formatString)
                 formatString = formatString.format(**caller.f_locals)
                 return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
-            elif 'skipdollar' in kwargs.keys():
+            elif kwargs['skipdollar']==1:
                 return formatString
 
 def iff(expression, result1, result2):

@@ -53,8 +53,10 @@ rm(path)    # Deletes a file or folder. Supports wildcards, vectorization.
 cp(source, destination)  # Copies source file(s) or folder to destination. Supports wildcards, vectorization.
 mv(source, destination)  # Moves source file(s) or folder to destination. Supports wildcards, vectorization.
 
+sprintf(formatString, *args, **kwargs)
 evaluate(exp)
-execute(cmd, verbose=3)    # Executes a bash command
+execute, execute2(cmd, verbose=3, save=None)    # Executes a bash command
+esp, esp2(cmd) # sprintf and execute
 with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
@@ -84,7 +86,6 @@ tree([path[, forest=True]) # Prints a directory tree structure.
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi
 
-sprintf(formatString, *args, **kwargs)
 iff(expression, result1, result2)
 clear(module, recursive=False)
 
@@ -771,7 +772,7 @@ def lns(source, destination):
 
 def execute2(cmd, verbose=3, save=None):
     """Executes a bash command.
-    (cmd, verbose=3)
+    (cmd, verbose=3, save=None)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -877,6 +878,7 @@ def esp(cmdString, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
@@ -901,6 +903,7 @@ def esp2(cmdString, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller

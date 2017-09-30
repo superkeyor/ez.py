@@ -51,8 +51,10 @@ rm(path)    # Deletes a file or folder. Supports wildcards, vectorization.
 cp(source, destination)  # Copies source file(s) or folder to destination. Supports wildcards, vectorization.
 mv(source, destination)  # Moves source file(s) or folder to destination. Supports wildcards, vectorization.
 
+sprintf(formatString, *args, **kwargs)
 evaluate(exp)
-execute(cmd, verbose=3)    # Executes a bash command
+execute, execute2(cmd, verbose=3, save=None)    # Executes a bash command
+esp, esp2(cmd) # sprintf and execute
 with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
@@ -82,7 +84,6 @@ tree([path[, forest=True]) # Prints a directory tree structure.
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi
 
-sprintf(formatString, *args, **kwargs)
 iff(expression, result1, result2)
 clear(module, recursive=False)
 

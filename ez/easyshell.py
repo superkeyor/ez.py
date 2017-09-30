@@ -56,7 +56,8 @@ mv(source, destination)  # Moves source file(s) or folder to destination. Suppor
 sprintf(formatString, *args, **kwargs)
 evaluate(exp)
 execute, execute2(cmd, verbose=3, save=None)    # Executes a bash command
-esp, esp2(cmd) # sprintf and execute
+esp, esp2(cmd, verbose=3, save=None) # sprintf and execute bash commands
+espR, espR2(cmd, verbose=3, save=None) # sprintf and execute R codes
 with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
@@ -861,7 +862,7 @@ def execute(cmd, verbose=3, save=None, *args, **kwargs):
     """
     a wrapper of execute2(), but does not return the output to a python variable
     Executes a bash command.
-    (cmd, verbose=3)
+    (cmd, verbose=3, save=None)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -870,28 +871,7 @@ def execute(cmd, verbose=3, save=None, *args, **kwargs):
     save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
-    execute2(cmd,verbose=verbose,save=save,*args,**kwargs)
-
-def esp(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
-    """
-    Execute a SPrintf, but does not return the output to a python variable
-    a shortcut for execute(sprintf(cmdString))
-    (cmdString, verbose=3)
-    verbose: any screen display here does not affect returned values
-            0 = nothing to display
-            1 = only the actual command
-            2 = only the command output
-            3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
-    if skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
-    """
-    # # caller's caller
-    # caller = inspect.currentframe().f_back.f_back
-    import inspect
-    caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
-    execute(cmd,verbose=verbose,save=save,*args,**kwargs)
+    execute2(cmd, verbose=verbose, save=save, *args, **kwargs)
 
 def esp2(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
     """
@@ -902,62 +882,38 @@ def esp2(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
         if error occurs, return None, also always print out the error message to screen
         if no output or all empty output, return [] 
            note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
-    (cmdString, verbose=3)
+    (cmdString, verbose=3, save=None, skipdollar=0)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
-    if skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
+    if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
-    return execute2(cmd,verbose=verbose,save=save,*args,**kwargs)
+    cmd = sprintf(cmdString, caller.f_locals, skipdollar=skipdollar)
+    return execute2(cmd, verbose=verbose, save=save, *args, **kwargs)
 
-def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
+def esp(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
     """
-    write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf, but does not return the output to a python variable
     a shortcut for execute(sprintf(cmdString))
-    (cmdString, verbose=3)
-    cmdString: R codes
+    (cmdString, verbose=3, save=None, skipdollar=0)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
-    if skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
+    if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
-    # # caller's caller
-    # caller = inspect.currentframe().f_back.f_back
-    import inspect
-    caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
-
-    import tempfile
-    # create temp file with specified suffix
-    fd, path = tempfile.mkstemp(suffix='.R')
-    try:
-        with os.fdopen(fd, 'w') as tmp:
-            tmp.write(cmd)
-        # not save this command line
-        execute('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
-
-        # but save R source code even if not run successfully
-        if save: 
-            with open(save, 'a') as tmp:
-                tmp.write(cmd+'\n')
-    # delete it when it is done
-    # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
-    finally:
-        os.remove(path)
+    esp2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, *args, **kwargs)
 
 def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     """
@@ -969,14 +925,14 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
         if error occurs, return None, also always print out the error message to screen
         if no output or all empty output, return [] 
            note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
-    (cmdString, verbose=3)
+    (cmdString, verbose=3, save=None, skipdollar=1)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
-    if skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
+    if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     # # caller's caller
@@ -1003,6 +959,24 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     finally:
         os.remove(path)
     return result
+
+def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
+    """
+    write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
+    Execute a SPrintf, but does not return the output to a python variable
+    a shortcut for execute(sprintf(cmdString))
+    (cmdString, verbose=3, save=None, skipdollar=1)
+    cmdString: R codes
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
+    if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    """
+    espR2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, *args, **kwargs)
 
 from contextlib import contextmanager
 @contextmanager

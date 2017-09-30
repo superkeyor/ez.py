@@ -20,6 +20,9 @@ debug(1/0)
           will print out simulated commands, useful for debugging and for counting files when necessary.
 error(msg)
 
+readx(path, sheet=0, r=[1,], c=None)  # Read xlsx, xls file into a list
+savex(path, data, header=None, delimiter=",", sheet_name='Sheet1') # Write a list of list to a xlsx (xlsxwriter), xls(xlwt), csv file
+
 fullpath(path)
 pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.

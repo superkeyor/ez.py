@@ -22,6 +22,9 @@ debug(1/0)
           will print out simulated commands, useful for debugging and for counting files when necessary.
 error(msg)
 
+readx(path, sheet=0, r=[1,], c=None)  # Read xlsx, xls file into a list
+savex(path, data, header=None, delimiter=",", sheet_name='Sheet1') # Write a list of list to a xlsx (xlsxwriter), xls(xlwt), csv file
+
 fullpath(path)
 pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
@@ -2029,6 +2032,144 @@ def hashes(filename, reference=None):
         print 'md5 32: ' + md5.hexdigest()
         print 'sha1 32: ' + sha1.hexdigest()
 
+def readx(path, sheet=0, r=[1,], c=None, *args, **kwargs):
+    """
+    (path, sheet=0, r=[1,], c=None, *args, **kwargs)
+    Read xlsx, xls file into a list (see returns for details), using xlrd library
+    Args:
+        path, a xlsx, xls file
+        sheet, either sheet number (the first is 0) or sheet name (e.g., Sheet1)
+        r, None=start-end; 3=4th row (zero based); [3,4,5]=listed rows; [1,]=from 2nd row to end (ie, skipping first row, or header)
+        c, the same format as r
+    Returns:
+        if multiple rows/columns, returns a list of list [[row1],[row2]]. To further slice returned result, result[r][c]
+        if a single row/column, returns a list
+        if a single cell, returns that cell as string, number depending on that cell type
+        Note: the cells/elements in a list/column/row could have different data types, exactly the same as the actual data type in the excel file
+              eg, a number is formated as string in excel file, then the returned type is string, u'2017'
+              empty cell returns u'', but cell with spaces returns u'  '
+    Raises:
+       None
+    """
+    import xlrd
+    wbobj = xlrd.open_workbook(path)
+    # convert sheet index to sheet name
+    if type(sheet) in [int]:
+        sheets = wbobj.sheet_names()
+        sheet = sheets[sheet]
+    else:
+        sheet = sheet
+    sheetobj = wbobj.sheet_by_name(sheet)
+
+    if r == None:
+        r = range(0,sheetobj.nrows)     # all rows
+    elif type(r) in [int]:
+        r = [r]     # a single row
+    elif type(r) in [list]:
+        if len(r) == 1:
+            r = range(r[0],sheetobj.nrows)  # from r to end
+        else:
+            r = r   # multiple rows
+    else:
+        raise Exception('Invalid row number(s)')
+
+    if c == None:
+        c = range(0,sheetobj.ncols)     # all cols
+    elif type(c) in [int]:
+        c = [c]    # a single col
+    elif type(c) in [list]:
+        if len(c) == 1:
+            c = range(c[0],sheetobj.ncols)  # from c to end
+        else:
+            c = c   # multiple cols
+    else:
+        raise Exception('Invalid col number(s)')
+
+    if len(r)==1 and len(c)==1:
+        result = sheetobj.cell_value(r[0],c[0])
+    elif len(r)==1 and len(c)>1:
+        result = sheetobj.row_values(r[0])
+        result = [result[i] for i in c]
+    elif len(r)>1 and len(c)==1:
+        result = sheetobj.col_values(c[0])
+        result = [result[i] for i in r]
+    elif len(r)>1 and len(c)>1:
+        result = []
+        for rr in r:
+            row = sheetobj.row_values(rr)
+            row = [row[i] for i in c]
+            result.append(row)
+
+    return result
+
+def savex(path, data, header=None, delimiter=",", sheet_name='Sheet1', *args, **kwargs):
+    """
+    (path, data, header=None, sheet_name='Sheet1', *args, **kwargs)
+    Write a list of list to a xlsx (xlsxwriter), xls(xlwt), csv file
+    Args:
+        path
+            the path to the excel file (xlsx/xls), or csv(.csv, comma separated); explicitly specify .xlsx/xls or .csv 
+            xls (but not xlsx) may be more compatible with old-version software (spss v20)
+            however, xls limited to 256 columns by 65536 rows
+            in which case, consider csv as an alternative
+            or xlsx which has limits of 16,384 columns by 1,048,576 rows
+            csv writing is much faster than xlsx
+        data
+            a list of list (each sublist is a row)
+        header
+            a list with each column's name, eg ['company','brand','price']
+        delimiter
+            only for writing csv, ignored for excel
+    Returns:
+        File is overwritten!
+        Each element of list could be of different type, resulting in different format for each cell in excel file
+        None and empty strings '' are written blank
+        Strings and string of number are written as string
+        Numbers as Numbers
+        Returns Nothing
+        For csv file, everything a string
+    Raises:
+       None
+    """
+    if path.endswith('.xls'):
+        import xlwt
+        book = xlwt.Workbook()
+        sheet = book.add_sheet(sheet_name)
+
+        if header:
+            for c, val in enumerate(header):
+                sheet.write(0, c, val, *args, **kwargs)
+            header = 1
+        else:
+            header = 0
+
+        for r, row in enumerate(data,header):
+            for c, val in enumerate(row):
+                sheet.write(r, c, val, *args, **kwargs)
+        book.save(path)
+    elif path.endswith('.xlsx'):
+        import xlsxwriter
+        xbook = xlsxwriter.Workbook(path)
+        xsheet = xbook.add_worksheet(sheet_name)
+
+        if header:
+            for c, val in enumerate(header):
+                xsheet.write(0, c, val, *args, **kwargs)
+            header = 1
+        else:
+            header = 0
+
+        for r, row in enumerate(data,header):
+            # https://xlsxwriter.readthedocs.io/worksheet.html#worksheet-write-row
+            xsheet.write_row(r, 0, row, *args, **kwargs)
+        xbook.close()
+    else:
+        import  csv
+        with open(path,"w") as f:
+            wr = csv.writer(f, delimiter=delimiter, *args, **kwargs)
+            if header: wr.writerow(header)
+            wr.writerows(data)
+writex = savex
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

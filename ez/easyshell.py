@@ -779,7 +779,7 @@ def execute2(cmd, verbose=3, save=None, *args, **kwargs):
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite)
-    return: ...regardless of output=True/False...
+    return: ...regardless of verbose...
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
             if error occurs, return None, also always print out the error message to screen
             if no output or all empty output, return [] 
@@ -886,14 +886,14 @@ def esp(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals,skipdollar=None)
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
     execute(cmd,verbose=verbose,save=save,*args,**kwargs)
 
 def esp2(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
     """
     Execute a SPrintf
     a shortcut for execute2(sprintf(cmdString))
-    return: ...regardless of output=True/False...
+    return: ...regardless of verbose...
         returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
         if error occurs, return None, also always print out the error message to screen
         if no output or all empty output, return [] 
@@ -912,7 +912,7 @@ def esp2(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
-    cmd = sprintf(cmdString,caller.f_locals,skipdollar=None)
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
     return execute2(cmd,verbose=verbose,save=save,*args,**kwargs)
 
 def espR(cmdString, *args, **kwargs):
@@ -956,7 +956,7 @@ def espR2(cmdString, *args, **kwargs):
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf    
     a shortcut for execute2(sprintf(cmdString))
-    return: ...regardless of output=True/False...
+    return: ...regardless of verbose...
         returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
         if error occurs, return None, also always print out the error message to screen
         if no output or all empty output, return [] 

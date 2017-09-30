@@ -872,7 +872,7 @@ def execute(cmd, verbose=3, save=None, *args, **kwargs):
     """
     execute2(cmd,verbose=verbose,save=save,*args,**kwargs)
 
-def esp(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
+def esp(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
     """
     Execute a SPrintf, but does not return the output to a python variable
     a shortcut for execute(sprintf(cmdString))
@@ -893,7 +893,7 @@ def esp(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
     execute(cmd,verbose=verbose,save=save,*args,**kwargs)
 
-def esp2(cmdString, verbose=3, save=None, skipdollar=None, *args, **kwargs):
+def esp2(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
     """
     Execute a SPrintf
     a shortcut for execute2(sprintf(cmdString))

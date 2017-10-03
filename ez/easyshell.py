@@ -771,7 +771,7 @@ def lns(source, destination):
     os.symlink(source, destination)
     print "Symbolic link: " + "->".join([source, destination])
 
-def execute2(cmd, verbose=3, save=None, *args, **kwargs):
+def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
     """Executes a bash command.
     (cmd, verbose=3, save=None)
     verbose: any screen display here does not affect returned values
@@ -780,6 +780,7 @@ def execute2(cmd, verbose=3, save=None, *args, **kwargs):
             2 = only the command output
             3 = both the command itself and output
     save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
+    shell: 'bash', 'tcsh', 'sh' (internally converted to /bin/tcsh)
     return: ...regardless of verbose...
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
             if error occurs, return None, also always print out the error message to screen
@@ -800,8 +801,8 @@ def execute2(cmd, verbose=3, save=None, *args, **kwargs):
                 # shell=True can do shell pipes, filename wildcards, environment variable expansion, and expansion of ~
                 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             else:
-                # Use bash; the default is sh
-                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+                # Use a particular shell; the default is sh
+                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/"+shell)
             
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate

@@ -1132,13 +1132,22 @@ whos = who
 #             with open(file, 'w') as fileHandler: fileHandler.write(content)
 #             print "Updated " + file
 
-def SetLog(file="log.txt", mode='a', status=True):
+def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
     """
-    log(file="log.txt", mode='a', status=True)
-    status=True (default) Prints output to both terminal and a file (log.txt, default name) globally.
-    status=False Prints output only to terminal
+    log(file="log.txt", mode='a', status=True, timestamp=True)
+    alias: SetLog, setlog
+
+    Usage:
+          logging on: log("thelog.txt")
+          logging off: log(status=False)  # no need to pass in the file parameter, auto recognize log file
+
+    file: could be .csv to generate excel file, or be different to genereate multiple files
     mode: a=append; w=overwrite
-    Note: use this function carefully, because it changes the sys.stdout globally.
+    status: True  logging on, Prints output to both terminal and a file (log.txt, default name) globally
+            False logging off, Prints output only to terminal
+    timestamp: True/False, insert timestamp at the beginning and end in the log file
+
+    Note, use this function carefully, because it changes the sys.stdout globally.
     """
     import sys, datetime
 
@@ -1149,9 +1158,9 @@ def SetLog(file="log.txt", mode='a', status=True):
             print "log on with " + fullpath(self.file)
             self.terminal = sys.stdout
             self.log = open(file, mode)
-            self.log.write("++++++++++\n")
-            self.log.write("starts at " + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "\n")
-            self.log.flush()
+            if timestamp:
+                self.log.write("++++++++++log on at " + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "\n")
+                self.log.flush()
 
         def flush(self):
             self.terminal.flush()
@@ -1166,9 +1175,9 @@ def SetLog(file="log.txt", mode='a', status=True):
             self.log.flush()
 
         def off(self):
-            self.log.write("ends at " + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "\n")
-            self.log.write("++++++++++\n")
-            self.log.write("\n")
+            if timestamp:
+                self.log.write("++++++++++log off at " + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "\n")
+            self.log.write('\n')
             self.log.flush()
             self.log.close()
             sys.stdout = sys.__stdout__

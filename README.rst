@@ -72,11 +72,7 @@ help(name)/doc(name) # name is a string, Prints the doc string of a module/class
 ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
 whos(name),whos() list imported functions/packages
 
-log(file="log.txt", mode='a', status=True)
-    status=True (default) Prints output to both terminal and a file (log.txt, default name) globally.
-    status=False Prints output only to terminal
-    mode: a=append; w=overwrite
-    Note: use this function carefully, because it changes the sys.stdout globally.
+log(file="log.txt", mode='a', status=True, timestamp=True)
 
 tree([path[, forest=True]) # Prints a directory tree structure. 
     forest=True (default) prints only folders, i.e., print less to show the big forest

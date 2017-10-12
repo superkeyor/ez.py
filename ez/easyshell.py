@@ -74,11 +74,7 @@ help(name)/doc(name) # name is a string, Prints the doc string of a module/class
 ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
 whos(name),whos() list imported functions/packages
 
-log(file="log.txt", mode='a', status=True)
-    status=True (default) Prints output to both terminal and a file (log.txt, default name) globally.
-    status=False Prints output only to terminal
-    mode: a=append; w=overwrite
-    Note: use this function carefully, because it changes the sys.stdout globally.
+logon(file="log.txt", mode='a', status=True, timestamp=True), logoff()
 
 tree([path[, forest=True]) # Prints a directory tree structure. 
     forest=True (default) prints only folders, i.e., print less to show the big forest
@@ -1136,6 +1132,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
     """
     log(file="log.txt", mode='a', status=True, timestamp=True)
     alias: SetLog, setlog
+    shortcut: logon(), logoff()
 
     Usage:
           logging on: log("thelog.txt")
@@ -1198,6 +1195,31 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
             pass
 log = SetLog
 setlog = SetLog
+
+def logon(file="log.txt", mode='a', status=True, timestamp=True):
+    """
+    wrapper of log()
+    logon(file="log.txt", mode='a', status=True, timestamp=True)
+
+    Usage: logon()
+
+    file: could be .csv to generate excel file, or be different to genereate multiple files
+    mode: a=append; w=overwrite
+    status: True  logging on, Prints output to both terminal and a file (log.txt, default name) globally
+            False logging off, Prints output only to terminal
+    timestamp: True/False, insert timestamp at the beginning and end in the log file
+
+    Note, use this function carefully, because it changes the sys.stdout globally.
+    """
+    SetLog(file=file,mode=mode,status=status,timestamp=timestamp)
+
+def logoff():
+    """
+    wrapper of log()
+    logoff()
+    turn off the file redirection, no need to pass in any parameter, auto recognize log file
+    """
+    SetLog(status=False)
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # print directory tree structure starts

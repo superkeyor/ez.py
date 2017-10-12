@@ -1132,7 +1132,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
     """
     (file="log.txt", mode='a', status=True, timestamp=True)
     alias: SetLog, setlog
-    shortcut: logon(), logoff()
+    convenient shortcut: logon(), logoff()
     internally and actually, SetLog=setlog=log=logon. Feel confused? just use logon() and logoff()
 
     Usage:

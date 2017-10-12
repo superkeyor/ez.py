@@ -1130,9 +1130,10 @@ whos = who
 
 def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
     """
-    log(file="log.txt", mode='a', status=True, timestamp=True)
+    (file="log.txt", mode='a', status=True, timestamp=True)
     alias: SetLog, setlog
     shortcut: logon(), logoff()
+    internally and actually, SetLog=setlog=log=logon. Feel confused? just use logon() and logoff()
 
     Usage:
           logging on: log("thelog.txt")
@@ -1198,10 +1199,11 @@ setlog = SetLog
 
 def logon(file="log.txt", mode='a', status=True, timestamp=True):
     """
+    (file="log.txt", mode='a', status=True, timestamp=True)
     wrapper of log()
     logon(file="log.txt", mode='a', status=True, timestamp=True)
 
-    Usage: logon()
+    Usage: logon(), logoff()
 
     file: could be .csv to generate excel file, or be different to genereate multiple files
     mode: a=append; w=overwrite
@@ -1216,8 +1218,8 @@ def logon(file="log.txt", mode='a', status=True, timestamp=True):
 def logoff():
     """
     wrapper of log()
-    logoff()
-    turn off the file redirection, no need to pass in any parameter, auto recognize log file
+    logon(), logoff()
+    turn off the file redirection, does not accept any parameter, auto recognize log file
     """
     SetLog(status=False)
 

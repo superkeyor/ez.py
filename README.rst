@@ -72,7 +72,7 @@ help(name)/doc(name) # name is a string, Prints the doc string of a module/class
 ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
 whos(name),whos() list imported functions/packages
 
-log(file="log.txt", mode='a', status=True, timestamp=True)
+logon(file="log.txt", mode='a', status=True, timestamp=True), logoff()
 
 tree([path[, forest=True]) # Prints a directory tree structure. 
     forest=True (default) prints only folders, i.e., print less to show the big forest

@@ -775,7 +775,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging) or simulation
+    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging) or simulation
     shell: 'bash', 'tcsh', 'sh' (internally converted to /bin/tcsh)
     return: ...regardless of verbose...
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
@@ -837,10 +837,14 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
 
         # post-process for returning value
         # save even if not run successfully
-        if save: 
-            with open(save, 'a') as tmp:
-                tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
-            print('cmd saved at '+save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd+'\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
+            print('Command saved at '+save)
 
         if out is None:
             return None
@@ -854,10 +858,14 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
     else:
         pprint("Simulation! Execute command: " + cmd, 'yellow')
         print ""
-        if save: 
-            with open(save, 'a') as tmp:
-                tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
-            print('cmd saved at '+save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd+'\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
+            print('Command saved at '+save)
         return None
 
 def execute(cmd, verbose=3, save=None, *args, **kwargs):
@@ -870,7 +878,7 @@ def execute(cmd, verbose=3, save=None, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     execute2(cmd, verbose=verbose, save=save, *args, **kwargs)
@@ -890,7 +898,7 @@ def esp2(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
@@ -911,7 +919,7 @@ def esp(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
@@ -933,7 +941,7 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging) or simulation
+    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging) or simulation
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
@@ -954,10 +962,14 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
 
             # but save R source code even if not run successfully
-            if save: 
-                with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
-                print('cmd saved at '+save)
+            if save:
+                if os.path.exists(save):
+                    with open(save, 'a') as tmp:
+                        tmp.write(cmd+'\n') 
+                else:
+                    with open(save, 'a') as tmp:
+                        tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+                print('Command saved at '+save)
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
         finally:
@@ -966,10 +978,14 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     else:
         pprint("Simulation! Execute command: " + cmd, 'yellow')
         print ""
-        if save: 
-            with open(save, 'a') as tmp:
-                tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
-            print('cmd saved at '+save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd+'\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+            print('Command saved at '+save)
         return None
 
 def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
@@ -984,7 +1000,7 @@ def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """

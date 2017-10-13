@@ -1041,6 +1041,8 @@ log=%s
 """ % (universe,str(getenv),luggage,memory,log)
 
     for e in executables:
+        # make executable, otherwise permission error from condor
+        execute('chmod +x '+e,verbose=0)
         condor = condor + """
 executable=%s
 output=%s.out

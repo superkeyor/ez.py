@@ -53,8 +53,8 @@ mv(source, destination)  # Moves source file(s) or folder to destination. Suppor
 
 sprintf(formatString, *args, **kwargs)
 evaluate(exp)
-execute, execute2(cmd, verbose=3, save=None)    # Executes a bash command
-esp, esp2(cmd, verbose=3, save=None) # sprintf and execute bash commands
+execute, execute2(cmd, verbose=3, save=None, shell='bash')    # Executes a shell command
+esp, esp2(cmd, verbose=3, save=None, shell='bash') # sprintf and execute shell commands
 espR, espR2(cmd, verbose=3, save=None) # sprintf and execute R codes
 with nooutput():
     print 'this is will not be printed in stdout'

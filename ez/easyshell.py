@@ -55,8 +55,8 @@ mv(source, destination)  # Moves source file(s) or folder to destination. Suppor
 
 sprintf(formatString, *args, **kwargs)
 evaluate(exp)
-execute, execute2(cmd, verbose=3, save=None)    # Executes a bash command
-esp, esp2(cmd, verbose=3, save=None) # sprintf and execute bash commands
+execute, execute2(cmd, verbose=3, save=None, shell='bash')    # Executes a shell command
+esp, esp2(cmd, verbose=3, save=None, shell='bash') # sprintf and execute shell commands
 espR, espR2(cmd, verbose=3, save=None) # sprintf and execute R codes
 with nooutput():
     print 'this is will not be printed in stdout'
@@ -1004,6 +1004,62 @@ def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     """
     espR2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, *args, **kwargs)
 
+def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub'):
+    """
+    generate a condor submission/configuration file for a list of scripts
+    executables=[], list of bash, python, etc script files, full or relative path
+    submit=True/False, actually submit the condor job or not, regardless, always generate condor configuration file 
+    luggage=None, should be a single string, eg, "file1,file2,file3", full or relative (to pwd) path
+            internally for condor syntax transfer_input_files=file1,file2,file3
+            could be folder path as well (without trailing /, eg, /usr/path)
+                A directory may be specified by appending the forward slash character (/) as a trailing path separator. 
+                This syntax is used for both Windows and Linux submit hosts. A directory example using a trailing path 
+                separator is input_data/. When a directory is specified with the trailing path separator, the contents of 
+                the directory are transferred, but the directory itself is not transferred. It is as if each of the items 
+                within the directory were listed in the transfer list. When there is no trailing path separator, 
+                the directory is transferred, its contents are transferred, and these contents are placed inside 
+                the transferred directory.
+    email=None, call shell command "mail" to send out mail when condor job done
+    memory=None, request_memory, unit MB, eg, 2000
+    getenv=True, If getenv is set to True, then condor_submit will copy all of the user's current shell environment variables 
+           at the time of job submission into the job ClassAd.
+    universe='vanilla', vanilla | standard | scheduler | local | grid | java | vm | parallel | docker
+    
+    log='condor.log', log file is appended, for the whole list of executables, if not fullpath, relative to pwd
+    submitfile='condor.sub', saved/overwritten condor file, if not fullpath, relative to pwd
+    out auto saved as executable_file_name.ext.out, the same path as each executable
+    err auto saved as executable_file_name.ext.err, the same path as each executable
+    """
+    luggage = 'transfer_input_files='+luggage if luggage else ''
+    memory = 'request_memory='+str(memory) if memory else ''
+    condor = """
+universe=%s
+getenv=%s
+%s
+%s
+log=%s
+""" % (universe,str(getenv),luggage,memory,log)
+
+    for e in executables:
+        condor = condor + """
+executable=%s
+output=%s.out
+error=%s.err
+queue
+""" % (e, e, e)
+
+    submitfile = 'condor.sub'
+    with open(submitfile, 'w') as tmp:
+        tmp.write(condor+'\n\n')
+    print('Condor submit file saved at '+submitfile)
+
+    if submit:
+        if email:
+            cmd = "(condor_submit %s; condor_wait %s; echo 'Coffee break over!' | mail -s 'Condor run complete' %s) &" % (submitfile,log,email)
+        else:
+            cmd = "condor_submit %s" % submitfile
+        execute(cmd)
+                
 from contextlib import contextmanager
 @contextmanager
 def nooutput():

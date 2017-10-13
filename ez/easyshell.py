@@ -840,7 +840,8 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
         if save: 
             with open(save, 'a') as tmp:
                 tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
-        
+            print('cmd saved at '+save)
+
         if out is None:
             return None
         else:
@@ -856,6 +857,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
         if save: 
             with open(save, 'a') as tmp:
                 tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
+            print('cmd saved at '+save)
         return None
 
 def execute(cmd, verbose=3, save=None, *args, **kwargs):
@@ -955,6 +957,7 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             if save: 
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+                print('cmd saved at '+save)
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
         finally:
@@ -966,6 +969,7 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
         if save: 
             with open(save, 'a') as tmp:
                 tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+            print('cmd saved at '+save)
         return None
 
 def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):

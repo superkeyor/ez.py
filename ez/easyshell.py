@@ -840,10 +840,10 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd+'\n') 
+                    tmp.write(cmd+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
+                    tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd+'\n\n')
             print('Command saved at '+save)
 
         if out is None:
@@ -856,15 +856,14 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
             else:
                 return out
     else:
-        pprint("Simulation! Execute command: " + cmd, 'yellow')
-        print ""
+        pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd+'\n') 
+                    tmp.write(cmd+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
+                    tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd+'\n\n')
             print('Command saved at '+save)
         return None
 
@@ -957,7 +956,7 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
         fd, path = tempfile.mkstemp(suffix='.R')
         try:
             with os.fdopen(fd, 'w') as tmp:
-                tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+                tmp.write('#!/usr/bin/env Rscript \n\n'+cmd+'\n\n')
             # not save this command line
             result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
 
@@ -965,10 +964,10 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             if save:
                 if os.path.exists(save):
                     with open(save, 'a') as tmp:
-                        tmp.write(cmd+'\n') 
+                        tmp.write(cmd+'\n\n') 
                 else:
                     with open(save, 'a') as tmp:
-                        tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+                        tmp.write('#!/usr/bin/env Rscript \n\n'+cmd+'\n\n')
                 print('Command saved at '+save)
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
@@ -976,15 +975,14 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             os.remove(path)
         return result
     else:
-        pprint("Simulation! Execute command: " + cmd, 'yellow')
-        print ""
+        pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd+'\n') 
+                    tmp.write(cmd+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+                    tmp.write('#!/usr/bin/env Rscript \n\n'+cmd+'\n\n')
             print('Command saved at '+save)
         return None
 

@@ -1029,6 +1029,15 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
     submitfile='condor.sub', saved/overwritten condor file, if not fullpath, relative to pwd
     out auto saved as executable_file_name.ext.out, the same path as each executable
     err auto saved as executable_file_name.ext.err, the same path as each executable
+
+    Further condor help:     
+    watch -n 2 condor_q
+    condor_q: See my current condor jobs
+    condor_q -better-analyze <job_id>
+    condor_status: cores being used
+    condor_run: run small jobs    condor_run "echo hello"
+    condor_submit: use submit files to submit jobs to vendor
+    condor_rm [job number/username]: condor_rm 96231.0
     """
     luggage = 'transfer_input_files='+luggage if luggage else ''
     memory = 'request_memory='+str(memory) if memory else ''
@@ -1055,13 +1064,37 @@ queue
         tmp.write(condor+'\n\n')
     print('Condor submit file saved at '+submitfile)
 
+    if email:
+        cmd = "(condor_submit %s; condor_wait %s; echo 'Coffee break over!' | mail -s 'Condor run complete' %s) &" % (submitfile,log,email)
+    else:
+        cmd = "condor_submit %s" % submitfile
+    
     if submit:
-        if email:
-            cmd = "(condor_submit %s; condor_wait %s; echo 'Coffee break over!' | mail -s 'Condor run complete' %s) &" % (submitfile,log,email)
-        else:
-            cmd = "condor_submit %s" % submitfile
-        execute(cmd)
-                
+        # execute(cmd)
+        # https://stackoverflow.com/a/34459371/2292993
+        # Use subprocess.Popen() with the close_fds=True parameter, which will allow the spawned subprocess to be detached from 
+        # the Python process itself and continue running even after Python exits.
+        subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash", close_fds=True)
+        pprint('Submitted: \n' + cmd,'green')
+    else:
+        pprint('To submit, execute: \n' + cmd,'yellow')
+    condorstats()
+
+def condorstats():
+    """
+    show some condor stats
+    """
+    status = execute2('condor_status -total',0)[-1].split()
+    unclaimed = '%s/%s unclaimed/total' % (status[4],status[1])
+    allqueue = 'Queue (all):\t' + execute2('condor_q -allusers -nobatch',0)[-1]
+    myqueue = 'Queue (mine):\t' + execute2('condor_q',0)[-1]
+    
+    # pprint("Some users' reports...",'blue')
+    # execute('condor_userprio -most',2)
+    
+    pprint("\nSome stats...",'blue')
+    print unclaimed + '\n' + allqueue + '\n' + myqueue
+
 from contextlib import contextmanager
 @contextmanager
 def nooutput():

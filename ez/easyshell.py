@@ -775,7 +775,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging) or simulation
     shell: 'bash', 'tcsh', 'sh' (internally converted to /bin/tcsh)
     return: ...regardless of verbose...
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
@@ -839,7 +839,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
         # save even if not run successfully
         if save: 
             with open(save, 'a') as tmp:
-                tmp.write(cmd+'\n')
+                tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
         
         if out is None:
             return None
@@ -853,6 +853,9 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
     else:
         pprint("Simulation! Execute command: " + cmd, 'yellow')
         print ""
+        if save: 
+            with open(save, 'a') as tmp:
+                tmp.write('#!/usr/bin/env '+shell+'\n'+cmd+'\n')
         return None
 
 def execute(cmd, verbose=3, save=None, *args, **kwargs):
@@ -928,7 +931,7 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (append to the file, not overwrite), can still save even if error occurs (for debugging) or simulation
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
@@ -938,24 +941,32 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     caller = inspect.currentframe().f_back
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
     
-    import tempfile
-    # create temp file with specified suffix
-    fd, path = tempfile.mkstemp(suffix='.R')
-    try:
-        with os.fdopen(fd, 'w') as tmp:
-            tmp.write(cmd)
-        # not save this command line
-        result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
+    if not _DEBUG_MODE:
+        import tempfile
+        # create temp file with specified suffix
+        fd, path = tempfile.mkstemp(suffix='.R')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+            # not save this command line
+            result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
 
-        # but save R source code even if not run successfully
+            # but save R source code even if not run successfully
+            if save: 
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+        # delete it when it is done (can still delete after return)
+        # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
+        finally:
+            os.remove(path)
+        return result
+    else:
+        pprint("Simulation! Execute command: " + cmd, 'yellow')
+        print ""
         if save: 
             with open(save, 'a') as tmp:
-                tmp.write(cmd+'\n')
-    # delete it when it is done (can still delete after return)
-    # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
-    finally:
-        os.remove(path)
-    return result
+                tmp.write('#!/usr/bin/env Rscript \n'+cmd+'\n')
+        return None
 
 def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     """

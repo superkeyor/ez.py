@@ -143,6 +143,7 @@ def error(msg):
 def fullpath(path):
     """
     fullpath(path) # Returns the full path by resolving ~ and relative path.
+    note: no trailing / returned, at least on mac os x
     """
     return os.path.normpath(os.path.abspath(os.path.expanduser(path)))
 

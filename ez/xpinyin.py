@@ -156,7 +156,7 @@ def pinyin(chr,splitter=u' ',tone=False,case='capitalize'):
     splitter: any string
     tone: Ture/False
     case: 'capitalize', 'lower', 'upper'
-    return specified pinyin (but also always print the pinyin with tone)
+    returns pinyin in specified format (but also always prints the returned pinyin with tone)
 
     reference: xpinyin, pypinyin
     """

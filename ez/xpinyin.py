@@ -50,8 +50,9 @@ class Pinyin(object):
     .. _chinese\_pinyin: https://github.com/flyerhzm/chinese_pinyin
     """
 
+    # original is Mandarin.dat, hack in order to pack py file
     data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             'Mandarin.dat')
+                             'xpinyinMandarindat.py')
 
     def __init__(self, data_path=data_path):
         self.dict = {}

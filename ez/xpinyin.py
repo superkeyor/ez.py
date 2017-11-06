@@ -149,10 +149,15 @@ class Pinyin(object):
 
         return splitter.join(result)
 
-def pinyin(chr):
+def pinyin(chr,splitter=u' ',tone=False,case='capitalize'):
     """
-    (chr): u'ChineseCharacterHere'
+    chr,splitter,tone,convert
+    chr: u'ChineseCharacterHere'
+    splitter: any string
+    tone: Ture/False
+    case: capitalize, lower, upper
+
     reference: xpinyin, pypinyin
     """
     p = Pinyin()
-    return p.get_pinyin(chr,splitter=u' ',show_tone_marks=False,convert='capitalize')
+    return p.get_pinyin(chr,splitter,tone,case)

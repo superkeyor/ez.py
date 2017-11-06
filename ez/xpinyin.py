@@ -155,7 +155,7 @@ def pinyin(chr,case='capitalize',splitter=None,tone=False):
     chr: u'ChineseCharacterHere'
     case: 'capitalize', 'lower', 'upper', 'initial' (Zhong--initial--> Z)
     splitter: any string, or nothing '' (default: ' ' for 'capitalize', 'lower', 'upper'; '' for 'initial')
-    tone: Ture/False (not working for initial)
+    tone: Ture/False (ignored by 'initial')
     returns pinyin in specified format
     regardless of the parameters for returning, always prints the pinyin with tone split by space
 

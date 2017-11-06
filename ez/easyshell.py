@@ -116,6 +116,8 @@ content = GetClip(), content = getclip()   # Read out content from current clipb
 lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
 keygen(length=8, complexity=3)  # generate a random key
 hashes(filename): # Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way
+pinyin(chr)
+hanzifreq()
 """
 
 # reference: abspath for ../ ./, expanduser for ~, glob to resolve wildcards, fnmatch.translate wildcards to re
@@ -2414,6 +2416,44 @@ def savex(path, data, header=None, delimiter=",", sheet_name='Sheet1', *args, **
             if header: wr.writerow(header)
             wr.writerows(data)
 writex = savex
+
+def hanzifreq(filename, size=10, outfile=None, encoding='utf8'):  
+    """
+    (filename, size, outfile, encoding)
+    size: top # items; if None, print(save) all items
+    outfile: path; if None, no save
+    does not count punctuation (ie, ignore punctuation)
+    print(save) freq table (top # items) and return a list [(char,times)]  (always all items)
+    
+    see also tagxedo.com/app.html   (support Chinese characters)
+    """
+    # modified from http://blog.csdn.net/xm1331305/article/details/8090639
+
+    import codecs  
+    from time import time  
+    from operator import itemgetter  
+    import sys
+
+    begin = time()
+
+    count = {}  
+    for line in codecs.open(filename, 'r', encoding):  
+        for chr in line:  
+            if u'\u4E00' <= chr <= u'\u9FA5' or  u'\uF900' <= chr <= u'\uFA2D':  
+                count[chr] = 1 + count.get(chr, 0)
+
+    hanzifreq = sorted(count.iteritems(), key=itemgetter(1), reverse=True)
+    result = hanzifreq  # for return
+    if size: hanzifreq = hanzifreq[:size]
+
+    print '\n'.join([u'%s\t%s' % (chr, times) for chr, times in hanzifreq]) 
+    if outfile:
+        with codecs.open(outfile, mode='w', encoding='utf-8') as outFile:
+            outFile.write('\n'.join([u'%s,%s' % (chr, times) for chr, times in hanzifreq]))
+    
+    print 'Done! Elapsed %s seconds.' % (time()-begin)
+    return result
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

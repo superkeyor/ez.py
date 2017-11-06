@@ -152,6 +152,7 @@ class Pinyin(object):
 def pinyin(chr):
     """
     (chr): u'ChineseCharacterHere'
+    reference: xpinyin, pypinyin
     """
     p = Pinyin()
     return p.get_pinyin(chr, ' ')

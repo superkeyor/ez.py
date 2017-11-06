@@ -26,6 +26,7 @@
 
 # do exclude last, i.e., after include
 include README.rst
+include ez/Mandarin.dat
 recursive-include ez/timezone/pytz *
 # recursive-exclude ez/timezone/pytz *.pyc
 recursive-include ez/timezone/tzlocal *

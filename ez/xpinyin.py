@@ -149,13 +149,13 @@ class Pinyin(object):
 
         return splitter.join(result)
 
-def pinyin(chr,splitter=u' ',tone=False,case='capitalize'):
+def pinyin(chr,case='capitalize',splitter=None,tone=False):
     """
     chr,splitter,tone,convert
     chr: u'ChineseCharacterHere'
-    splitter: any string
+    case: 'capitalize', 'lower', 'upper', 'initial' (Zhong--initial--> Z)
+    splitter: any string, or nothing '' (default: ' ' for 'capitalize', 'lower', 'upper'; '' for 'initial')
     tone: Ture/False (not working for initial)
-    case: 'capitalize', 'lower', 'upper', 'initial'
     returns pinyin in specified format
     regardless of the parameters for returning, always prints the pinyin with tone split by space
 
@@ -164,6 +164,8 @@ def pinyin(chr,splitter=u' ',tone=False,case='capitalize'):
     p = Pinyin()
     print p.get_pinyin(chr,u' ',True,'capitalize')  # print tone
     if case=='initial':
+        if not splitter: splitter=u''
         return p.get_initials(chr,splitter)
     else:
+        if not splitter: splitter=u' '
         return p.get_pinyin(chr,splitter,tone,case)

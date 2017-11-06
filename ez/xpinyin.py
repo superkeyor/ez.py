@@ -155,4 +155,4 @@ def pinyin(chr):
     reference: xpinyin, pypinyin
     """
     p = Pinyin()
-    return p.get_pinyin(chr, ' ')
+    return p.get_pinyin(chr,splitter=u' ',show_tone_marks=False,convert='capitalize')

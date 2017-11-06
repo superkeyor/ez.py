@@ -2425,7 +2425,7 @@ def hanzifreq(filename, size=10, outfile=None, encoding='utf8'):
     does not count punctuation (ie, ignore punctuation)
     print(save) freq table (top # items) and return a list [(char,times)]  (always all items)
     
-    see also tagxedo.com/app.html   (support Chinese characters)
+    see also http://www.tagxedo.com/ (support Chinese characters)
     """
     # modified from http://blog.csdn.net/xm1331305/article/details/8090639
 

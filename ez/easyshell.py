@@ -83,7 +83,7 @@ tree([path[, forest=True]) # Prints a directory tree structure.
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi
 
-iff(expression, result1, result2)
+iff(expression, result1, result2), ifelse()
 clear(module, recursive=False)
 
 num(string)
@@ -1732,6 +1732,7 @@ def sprintf(formatString, *args, **kwargs):
 def iff(expression, result1, result2):
     """iff(expression, result1, result2)"""
     return result1 if expression else result2
+ifelse=iff
 
 def clear(module, recursive=False):
     """clear(module, recursive=False)

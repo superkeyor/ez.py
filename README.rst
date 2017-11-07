@@ -81,7 +81,7 @@ tree([path[, forest=True]) # Prints a directory tree structure.
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi
 
-iff(expression, result1, result2)
+iff(expression, result1, result2), ifelse()
 clear(module, recursive=False)
 
 num(string)

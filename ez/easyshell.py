@@ -442,8 +442,8 @@ def cd(path):
     os.chdir(path)
     print "Start working in " + os.getcwd()
 
-def ls(path="./", regex=".*", full=True, dotfile=False):
-    """ls([path[, regex]], full=True, dotfile=False)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
+def ls(path="./", regex=".*", full=True, dotfile=False, sort=True):
+    """ls([path[, regex]], full=True, dotfile=False, sort=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
     """
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
@@ -467,10 +467,14 @@ def ls(path="./", regex=".*", full=True, dotfile=False):
     files = _FilterList(os.listdir(path), pattern_regex)
     if not dotfile: files = _FilterList(files,'^[^\.]')
     if full: files = [os.path.join(path,file) for file in files]
-    return [file for file in files if os.path.isfile(file)]
+    result = [file for file in files if os.path.isfile(file)]
+    if sort: 
+        return sorted(result)
+    else:
+        return result
 
-def lsd(path="./", regex=".*", full=False, dotfolder=False):
-    """lsd([path[, regex]], full=False, dotfolder=False), Returns a list of all (including hidden) folders with their (optionally) full paths in path, filtered by regular expression."""
+def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True):
+    """lsd([path[, regex]], full=False, dotfolder=False, sort=True), Returns a list of all (including hidden) folders with their (optionally) full paths in path, filtered by regular expression."""
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search
@@ -493,10 +497,14 @@ def lsd(path="./", regex=".*", full=False, dotfolder=False):
     files = _FilterList(os.listdir(path), pattern_regex)
     if not dotfolder: files = _FilterList(files,'^[^\.]')
     if full: files = [os.path.join(path,file) for file in files]
-    return [file for file in files if not os.path.isfile(file)]
+    result = [file for file in files if not os.path.isfile(file)]
+    if sort: 
+        return sorted(result)
+    else:
+        return result
 
-def fls(path="./", regex=".*", dotf=False):
-    """fls([path[, regex=".*", dotf=False]])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
+def fls(path="./", regex=".*", dotf=False, sort=True):
+    """fls([path[, regex=".*", dotf=False], sort=True])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
     """
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
@@ -533,7 +541,11 @@ def fls(path="./", regex=".*", dotf=False):
             for file in filteredFiles:
                 fileFullName = os.path.join(root, file)
                 flatFiles.append(fileFullName)
-    return flatFiles
+    result = flatFiles
+    if sort: 
+        return sorted(result)
+    else:
+        return result
 
 def mkdir(path):
     """mkdir("path/to/a/directory") , Makes a directory (also any one of the "path", "to", "a" directories if not exits)."""

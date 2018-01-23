@@ -924,6 +924,10 @@ def esp2(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
+    # for esp()
+    if kwargs: 
+        if kwargs['insideCalling']:
+            caller = inspect.currentframe().f_back.f_back
     cmd = sprintf(cmdString, caller.f_locals, skipdollar=skipdollar)
     return execute2(cmd, verbose=verbose, save=save, *args, **kwargs)
 
@@ -941,7 +945,7 @@ def esp(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
-    esp2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, *args, **kwargs)
+    esp2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, insideCalling=True)
 
 def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     """
@@ -967,6 +971,10 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
+    # for esp()
+    if kwargs: 
+        if kwargs['insideCalling']:
+            caller = inspect.currentframe().f_back.f_back
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
     
     if not _DEBUG_MODE:
@@ -1021,7 +1029,7 @@ def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
-    espR2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, *args, **kwargs)
+    espR2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, insideCalling=True)
 
 def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub'):
     """

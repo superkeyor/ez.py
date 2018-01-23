@@ -23,12 +23,12 @@ error(msg)
 readx(path, sheet=0, r=[1,], c=None)  # Read xlsx, xls file into a list
 savex(path, data, header=None, delimiter=",", sheet_name='Sheet1') # Write a list of list to a xlsx (xlsxwriter), xls(xlwt), csv file
 
-fullpath(path)
+fullpath(path) fp()
 pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
-parentdir(path) # Returns the parent directory of a path.
-joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.
-splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
+parentdir(path) pp() # Returns the parent directory of a path.
+joinpath(path1[, path2[, ...]])   jp() # Returns the joined path. Supports vectorization.
+splitpath(path) sp() # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
 stepfolder(-1)
 
@@ -54,8 +54,8 @@ mv(source, destination)  # Moves source file(s) or folder to destination. Suppor
 sprintf(formatString, *args, **kwargs)
 evaluate(exp)
 execute, execute2(cmd, verbose=3, save=None, shell='bash')    # Executes a shell command
-esp, esp2(cmd, verbose=3, save=None, shell='bash') # sprintf and execute shell commands
-espR, espR2(cmd, verbose=3, save=None) # sprintf and execute R codes
+esp, esp2(cmd, verbose=3, save=None, shell='bash') # execute sprintf shell commands
+espR, espR2(cmd, verbose=3, save=None) # execute sprintf R codes
 with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures

@@ -25,12 +25,12 @@ error(msg)
 readx(path, sheet=0, r=[1,], c=None)  # Read xlsx, xls file into a list
 savex(path, data, header=None, delimiter=",", sheet_name='Sheet1') # Write a list of list to a xlsx (xlsxwriter), xls(xlwt), csv file
 
-fullpath(path)
+fullpath(path) fp()
 pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
-parentdir(path) # Returns the parent directory of a path.
-joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.
-splitpath(path) # Returns a list of path elements: [path, file, ext]. Supports vectorization.
+parentdir(path) pp() # Returns the parent directory of a path.
+joinpath(path1[, path2[, ...]])   jp() # Returns the joined path. Supports vectorization.
+splitpath(path) sp() # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
 stepfolder(-1)
 
@@ -56,8 +56,8 @@ mv(source, destination)  # Moves source file(s) or folder to destination. Suppor
 sprintf(formatString, *args, **kwargs)
 evaluate(exp)
 execute, execute2(cmd, verbose=3, save=None, shell='bash')    # Executes a shell command
-esp, esp2(cmd, verbose=3, save=None, shell='bash') # sprintf and execute shell commands
-espR, espR2(cmd, verbose=3, save=None) # sprintf and execute R codes
+esp, esp2(cmd, verbose=3, save=None, shell='bash') # execute sprintf shell commands
+espR, espR2(cmd, verbose=3, save=None) # execute sprintf R codes
 with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
@@ -148,6 +148,7 @@ def fullpath(path):
     note: no trailing / returned, at least on mac os x
     """
     return os.path.normpath(os.path.abspath(os.path.expanduser(path)))
+fp = fullpath
 
 def csd():
     """(),Returns current script directory, i.e. the directory where the running script is.
@@ -223,6 +224,7 @@ def parentdir(path):
         return os.path.abspath(os.path.join(os.path.abspath(os.path.join(path, os.pardir)), os.pardir))
     else:
         return os.path.abspath(os.path.join(path, os.pardir))
+pp = parentdir
 
 def joinpath(*args):
     """joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.
@@ -252,6 +254,7 @@ def joinpath(*args):
         return results
     else:
         return os.path.join(*args)
+jp = joinpath
 
 def trim(s, how=4, *args):
     """Merge multiple spaces to single space in the middle, and remove trailing/leading spaces
@@ -435,6 +438,7 @@ def splitpath(path):
     ext = os.path.splitext(path)[1]
     file = os.path.basename(path)[0:-len(ext)] if len(ext) != 0 else os.path.basename(path)
     return [dir, file, ext]
+sp = splitpath
 
 def cd(path):
     """cd(path), Changes to a new directory."""

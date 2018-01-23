@@ -919,6 +919,11 @@ def esp2(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
     save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    Example:
+            var_to_be_in_bash = 'blabla'
+            ez.esp('echo $var_to_be_in_bash')
+            # Command: echo blabla
+            # Actual output: blabla    
     """
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
@@ -944,6 +949,11 @@ def esp(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
     save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    Example:
+            var_to_be_in_bash = 'blabla'
+            ez.esp('echo $var_to_be_in_bash')
+            # Command: echo blabla
+            # Actual output: blabla
     """
     esp2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, insideCalling=True)
 
@@ -966,6 +976,9 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging) or simulation
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    Example: 
+            ez.espR('iris$Species')
+            # print out iris$Species, Levels: setosa versicolor virginica    
     """
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
@@ -1028,6 +1041,9 @@ def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
     save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    Example: 
+            ez.espR('iris$Species')
+            # print out iris$Species, Levels: setosa versicolor virginica
     """
     espR2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, insideCalling=True)
 

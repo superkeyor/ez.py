@@ -28,7 +28,7 @@ savex(path, data, header=None, delimiter=",", sheet_name='Sheet1') # Write a lis
 fullpath(path) fp()
 pwd() or cwd()  # Returns current working director.
 csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
-parentdir(path) pp() # Returns the parent directory of a path.
+parentdir(path) pr() # Returns the parent directory of a path.
 joinpath(path1[, path2[, ...]])   jp() # Returns the joined path. Supports vectorization.
 splitpath(path) sp() # Returns a list of path elements: [path, file, ext]. Supports vectorization.
 cd(path)    # Changes to a new working directory.
@@ -224,7 +224,7 @@ def parentdir(path):
         return os.path.abspath(os.path.join(os.path.abspath(os.path.join(path, os.pardir)), os.pardir))
     else:
         return os.path.abspath(os.path.join(path, os.pardir))
-pp = parentdir
+pr = parentdir
 
 def joinpath(*args):
     """joinpath(path1[, path2[, ...]])   # Returns the joined path. Supports vectorization.

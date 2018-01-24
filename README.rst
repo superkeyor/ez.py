@@ -93,6 +93,7 @@ RandomChoice(seq), randomchoice(seq) # Returns a random element from sequence
 Permute(iterable=[]) permute(iterable=[]) # Returns permutations in a list
 
 unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in original order
+seq could be a list
     note: setdiff(seq1,seq2) may not be equal to setdiff(seq2,seq1)
             >>> unique('abracadaba')
             ['a', 'b', 'r', 'c', 'd']
@@ -104,6 +105,9 @@ unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in origi
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
 duplicate(seq) # returns a list of duplicated elements in original order
+    # e.g.
+    # a = [1,5,2,3,2,1,5,6,5,5,5]
+    # duplicate(a) # yields [2, 1, 5]
 
 JDict() # Jerry's dictionary, customized ordered dictionary class with convient attributes and methods, see help(JDict)
 Moment(timezone)    # Generates the current datetime in specified timezone, or local naive datetime if omitted.

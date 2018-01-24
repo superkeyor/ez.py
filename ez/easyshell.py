@@ -1015,6 +1015,105 @@ echo "new line"
             debug_mode_in_effect = False
     esp2(cmdString, verbose=verbose, save=save, shell=shell, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
 
+def execute(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **kwargs):
+    """
+    a wrapper of subprocess.call, does not return the output to a python variable
+    Executes a shell command.
+    (cmd, verbose=3, save=None, shell='bash', debugMode=False)
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    """
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+
+    if not debug_mode_in_effect:
+        if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
+        if verbose in [0,1]: 
+            output=False
+        else:
+            output=True
+
+        if os.name == 'nt' or platform.system() == 'Windows':
+            if output:
+                subprocess.call(cmd, shell=True)
+            else:
+                subprocess.call(cmd, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+        else:
+            if output:
+                subprocess.call(cmd, shell=True, executable="/bin/"+shell)    # Use bash; the default is sh
+            else:
+                subprocess.call(cmd, shell=True, executable="/bin/"+shell, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+        print ""
+
+        # save even if not run successfully
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('chmod +x '+save)
+            print('Command saved at '+save)
+    else:
+        pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('chmod +x '+save)
+            print('Command saved at '+save)
+
+def esp(cmdString, verbose=3, save=None, shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
+    """
+    Execute a SPrintf, but does not return the output to a python variable
+    a shortcut for execute(sprintf(cmdString))
+    (cmdString, verbose=3, save=None, skipdollar=0)
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    Example:
+            var_to_be_in_bash = 'blabla'
+            cmd = '''
+echo $var_to_be_in_bash
+echo "new line"
+'''
+            ez.esp(cmd)
+            # Command: echo blabla
+            # Actual output: blabla
+    """
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+    # # caller's caller
+    # caller = inspect.currentframe().f_back.f_back
+    import inspect
+    caller = inspect.currentframe().f_back
+    cmd = sprintf(cmdString, caller.f_locals, skipdollar=skipdollar)
+    execute(cmd, verbose=verbose, save=save, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+
 def espR2(cmdString, verbose=3, save=None, shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file

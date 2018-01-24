@@ -890,7 +890,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            subprocess.call('chmod +x '+save)
+            subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
 
         if out is None:
@@ -911,7 +911,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            subprocess.call('chmod +x '+save)
+            subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
         return None
 
@@ -1171,7 +1171,7 @@ def execute(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **k
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            subprocess.call('chmod +x '+save)
+            subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
     else:
         pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
@@ -1182,7 +1182,7 @@ def execute(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **k
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            subprocess.call('chmod +x '+save)
+            subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
 
 def esp(cmdString, verbose=3, save=None, shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
@@ -1347,7 +1347,7 @@ log=%s
 
     for e in executables:
         # make executable, otherwise permission error from condor
-        subprocess.call('chmod +x '+e)
+        subprocess.call('chmod +x '+e, shell=True)
         condor = condor + """
 executable=%s
 output=%s.out

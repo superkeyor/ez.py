@@ -890,7 +890,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            execute('chmod +x '+save,verbose=0)
+            subprocess.call('chmod +x '+save)
             print('Command saved at '+save)
 
         if out is None:
@@ -911,11 +911,11 @@ def execute2(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            execute('chmod +x '+save,verbose=0)
+            subprocess.call('chmod +x '+save)
             print('Command saved at '+save)
         return None
 
-def execute1(cmd, verbose=3, save=None, debugMode=False, *args, **kwargs):
+def execute1(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **kwargs):
     """
     a wrapper of execute2(), but does not return the output to a python variable
     Executes a bash command.
@@ -935,9 +935,9 @@ def execute1(cmd, verbose=3, save=None, debugMode=False, *args, **kwargs):
             debug_mode_in_effect = True
         else:
             debug_mode_in_effect = False
-    execute2(cmd, verbose=verbose, save=save, debugMode=debug_mode_in_effect, *args, **kwargs)
+    execute2(cmd, verbose=verbose, save=save, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
-def esp2(cmdString, verbose=3, save=None, skipdollar=0, debugMode=False, *args, **kwargs):
+def esp2(cmdString, verbose=3, save=None, shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
     Execute a SPrintf
     a shortcut for execute2(sprintf(cmdString))
@@ -976,14 +976,14 @@ echo "new line"
     # caller = inspect.currentframe().f_back.f_back
     import inspect
     caller = inspect.currentframe().f_back
-    # for esp()
+    # for esp1()
     if kwargs: 
         if kwargs['insideCalling']:
             caller = inspect.currentframe().f_back.f_back
     cmd = sprintf(cmdString, caller.f_locals, skipdollar=skipdollar)
-    return execute2(cmd, verbose=verbose, save=save, debugMode=debug_mode_in_effect, *args, **kwargs)
+    return execute2(cmd, verbose=verbose, save=save, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
-def esp1(cmdString, verbose=3, save=None, skipdollar=0, debugMode=False, *args, **kwargs):
+def esp1(cmdString, verbose=3, save=None, shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
     Execute a SPrintf, but does not return the output to a python variable
     a shortcut for execute2(sprintf(cmdString)) without return
@@ -1013,9 +1013,9 @@ echo "new line"
             debug_mode_in_effect = True
         else:
             debug_mode_in_effect = False
-    esp2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
+    esp2(cmdString, verbose=verbose, save=save, shell=shell, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
 
-def espR2(cmdString, verbose=3, save=None, skipdollar=1, debugMode=False, *args, **kwargs):
+def espR2(cmdString, verbose=3, save=None, shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf    
@@ -1064,7 +1064,7 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, debugMode=False, *args,
             with os.fdopen(fd, 'w') as tmp:
                 tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             # not save this command line
-            result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
+            result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
             # but save R source code even if not run successfully
             if save:
@@ -1172,7 +1172,7 @@ log=%s
 
     for e in executables:
         # make executable, otherwise permission error from condor
-        execute('chmod +x '+e,verbose=0)
+        subprocess.call('chmod +x '+e)
         condor = condor + """
 executable=%s
 output=%s.out

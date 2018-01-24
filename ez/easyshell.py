@@ -897,7 +897,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fa
 
         # post-process for returning value
         # save even if not run successfully
-        if saveMode=='w': os.remove(save)
+        if saveMode=='w': rm(save)
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
@@ -919,7 +919,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fa
                 return out
     else:
         pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
-        if saveMode=='w': os.remove(save)
+        if saveMode=='w': rm(save)
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
@@ -1089,7 +1089,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdolla
             result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
             # but save R source code even if not run successfully
-            if saveMode=='w': os.remove(save)
+            if saveMode=='w': rm(save)
             if save:
                 if os.path.exists(save):
                     with open(save, 'a') as tmp:
@@ -1105,7 +1105,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdolla
         return result
     else:
         pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
-        if saveMode=='w': os.remove(save)
+        if saveMode=='w': rm(save)
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
@@ -1188,7 +1188,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fal
         print ""
 
         # save even if not run successfully
-        if saveMode=='w': os.remove(save)
+        if saveMode=='w': rm(save)
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
@@ -1200,7 +1200,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fal
             print('Command saved at '+save)
     else:
         pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
-        if saveMode=='w': os.remove(save)
+        if saveMode=='w': rm(save)
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
@@ -1299,7 +1299,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar
             execute('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
             # but save R source code even if not run successfully
-            if saveMode=='w': os.remove(save)
+            if saveMode=='w': rm(save)
             if save:
                 if os.path.exists(save):
                     with open(save, 'a') as tmp:
@@ -1314,7 +1314,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar
             os.remove(path)
     else:
         pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
-        if saveMode=='w': os.remove(save)
+        if saveMode=='w': rm(save)
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:

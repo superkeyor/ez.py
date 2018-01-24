@@ -53,9 +53,9 @@ mv(source, destination)  # Moves source file(s) or folder to destination. Suppor
 
 sprintf(formatString, *args, **kwargs)
 evaluate(exp)
-execute, execute2(cmd, verbose=3, save=None, shell='bash')    # Executes a shell command
-esp, esp2(cmd, verbose=3, save=None, shell='bash') # execute sprintf shell commands
-espR, espR2(cmd, verbose=3, save=None) # execute sprintf R codes
+execute, execute1, execute2    # Executes a shell command
+esp, esp1, esp2 # execute sprintf shell commands
+espR, espR1, espR2 # execute sprintf R codes
 with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures

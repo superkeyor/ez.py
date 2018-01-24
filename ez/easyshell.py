@@ -28,7 +28,8 @@ savex(path, data, header=None, delimiter=",", sheet_name='Sheet1') # Write a lis
 
 fullpath(path) fp()
 pwd() or cwd()  # Returns current working director.
-csd(), csf()   # Returns current script directory, i.e. the directory where the running script is.
+csd() # Returns full path of current script directory, i.e. the directory where the running script is. 
+csf() # Returns current script name without ext.
 parentdir(path) pr() # Returns the parent directory of a path.
 joinpath(path1[, path2[, ...]])   jp() # Returns the joined path. Supports vectorization.
 splitpath(path) sp() # Returns a list of path elements: [path, file, ext]. Supports vectorization.
@@ -152,11 +153,17 @@ def fullpath(path):
     fullpath(path) # Returns the full path by resolving ~ and relative path.
     note: no trailing / returned, at least on mac os x
     """
-    return os.path.normpath(os.path.abspath(os.path.expanduser(path)))
+    # https://stackoverflow.com/a/40311142/2292993
+    # os.path.abspath returns the absolute path, but does NOT resolve symlinks
+    # os.path.realpath will first resolve any symbolic links in the path, and then return the absolute path.
+    # both abspath and realpath imply os.path.normpath
+    # neither abspath or realpath will resolve ~ to the user's home directory
+    # abspath and realpath: if fullpath provided, simply return fullpath. if not, resolved relative to pwd
+    return os.path.abspath(os.path.expanduser(path))
 fp = fullpath
 
 def csd():
-    """(),Returns current script directory, i.e. the directory where the running script is.
+    """(),Returns full path of current script directory, i.e. the directory where the running script is.
     if in interactive mode, return current working directory
     """
     # https://stackoverflow.com/a/22424821/2292993
@@ -165,7 +172,8 @@ def csd():
     if is_interactive:
         return os.getcwd()
     else:
-        path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+        # os.path.split returns (head,tail), here for path = , same effect as splitpath
+        path = splitpath(os.path.abspath(sys.argv[0]))[0]
         # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
         return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
@@ -184,7 +192,7 @@ def stepfolder(step=-1):
     if is_interactive:
         theCSD = os.getcwd()
     else:
-        path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+        path = splitpath(os.path.abspath(sys.argv[0]))[0]
         # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
         theCSD = os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
     projFolder = parentdir(theCSD)
@@ -204,18 +212,14 @@ def stepfolder(step=-1):
     return folder
 
 def csf():
-    """(),Returns current script name, i.e. the name of the running script."""
+    """(),Returns current script file name without ext, i.e. the name of the running script without ext."""
     import __main__ as main
     is_interactive = not hasattr(main, '__file__')
     if is_interactive:
         path = os.getcwd()
     else:
-        path = os.path.split(os.path.abspath(sys.argv[0]))[0]
-        # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
-        path =  os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
-    dir = os.path.dirname(path)
-    ext = os.path.splitext(path)[1]
-    file = os.path.basename(path)[0:-len(ext)] if len(ext) != 0 else os.path.basename(path)
+        # os.path.split returns (head, tail)
+        file = splitpath(os.path.abspath(sys.argv[0]))[1]
     return file
 
 def parentdir(path):
@@ -260,6 +264,27 @@ def joinpath(*args):
     else:
         return os.path.join(*args)
 jp = joinpath
+
+def splitpath(path):
+    """splitpath(path), Split path into [dir, file, ext]. e.g., file=easyshell, ext=.py
+    Supports vectorization."""
+
+    # os.path.split only returns (head, tail), so do not use
+
+    # vectorization
+    if type(path) in [list, tuple]:
+        dirs = []; files = []; exts = []
+        for p in path:
+            [dir, file, ext] = splitpath(p)
+            dirs.append(dir); files.append(file); exts.append(ext)
+        return [dirs, files, exts]
+
+    path = fullpath(path)
+    dir = os.path.dirname(path)
+    ext = os.path.splitext(path)[1]
+    file = os.path.basename(path)[0:-len(ext)] if len(ext) != 0 else os.path.basename(path)
+    return [dir, file, ext]
+sp = splitpath
 
 def trim(s, how=4, *args):
     """Merge multiple spaces to single space in the middle, and remove trailing/leading spaces
@@ -424,26 +449,6 @@ def remove(theList, theItem):
 def sort(*args, **kwargs):
     """wrapper of sorted, passed in list does not change, returns a sorted list"""
     return sorted(*args, **kwargs)
-    
-def splitpath(path):
-    """splitpath(path), Split path into [dir, file, ext]. e.g., file=easyshell, ext=.py
-    Supports vectorization."""
-    # return os.path.split(path)
-
-    # vectorization
-    if type(path) in [list, tuple]:
-        dirs = []; files = []; exts = []
-        for p in path:
-            [dir, file, ext] = splitpath(p)
-            dirs.append(dir); files.append(file); exts.append(ext)
-        return [dirs, files, exts]
-
-    path = fullpath(path)
-    dir = os.path.dirname(path)
-    ext = os.path.splitext(path)[1]
-    file = os.path.basename(path)[0:-len(ext)] if len(ext) != 0 else os.path.basename(path)
-    return [dir, file, ext]
-sp = splitpath
 
 def cd(path):
     """cd(path), Changes to a new directory."""
@@ -1669,7 +1674,7 @@ def tree(path='./', forest=True):
     """
     import sys, os
     global PRINT_FILES; PRINT_FILES = not forest
-    path = os.path.normpath(os.path.abspath(os.path.expanduser(path)))
+    path = os.path.abspath(os.path.expanduser(path))
 
     def walk(root, dirs, files, prefix=''):
         if PRINT_FILES and files:

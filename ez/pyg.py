@@ -257,7 +257,7 @@ __doc__ = """
 To avoid typing email password each time, place a file named pygmailconfig.py with
 EMAIL = 'someone@gmail.com'
 PASSWORD = 'abcdefghik'
-in the site-packages/ez folder
+in the site-packages/ez folder, check with ez.which('ez')
 The functions will no longer need email/password and become like this
 Mail(to, subject, body, attach=None), AddEvent(event), Sheet(fileName)
 

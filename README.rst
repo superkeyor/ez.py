@@ -14,6 +14,7 @@ no dependencies
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.
 
+see also pyg.py
 debug(1/0)
     # 0 = everything will be actually executed
     # 1 = simulate operations of cp, mv, execute; other commands will be actually performed.
@@ -128,7 +129,7 @@ hanzifreq()
 To avoid typing email password each time, place a file named pygmailconfig.py with
 EMAIL = 'someone@gmail.com'
 PASSWORD = 'abcdefghik'
-in the site-packages/ez folder
+in the site-packages/ez folder, check with ez.which('ez')
 The functions will no longer need email/password and become like this
 Mail(to, subject, body, attach=None), AddEvent(event), Sheet(fileName)
 

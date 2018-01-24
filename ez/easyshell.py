@@ -16,6 +16,7 @@ no dependencies
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.
 
+see also pyg.py
 debug(1/0)
     # 0 = everything will be actually executed
     # 1 = simulate operations of cp, mv, execute; other commands will be actually performed.

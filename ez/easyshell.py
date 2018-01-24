@@ -655,7 +655,7 @@ def rm(path):
         # else:
             # print path + " not removed"
 
-def cp(source, destination, ignores=None):
+def cp(source, destination, ignores=None, debugMode=False):
     """
     Copies a source file or folder to destination.
     accepts ignore, which is a list of ignore_patterns, supports wildcards (not regex)
@@ -672,6 +672,14 @@ def cp(source, destination, ignores=None):
     2) folder: cp('a','b')-->if b not exists, cp contents of a to b; if b exist, a becomes subfolder of b
     kinda combines rn and mv
     """
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+
     vectorization = False
     for arg in [source,destination]:
         if type(arg) in [list, tuple]:
@@ -697,7 +705,7 @@ def cp(source, destination, ignores=None):
 
     for source in sources:
         if os.path.isfile(source):
-            if not _DEBUG_MODE:
+            if not debug_mode_in_effect:
                 # prepare destination dir if not exist
                 ext = os.path.splitext(destination)[1]
                 # if destination dirlike
@@ -715,7 +723,7 @@ def cp(source, destination, ignores=None):
             else:
                 pprint("Simulation! Copied file: " + "->".join([source, destination]), 'yellow')
         elif os.path.isdir(source):
-            if not _DEBUG_MODE:
+            if not debug_mode_in_effect:
                 # if destination dir not exist, shutil.copytree will auto create
                 # shutil.copytree will raise error if destination dir exists
                 if os.path.isdir(destination):
@@ -730,7 +738,7 @@ def cp(source, destination, ignores=None):
         # else:
         #     print source + " not copied to " + destination
 
-def mv(source, destination):
+def mv(source, destination, debugMode=False):
     """Moves a source file or folder to destination.
     support vectorization
     destination parent folder does not have to exist already
@@ -738,6 +746,14 @@ def mv(source, destination):
     mv('a','b')-->get b/a, b now has a as subfolder, regardless of b exists or not
                   use ez.rn('a','b') to change name a->b
     """
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+
     vectorization = False
     for arg in [source,destination]:
         if type(arg) in [list, tuple]:
@@ -774,10 +790,10 @@ def mv(source, destination):
             os.makedirs(destDir)
 
     for source in sources:
-        if not _DEBUG_MODE:
+        if not debug_mode_in_effect:
             shutil.move(source, destination)
             # print "Moved: " + "->".join([source, destination])
-        elif _DEBUG_MODE:
+        elif debug_mode_in_effect:
             pprint("Simulation! Moved: " + "->".join([source, destination]), 'yellow')
         # else:
         #     print source + " not moved to " + destination
@@ -790,7 +806,7 @@ def lns(source, destination):
     os.symlink(source, destination)
     print "Symbolic link: " + "->".join([source, destination])
 
-def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
+def execute2(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **kwargs):
     """Executes a bash command.
     (cmd, verbose=3, save=None)
     verbose: any screen display here does not affect returned values
@@ -810,7 +826,14 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
           or use execute(), which does not return the output to a python variable
           seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
-    if not _DEBUG_MODE:
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+    if not debug_mode_in_effect:
         if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
 
         # https://stackoverflow.com/a/40139101/2292993
@@ -971,7 +994,7 @@ echo "new line"
     """
     esp2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, insideCalling=True)
 
-def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
+def espR2(cmdString, verbose=3, save=None, skipdollar=1, debugMode=False, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf    
@@ -1003,7 +1026,16 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
         if kwargs['insideCalling']:
             caller = inspect.currentframe().f_back.f_back
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
-    if not _DEBUG_MODE:
+    
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+    
+    if not debug_mode_in_effect:
         import tempfile
         # create temp file with specified suffix
         fd, path = tempfile.mkstemp(suffix='.R')

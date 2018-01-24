@@ -165,6 +165,9 @@ fp = fullpath
 def csd():
     """(),Returns full path of current script directory, i.e. the directory where the running script is.
     if in interactive mode, return current working directory
+    It should always be the best to call csd() at the top of a script, 
+    during which the running script has not change any working directory yet. 
+    Therefore the internal call of sys.argv[0], if given not in full path, can be resolved to correct full path
     """
     # https://stackoverflow.com/a/22424821/2292993
     import __main__ as main
@@ -172,8 +175,10 @@ def csd():
     if is_interactive:
         return os.getcwd()
     else:
+        # for difference between __file__ and sys.argv[0]
+        # see https://stackoverflow.com/questions/5851588/difference-between-file-and-sys-argv0
         # os.path.split returns (head,tail), here for path = , same effect as splitpath
-        path = splitpath(os.path.abspath(sys.argv[0]))[0]
+        path = os.path.split(os.path.abspath(sys.argv[0]))[0]
         # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
         return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
@@ -212,14 +217,16 @@ def stepfolder(step=-1):
     return folder
 
 def csf():
-    """(),Returns current script file name without ext, i.e. the name of the running script without ext."""
+    """(),Returns current script file name without ext, i.e. the name of the running script without ext.
+    different from csd(), even if working directory changes, csf() still return correct sys.argv[0]
+    """
     import __main__ as main
     is_interactive = not hasattr(main, '__file__')
     if is_interactive:
         path = os.getcwd()
     else:
         # os.path.split returns (head, tail)
-        file = splitpath(os.path.abspath(sys.argv[0]))[1]
+        file = os.path.split(os.path.abspath(sys.argv[0]))[1]
     return file
 
 def parentdir(path):

@@ -810,7 +810,6 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
           or use execute(), which does not return the output to a python variable
           seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
-    cmd = cmd.replace('"','\"'); cmd = cmd.replace("'","\'")
     if not _DEBUG_MODE:
         if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
 
@@ -864,10 +863,10 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd+'\n\n')
+                    tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             print('Command saved at '+save)
 
         if out is None:
@@ -884,10 +883,10 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd+'\n\n')
+                    tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             print('Command saved at '+save)
         return None
 
@@ -1002,14 +1001,13 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
         if kwargs['insideCalling']:
             caller = inspect.currentframe().f_back.f_back
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
-    cmd = cmd.replace('"','\"'); cmd = cmd.replace("'","\'")
     if not _DEBUG_MODE:
         import tempfile
         # create temp file with specified suffix
         fd, path = tempfile.mkstemp(suffix='.R')
         try:
             with os.fdopen(fd, 'w') as tmp:
-                tmp.write('#!/usr/bin/env Rscript \n\n'+cmd+'\n\n')
+                tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             # not save this command line
             result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, *args, **kwargs)
 
@@ -1017,10 +1015,10 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             if save:
                 if os.path.exists(save):
                     with open(save, 'a') as tmp:
-                        tmp.write(cmd+'\n\n') 
+                        tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
                 else:
                     with open(save, 'a') as tmp:
-                        tmp.write('#!/usr/bin/env Rscript \n\n'+cmd+'\n\n')
+                        tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
                 print('Command saved at '+save)
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
@@ -1032,10 +1030,10 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env Rscript \n\n'+cmd+'\n\n')
+                    tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             print('Command saved at '+save)
         return None
 
@@ -1122,7 +1120,7 @@ queue
 
     submitfile = 'condor.sub'
     with open(submitfile, 'w') as tmp:
-        tmp.write(condor+'\n\n')
+        tmp.write(condor.replace('"','\"').replace("'","\'")+'\n\n')
     print('Condor submit file saved at '+submitfile)
 
     if email:

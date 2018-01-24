@@ -867,6 +867,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            execute('chmod +x '+save,verbose=0)
             print('Command saved at '+save)
 
         if out is None:
@@ -887,6 +888,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/usr/bin/env '+shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            execute('chmod +x '+save,verbose=0)
             print('Command saved at '+save)
         return None
 

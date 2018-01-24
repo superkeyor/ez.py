@@ -808,7 +808,7 @@ def lns(source, destination):
 
 def execute2(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **kwargs):
     """Executes a bash command.
-    (cmd, verbose=3, save=None)
+    (cmd, verbose=3, save=None, shell='bash', debugMode=False)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -820,9 +820,9 @@ def execute2(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
             if error occurs, return None, also always print out the error message to screen
             if no output or all empty output, return [] 
-               note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
-    note: if use this function interactively, one can return _ = execute() to a dummy variable
-          alternatively, in ipython, execute(); (add semicolon) to suppress the returned contents
+               note execute2('printf "\n\n"')-->[]; but execute2('printf "\n\n3"')-->['', '', '3']
+    note: if use this function interactively, one can return _ = execute2() to a dummy variable
+          alternatively, in ipython, execute2(); (add semicolon) to suppress the returned contents
           or use execute(), which does not return the output to a python variable
           seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
@@ -915,7 +915,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', debugMode=False, *args, **
             print('Command saved at '+save)
         return None
 
-def execute(cmd, verbose=3, save=None, *args, **kwargs):
+def execute1(cmd, verbose=3, save=None, debugMode=False, *args, **kwargs):
     """
     a wrapper of execute2(), but does not return the output to a python variable
     Executes a bash command.
@@ -928,9 +928,16 @@ def execute(cmd, verbose=3, save=None, *args, **kwargs):
     save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
-    execute2(cmd, verbose=verbose, save=save, *args, **kwargs)
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+    execute2(cmd, verbose=verbose, save=save, debugMode=debug_mode_in_effect, *args, **kwargs)
 
-def esp2(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
+def esp2(cmdString, verbose=3, save=None, skipdollar=0, debugMode=False, *args, **kwargs):
     """
     Execute a SPrintf
     a shortcut for execute2(sprintf(cmdString))
@@ -938,7 +945,7 @@ def esp2(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
         returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
         if error occurs, return None, also always print out the error message to screen
         if no output or all empty output, return [] 
-           note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
+           note execute2('printf "\n\n"')-->[]; but execute2('printf "\n\n3"')-->['', '', '3']
     (cmdString, verbose=3, save=None, skipdollar=0)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
@@ -958,6 +965,13 @@ echo "new line"
             # Command: echo blabla
             # Actual output: blabla    
     """
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
     import inspect
@@ -967,12 +981,12 @@ echo "new line"
         if kwargs['insideCalling']:
             caller = inspect.currentframe().f_back.f_back
     cmd = sprintf(cmdString, caller.f_locals, skipdollar=skipdollar)
-    return execute2(cmd, verbose=verbose, save=save, *args, **kwargs)
+    return execute2(cmd, verbose=verbose, save=save, debugMode=debug_mode_in_effect, *args, **kwargs)
 
-def esp(cmdString, verbose=3, save=None, skipdollar=0, *args, **kwargs):
+def esp1(cmdString, verbose=3, save=None, skipdollar=0, debugMode=False, *args, **kwargs):
     """
     Execute a SPrintf, but does not return the output to a python variable
-    a shortcut for execute(sprintf(cmdString))
+    a shortcut for execute2(sprintf(cmdString)) without return
     (cmdString, verbose=3, save=None, skipdollar=0)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
@@ -992,7 +1006,14 @@ echo "new line"
             # Command: echo blabla
             # Actual output: blabla
     """
-    esp2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, insideCalling=True)
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+    esp2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
 
 def espR2(cmdString, verbose=3, save=None, skipdollar=1, debugMode=False, *args, **kwargs):
     """
@@ -1003,7 +1024,7 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, debugMode=False, *args,
         returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
         if error occurs, return None, also always print out the error message to screen
         if no output or all empty output, return [] 
-           note execute('printf "\n\n"')-->[]; but execute('printf "\n\n3"')-->['', '', '3']
+           note execute2('printf "\n\n"')-->[]; but execute2('printf "\n\n3"')-->['', '', '3']
     (cmdString, verbose=3, save=None, skipdollar=1)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
@@ -1071,11 +1092,11 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, debugMode=False, *args,
             print('Command saved at '+save)
         return None
 
-def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
+def espR(cmdString, verbose=3, save=None, skipdollar=1, debugMode=False, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf, but does not return the output to a python variable
-    a shortcut for execute(sprintf(cmdString))
+    a shortcut for execute2(sprintf(cmdString)) without return
     (cmdString, verbose=3, save=None, skipdollar=1)
     cmdString: R codes
     verbose: any screen display here does not affect returned values
@@ -1090,7 +1111,14 @@ def espR(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
             ez.espR('iris$Species')
             # print out iris$Species, Levels: setosa versicolor virginica
     """
-    espR2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, insideCalling=True)
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+    espR2(cmdString, verbose=verbose, save=save, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
 
 def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub'):
     """

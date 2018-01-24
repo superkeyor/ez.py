@@ -810,6 +810,7 @@ def execute2(cmd, verbose=3, save=None, shell='bash', *args, **kwargs):
           or use execute(), which does not return the output to a python variable
           seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
+    cmd = cmd.replace('"','\"'); cmd = cmd.replace("'","\'")
     if not _DEBUG_MODE:
         if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
 
@@ -1001,7 +1002,7 @@ def espR2(cmdString, verbose=3, save=None, skipdollar=1, *args, **kwargs):
         if kwargs['insideCalling']:
             caller = inspect.currentframe().f_back.f_back
     cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
-    
+    cmd = cmd.replace('"','\"'); cmd = cmd.replace("'","\'")
     if not _DEBUG_MODE:
         import tempfile
         # create temp file with specified suffix

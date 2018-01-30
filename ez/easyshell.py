@@ -819,7 +819,7 @@ def lns(source, destination):
     os.symlink(source, destination)
     print "Symbolic link: " + "->".join([source, destination])
 
-def execute2(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=False, *args, **kwargs):
+def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """Executes a bash command.
     (cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=False)
     verbose: any screen display here does not affect returned values
@@ -827,8 +827,10 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fa
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging) or simulation
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging) or simulation
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     shell: 'bash', 'tcsh', 'sh' (internally converted to '#!/usr/bin/env '+shell)
     return: ...regardless of verbose...
             returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
@@ -850,15 +852,30 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fa
     if not debug_mode_in_effect:
         if verbose in [1,3]: pprint("Command: " + cmd + "\n> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > ")
 
+        # https://askubuntu.com/a/731237
+        if redirect:
+            if redirectMode == 'a':
+                if shell in ['tcsh']:
+                    cmdSuffix = ' |& tee -a "' + redirect + '"'
+                else:
+                    cmdSuffix = ' 2>&1 | tee -a "' + redirect + '"'
+            else:
+                if shell in ['tcsh']:
+                    cmdSuffix = ' |& tee "' + redirect + '"'
+                else:
+                    cmdSuffix = ' 2>&1 | tee "' + redirect + '"'
+        else:
+            cmdSuffix = ''
+
         # https://stackoverflow.com/a/40139101/2292993
         def _execute_cmd(cmd):
             if os.name == 'nt' or platform.system() == 'Windows':
                 # set stdin, out, err all to PIPE to get results (other than None) after run the Popen() instance
                 # shell=True can do shell pipes, filename wildcards, environment variable expansion, and expansion of ~
-                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                p = subprocess.Popen(cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             else:
                 # Use a particular shell; the default is sh
-                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/"+shell)
+                p = subprocess.Popen(cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/"+shell)
             
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
@@ -931,7 +948,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fa
             print('Command saved at '+save)
         return None
 
-def execute1(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=False, *args, **kwargs):
+def execute1(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """
     a wrapper of execute2(), but does not return the output to a python variable
     execute, esp (subprocess.call) seem to work better with AFNI commands, while execute1/2, esp1/2 (based on subprocess.Popen) sometimes fail
@@ -942,8 +959,10 @@ def execute1(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fa
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging)
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     if debugMode:
@@ -953,9 +972,9 @@ def execute1(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fa
             debug_mode_in_effect = True
         else:
             debug_mode_in_effect = False
-    execute2(cmd, verbose=verbose, save=save, saveMode=saveMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+    execute2(cmd, verbose=verbose, save=save, saveMode=saveMode, redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
-def esp2(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
+def esp2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
     Execute a SPrintf
     a shortcut for execute2(sprintf(cmdString))
@@ -970,8 +989,10 @@ def esp2(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging)
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     Example:
@@ -1000,9 +1021,9 @@ echo "new line"
         if kwargs['insideCalling']:
             caller = inspect.currentframe().f_back.f_back
     cmd = sprintf(cmdString, caller.f_locals, skipdollar=skipdollar)
-    return execute2(cmd, verbose=verbose, save=save, saveMode=saveMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+    return execute2(cmd, verbose=verbose, save=save, saveMode=saveMode, redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
-def esp1(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
+def esp1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
     Execute a SPrintf, but does not return the output to a python variable
     a shortcut for execute2(sprintf(cmdString)) without return
@@ -1013,8 +1034,10 @@ def esp1(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging)
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     Example:
@@ -1034,9 +1057,9 @@ echo "new line"
             debug_mode_in_effect = True
         else:
             debug_mode_in_effect = False
-    esp2(cmdString, verbose=verbose, save=save, saveMode=saveMode, shell=shell, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
+    esp2(cmdString, verbose=verbose, save=save, saveMode=saveMode, redirect=redirect, redirectMode=redirectMode, shell=shell, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
 
-def espR2(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
+def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf    
@@ -1052,8 +1075,10 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdolla
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging) or simulation
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging) or simulation
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     Example: 
@@ -1085,8 +1110,24 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdolla
         try:
             with os.fdopen(fd, 'w') as tmp:
                 tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            
+            # https://askubuntu.com/a/731237
+            if redirect:
+                if redirectMode == 'a':
+                    if shell in ['tcsh']:
+                        cmdSuffix = ' |& tee -a "' + redirect + '"'
+                    else:
+                        cmdSuffix = ' 2>&1 | tee -a "' + redirect + '"'
+                else:
+                    if shell in ['tcsh']:
+                        cmdSuffix = ' |& tee "' + redirect + '"'
+                    else:
+                        cmdSuffix = ' 2>&1 | tee "' + redirect + '"'
+            else:
+                cmdSuffix = ''
+
             # not save this command line
-            result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+            result = execute2('Rscript --no-save --no-restore ' + path + cmdSuffix, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
             # but save R source code even if not run successfully
             if saveMode=='w': rm(save)
@@ -1116,7 +1157,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdolla
             print('Command saved at '+save)
         return None
 
-def espR1(cmdString, verbose=3, save=None, saveMode='a', skipdollar=1, debugMode=False, *args, **kwargs):
+def espR1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', skipdollar=1, debugMode=False, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf, but does not return the output to a python variable
@@ -1128,8 +1169,10 @@ def espR1(cmdString, verbose=3, save=None, saveMode='a', skipdollar=1, debugMode
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging)
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     Example: 
@@ -1143,9 +1186,9 @@ def espR1(cmdString, verbose=3, save=None, saveMode='a', skipdollar=1, debugMode
             debug_mode_in_effect = True
         else:
             debug_mode_in_effect = False
-    espR2(cmdString, verbose=verbose, save=save, saveMode=saveMode, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
+    espR2(cmdString, verbose=verbose, save=save, saveMode=saveMode, redirect=redirect, redirectMode=redirectMode, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
 
-def execute(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=False, *args, **kwargs):
+def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """
     a wrapper of subprocess.call, does not return the output to a python variable
     execute, esp (subprocess.call) seem to work better with AFNI commands, while execute1/2, esp1/2 (based on subprocess.Popen) sometimes fail
@@ -1156,8 +1199,10 @@ def execute(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fal
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging)
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     """
     if debugMode:
@@ -1175,16 +1220,31 @@ def execute(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fal
         else:
             output=True
 
+        # https://askubuntu.com/a/731237
+        if redirect:
+            if redirectMode == 'a':
+                if shell in ['tcsh']:
+                    cmdSuffix = ' |& tee -a "' + redirect + '"'
+                else:
+                    cmdSuffix = ' 2>&1 | tee -a "' + redirect + '"'
+            else:
+                if shell in ['tcsh']:
+                    cmdSuffix = ' |& tee "' + redirect + '"'
+                else:
+                    cmdSuffix = ' 2>&1 | tee "' + redirect + '"'
+        else:
+            cmdSuffix = ''
+
         if os.name == 'nt' or platform.system() == 'Windows':
             if output:
-                subprocess.call(cmd, shell=True)
+                subprocess.call(cmd+cmdSuffix, shell=True)
             else:
-                subprocess.call(cmd, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                subprocess.call(cmd+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         else:
             if output:
-                subprocess.call(cmd, shell=True, executable="/bin/"+shell)    # Use bash; the default is sh
+                subprocess.call(cmd+cmdSuffix, shell=True, executable="/bin/"+shell)    # Use bash; the default is sh
             else:
-                subprocess.call(cmd, shell=True, executable="/bin/"+shell, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                subprocess.call(cmd+cmdSuffix, shell=True, executable="/bin/"+shell, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         print ""
 
         # save even if not run successfully
@@ -1211,7 +1271,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=Fal
             subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
 
-def esp(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
+def esp(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
     Execute a SPrintf, but does not return the output to a python variable
     a shortcut for execute(sprintf(cmdString))
@@ -1222,8 +1282,10 @@ def esp(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging)
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     Example:
@@ -1248,9 +1310,9 @@ echo "new line"
     import inspect
     caller = inspect.currentframe().f_back
     cmd = sprintf(cmdString, caller.f_locals, skipdollar=skipdollar)
-    execute(cmd, verbose=verbose, save=save, saveMode=saveMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+    execute(cmd, verbose=verbose, save=save, saveMode=saveMode, redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
-def espR(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
+def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
     """
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf, but does not return the output to a python variable
@@ -1262,8 +1324,10 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar
             1 = only the actual command
             2 = only the command output
             3 = both the command itself and output
-    save: None, or a file path to save the cmd (append to the file, not overwrite, shebang prepended), can still save even if error occurs (for debugging)
+    save: None, or a file path to save the cmd (shebang prepended), can still save even if error occurs (for debugging)
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
     note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
     Example: 
@@ -1295,8 +1359,24 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar
         try:
             with os.fdopen(fd, 'w') as tmp:
                 tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            
+            # https://askubuntu.com/a/731237
+            if redirect:
+                if redirectMode == 'a':
+                    if shell in ['tcsh']:
+                        cmdSuffix = ' |& tee -a "' + redirect + '"'
+                    else:
+                        cmdSuffix = ' 2>&1 | tee -a "' + redirect + '"'
+                else:
+                    if shell in ['tcsh']:
+                        cmdSuffix = ' |& tee "' + redirect + '"'
+                    else:
+                        cmdSuffix = ' 2>&1 | tee "' + redirect + '"'
+            else:
+                cmdSuffix = ''
+
             # not save this command line
-            execute('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+            execute('Rscript --no-save --no-restore ' + path + cmdSuffix, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
             # but save R source code even if not run successfully
             if saveMode=='w': rm(save)

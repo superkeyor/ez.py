@@ -1110,24 +1110,9 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
         try:
             with os.fdopen(fd, 'w') as tmp:
                 tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            
-            # https://askubuntu.com/a/731237
-            if redirect:
-                if redirectMode == 'a':
-                    if shell in ['tcsh']:
-                        cmdSuffix = ' |& tee -a "' + redirect + '"'
-                    else:
-                        cmdSuffix = ' 2>&1 | tee -a "' + redirect + '"'
-                else:
-                    if shell in ['tcsh']:
-                        cmdSuffix = ' |& tee "' + redirect + '"'
-                    else:
-                        cmdSuffix = ' 2>&1 | tee "' + redirect + '"'
-            else:
-                cmdSuffix = ''
 
             # not save this command line
-            result = execute2('Rscript --no-save --no-restore ' + path + cmdSuffix, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+            result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
             # but save R source code even if not run successfully
             if saveMode=='w': rm(save)
@@ -1360,23 +1345,8 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             with os.fdopen(fd, 'w') as tmp:
                 tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             
-            # https://askubuntu.com/a/731237
-            if redirect:
-                if redirectMode == 'a':
-                    if shell in ['tcsh']:
-                        cmdSuffix = ' |& tee -a "' + redirect + '"'
-                    else:
-                        cmdSuffix = ' 2>&1 | tee -a "' + redirect + '"'
-                else:
-                    if shell in ['tcsh']:
-                        cmdSuffix = ' |& tee "' + redirect + '"'
-                    else:
-                        cmdSuffix = ' 2>&1 | tee "' + redirect + '"'
-            else:
-                cmdSuffix = ''
-
             # not save this command line
-            execute('Rscript --no-save --no-restore ' + path + cmdSuffix, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+            execute('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
 
             # but save R source code even if not run successfully
             if saveMode=='w': rm(save)

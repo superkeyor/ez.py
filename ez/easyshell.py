@@ -881,7 +881,11 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 p = subprocess.Popen(cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             else:
                 # Use a particular shell; the default is sh
-                p = subprocess.Popen(cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/usr/bin/env "+'tcsh' if shell in ['tcsh'] else shell)
+                # tcsh -xef
+                # -x : echo commands to terminal before executing them
+                # -e : terminate script when encountering any error
+                # -f : do not process user's ~/.cshrc file
+                p = subprocess.Popen(cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/usr/bin/env "+'tcsh -xef' if shell in ['tcsh'] else shell)
             
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
@@ -1233,9 +1237,13 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 subprocess.call(cmd+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         else:
             if output:
-                subprocess.call(cmd+cmdSuffix, shell=True, executable="/usr/bin/env "+'tcsh' if shell in ['tcsh'] else shell)    # Use bash; the default is sh
+                # tcsh -xef
+                # -x : echo commands to terminal before executing them
+                # -e : terminate script when encountering any error
+                # -f : do not process user's ~/.cshrc file
+                subprocess.call(cmd+cmdSuffix, shell=True, executable="/usr/bin/env "+'tcsh -xef' if shell in ['tcsh'] else shell)    # Use bash; the default is sh
             else:
-                subprocess.call(cmd+cmdSuffix, shell=True, executable="/usr/bin/env "+'tcsh' if shell in ['tcsh'] else shell, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                subprocess.call(cmd+cmdSuffix, shell=True, executable="/usr/bin/env "+'tcsh -xef' if shell in ['tcsh'] else shell, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         print ""
 
         # save even if not run successfully

@@ -881,7 +881,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 p = subprocess.Popen(cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             else:
                 # Use a particular shell; the default is sh
-                p = subprocess.Popen(cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/usr/bin/env "+'tcsh -xef' if shell in ['tcsh'] else shell)
+                p = subprocess.Popen(cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/usr/bin/env "+'tcsh' if shell in ['tcsh'] else shell)
             
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
@@ -927,7 +927,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+'tcsh -xef' if shell in ['tcsh'] else shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    tmp.write('#!/usr/bin/env '+'tcsh' if shell in ['tcsh'] else shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
 
@@ -949,7 +949,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+'tcsh -xef' if shell in ['tcsh'] else shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    tmp.write('#!/usr/bin/env '+'tcsh' if shell in ['tcsh'] else shell+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
         return None
@@ -1233,9 +1233,9 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 subprocess.call(cmd+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         else:
             if output:
-                subprocess.call(cmd+cmdSuffix, shell=True, executable="/usr/bin/env "+'tcsh -xef' if shell in ['tcsh'] else shell)    # Use bash; the default is sh
+                subprocess.call(cmd+cmdSuffix, shell=True, executable="/usr/bin/env "+'tcsh' if shell in ['tcsh'] else shell)    # Use bash; the default is sh
             else:
-                subprocess.call(cmd+cmdSuffix, shell=True, executable="/usr/bin/env "+'tcsh -xef' if shell in ['tcsh'] else shell, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                subprocess.call(cmd+cmdSuffix, shell=True, executable="/usr/bin/env "+'tcsh' if shell in ['tcsh'] else shell, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         print ""
 
         # save even if not run successfully

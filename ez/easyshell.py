@@ -515,10 +515,16 @@ def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True):
     pattern_regex = regex
     path, pattern_regex = _ListingParse(path, pattern_regex)
 
+    # os.listdir() bug on Redhat (maybe all linux) personally came across on Mon, Feb 05 2018
+    # os.listdir() also list files if the dir is not working directory
+    # so change working directory and change back
+    olddir = os.getcwd()
+    os.chdir(path)
     files = _FilterList(os.listdir(path), pattern_regex)
     if not dotfolder: files = _FilterList(files,'^[^\.]')
     if full: files = [os.path.join(path,file) for file in files]
     result = [file for file in files if not os.path.isfile(file)]
+    os.chdir(olddir)
     if sort: 
         return sorted(result)
     else:

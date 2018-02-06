@@ -889,7 +889,8 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 # for subprocess(), if cmd is a string, set shell=True; if a list, set shell=False
                 # also, The executable argument specifies a replacement program to execute. It is very seldom needed. 
                 # If shell=True, on Unix the executable argument specifies a replacement shell for the default /bin/sh
-                print '/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix
+                # this shell is not effected by the actual shell terminal used when execute python
+                # when using executable, you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
                 p = subprocess.Popen('/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             
             # the Popen() instance starts running once instantiated (??)
@@ -1251,6 +1252,8 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 # for subprocess(), if cmd is a string, set shell=True; if a list, set shell=False
                 # also, The executable argument specifies a replacement program to execute. It is very seldom needed. 
                 # If shell=True, on Unix the executable argument specifies a replacement shell for the default /bin/sh
+                # this shell is not effected by the actual shell terminal used when execute python
+                # when using executable, you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
                 subprocess.call('/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True) 
             else:
                 subprocess.call('/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)

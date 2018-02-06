@@ -885,7 +885,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 # -x : echo commands to terminal before executing them
                 # -e : terminate script when encountering any error
                 # -f : do not process user's ~/.cshrc file
-                p = subprocess.Popen('/usr/bin/env '+'tcsh -xef ' if shell in ['tcsh'] else shell +'-c '+cmd+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                p = subprocess.Popen('/usr/bin/env '+'tcsh -xef ' if shell in ['tcsh'] else shell +'-c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
@@ -1241,9 +1241,9 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 # -x : echo commands to terminal before executing them
                 # -e : terminate script when encountering any error
                 # -f : do not process user's ~/.cshrc file
-                subprocess.call('/usr/bin/env '+'tcsh -xef ' if shell in ['tcsh'] else shell +'-c '+cmd+cmdSuffix, shell=True)    # Use bash; the default is sh
+                subprocess.call('/usr/bin/env '+'tcsh -xef ' if shell in ['tcsh'] else shell +'-c "'+cmd+'"'+cmdSuffix, shell=True)    # Use bash; the default is sh
             else:
-                subprocess.call('/usr/bin/env '+'tcsh -xef ' if shell in ['tcsh'] else shell +'-c '+cmd+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                subprocess.call('/usr/bin/env '+'tcsh -xef ' if shell in ['tcsh'] else shell +'-c "'+cmd+'"'+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         print ""
 
         # save even if not run successfully

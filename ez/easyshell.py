@@ -2872,6 +2872,22 @@ def hanzifreq(filename, size=10, outfile=None, encoding='utf8'):
     print 'Done! Elapsed %s seconds.' % (time()-begin)
     return result
 
+def chunk(xs, n):
+    '''
+    Split the list, xs, into n chunks. 
+    gives exactly n chunks, but they may not be evenly sized, since the last chunk gets padded with any surplus.
+    eg, 
+    chunk('abcdefghij', 3) ->     ['abc', 'def', 'ghij']
+    chunk([1,2,3,4],3)     ->     [[1], [2], [3, 4]]
+    '''
+    # http://wordaligned.org/articles/slicing-a-list-evenly-with-python
+    L = len(xs)
+    assert 0 < n <= L
+    s, r = divmod(L, n)
+    chunks = [xs[p:p+s] for p in range(0, L, s)]
+    chunks[n-1:] = [xs[-r-s:]]
+    return chunks
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

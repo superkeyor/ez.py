@@ -2879,6 +2879,7 @@ def chunk(xs, n):
     eg, 
     chunk('abcdefghij', 3) ->     ['abc', 'def', 'ghij']
     chunk([1,2,3,4],3)     ->     [[1], [2], [3, 4]]
+    chunk([1,2,3,4,5,6],6) ->     [[1], [2], [3], [4], [5], [6]]
     '''
     # http://wordaligned.org/articles/slicing-a-list-evenly-with-python
     L = len(xs)

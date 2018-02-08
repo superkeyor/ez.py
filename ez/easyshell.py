@@ -1516,8 +1516,8 @@ def condorstats():
     # pprint("Some users' reports...",'blue')
     # execute('condor_userprio -most',2)
     
-    pprint("\nSome stats...",'blue')
-    print unclaimed + '\n' + allqueue + '\n' + myqueue
+    pprint("\nSome condor stats...",'blue')
+    print unclaimed + '\n' + allqueue + '\n' + myqueue + '\n'
 
 from contextlib import contextmanager
 @contextmanager

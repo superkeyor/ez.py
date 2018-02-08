@@ -1402,7 +1402,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             print('Command saved at '+save)
         return None
 
-def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub'):
+def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub',showstats=True):
     """
     specific for waisman server
     generate a condor submission/configuration file for a list of scripts
@@ -1443,7 +1443,8 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
 
                 When there is no trailing path separator, the directory is transferred, its contents are transferred, 
                 and these contents are placed inside the transferred directory.
-    email=None, call shell command "mail" to send out mail when condor job done
+    email=None, call shell command "mail" to send out mail when condor job done (ignored if submit=False)
+    showstats=True/False, show condor stats, regardless of submit=True/False
     memory=None, request_memory, unit MB, eg, 2000
     getenv=True, If getenv is set to True, then condor_submit will copy all of the user's current shell environment variables 
            at the time of job submission into the job ClassAd.
@@ -1503,7 +1504,7 @@ queue
         pprint('Submitted: \n' + cmd,'green')
     else:
         pprint('To submit, execute: \n' + cmd,'yellow')
-    condorstats()
+    if showstats: condorstats()
 
 def condorstats():
     """

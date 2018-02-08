@@ -891,7 +891,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 # If shell=True, on Unix the executable argument specifies a replacement shell for the default /bin/sh
                 # this shell is not effected by the actual shell terminal used when execute python
                 # when using executable, you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
-                p = subprocess.Popen('/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
@@ -937,7 +937,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
 
@@ -959,7 +959,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
         return None
@@ -1125,7 +1125,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
         fd, path = tempfile.mkstemp(suffix='.R')
         try:
             with os.fdopen(fd, 'w') as tmp:
-                tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
 
             # not save this command line
             result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
@@ -1138,7 +1138,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
                         tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
                 else:
                     with open(save, 'a') as tmp:
-                        tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                        tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
                 print('Command saved at '+save)
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
@@ -1154,7 +1154,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             print('Command saved at '+save)
         return None
 
@@ -1254,9 +1254,9 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 # If shell=True, on Unix the executable argument specifies a replacement shell for the default /bin/sh
                 # this shell is not effected by the actual shell terminal used when execute python
                 # when using executable, you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
-                subprocess.call('/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True) 
+                subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True) 
             else:
-                subprocess.call('/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         print ""
 
         # save even if not run successfully
@@ -1267,7 +1267,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
     else:
@@ -1279,7 +1279,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env '+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('Command saved at '+save)
 
@@ -1370,7 +1370,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
         fd, path = tempfile.mkstemp(suffix='.R')
         try:
             with os.fdopen(fd, 'w') as tmp:
-                tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             
             # not save this command line
             execute('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
@@ -1383,7 +1383,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
                         tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
                 else:
                     with open(save, 'a') as tmp:
-                        tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                        tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
                 print('Command saved at '+save)
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
@@ -1398,7 +1398,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/usr/bin/env Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             print('Command saved at '+save)
         return None
 
@@ -1406,6 +1406,27 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
     """
     specific for waisman server
     generate a condor submission/configuration file for a list of scripts
+
+    #### example:
+    condor=True
+    for subj in subjects:
+        src_dset = ez.jp(inputDir,subj,subj+'+orig.HEAD')
+        subjDir = ez.jp(outputDir,subj)
+        ez.mkdir(subjDir)
+        anat_dset = ez.jp(outputDir,subj,subj+'+orig.HEAD')
+
+        # copy anat, just in case any changes would occur to anat (header)
+        cmd = '''
+    3dcopy $src_dset $subjDir/$subj+orig.HEAD
+    cd $subjDir
+    @SSwarper $anat_dset $subj
+    '''
+        ez.cd(subjDir)
+        ez.esp(cmd,save=ez.jp(subjDir,'zzz.'+subj+'.cmd'),saveMode='w',redirect=ez.jp(subjDir,'zzz.'+subj+'.log'),redirectMode='w',shell='tcsh',debugMode=condor)
+        if condor: ez.condorize([ez.jp(subjDir,'zzz.'+subj+'.cmd')],submit=True,luggage=ez.jp(ez.pr(csd),'ez.pyc'),email='jerryzhujian9@gmail.com')
+    if (not condor): ez.mail('jerryzhujian9@gmail.com',ez.csf() + ' at ' + ez.Moment().datetime,startTime)
+    #### example end
+
     executables=[], list of bash, python, etc script files, full or relative path
             something generated by ez.execute
     submit=True/False, actually submit the condor job or not, regardless, always generate condor configuration file 

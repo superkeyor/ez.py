@@ -1414,6 +1414,7 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
         subjDir = ez.jp(outputDir,subj)
         ez.mkdir(subjDir)
         anat_dset = ez.jp(outputDir,subj,subj+'+orig.HEAD')
+        ez.cd(subjDir)
 
         # copy anat, just in case any changes would occur to anat (header)
         cmd = '''
@@ -1421,9 +1422,10 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
     cd $subjDir
     @SSwarper $anat_dset $subj
     '''
-        ez.cd(subjDir)
         ez.esp(cmd,save=ez.jp(subjDir,'zzz.'+subj+'.cmd'),saveMode='w',redirect=ez.jp(subjDir,'zzz.'+subj+'.log'),redirectMode='w',shell='tcsh',debugMode=condor)
-        if condor: ez.condorize([ez.jp(subjDir,'zzz.'+subj+'.cmd')],submit=True,luggage=ez.jp(ez.pr(csd),'ez.pyc'),email='jerryzhujian9@gmail.com')
+        if condor: ez.condorize([ez.jp(subjDir,'zzz.'+subj+'.cmd')],submit=True,email='jerryzhujian9@gmail.com' if subj==subjects[-1] else None,showstats=False)
+
+    if condor: ez.condorstats()
     if (not condor): ez.mail('jerryzhujian9@gmail.com',ez.csf() + ' at ' + ez.Moment().datetime,startTime)
     #### example end
 

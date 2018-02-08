@@ -1447,6 +1447,7 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
     memory=None, request_memory, unit MB, eg, 2000
     getenv=True, If getenv is set to True, then condor_submit will copy all of the user's current shell environment variables 
            at the time of job submission into the job ClassAd.
+           better to be True, so that $PATH could be copied which may affect AFNI version used
     universe='vanilla', vanilla | standard | scheduler | local | grid | java | vm | parallel | docker
     
     log='condor.log', log file is appended, for the whole list of executables, if not fullpath, relative to pwd

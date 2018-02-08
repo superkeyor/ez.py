@@ -1520,6 +1520,17 @@ def condorstats():
     pprint("\nSome condor stats...",'blue')
     print unclaimed + '\n' + allqueue + '\n' + myqueue + '\n'
 
+    print """
+    Further condor help:     
+    watch -n 2 condor_q
+    condor_q: See my current condor jobs
+    condor_q -better-analyze <job_id>
+    condor_status: cores being used
+    condor_run: run small jobs    condor_run "echo hello"
+    condor_submit: use submit files to submit jobs to vendor
+    condor_rm [job number/username]: condor_rm 96231.0
+    """
+
 from contextlib import contextmanager
 @contextmanager
 def nooutput():

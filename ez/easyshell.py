@@ -1493,7 +1493,7 @@ queue
     print('Condor submit file saved at '+submitfile)
 
     if email:
-        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete. Coffee break over!' %s) &" % (submitfile,log,'\n'.join(executables),email)
+        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete.' %s) &" % (submitfile,log,ez.Moment().datetime+'\n'+'\n'.join(executables),email)
     else:
         cmd = "condor_submit %s" % submitfile
     

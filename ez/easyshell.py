@@ -1402,7 +1402,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             print('Command saved at '+save)
         return None
 
-def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub',showstats=True):
+def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, disk=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub',showstats=True):
     """
     specific for waisman server
     generate a condor submission/configuration file for a list of scripts
@@ -1448,6 +1448,7 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
     email=None, call shell command "mail" to send out mail when condor job done (ignored if submit=False)
     showstats=True/False, show condor stats, regardless of submit=True/False
     memory=None, request_memory, unit MB, eg, 2000
+    disk=None, request_disk, unit KB, eg, 4500000
     getenv=True, If getenv is set to True, then condor_submit will copy all of the user's current shell environment variables 
            at the time of job submission into the job ClassAd.
            better to be True, so that $PATH could be copied which may affect AFNI version used
@@ -1469,13 +1470,15 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
     """
     luggage = 'transfer_input_files='+luggage if luggage else ''
     memory = 'request_memory='+str(memory) if memory else ''
+    disk = 'request_disk='+str(disk) if disk else ''
     condor = """
 universe=%s
 getenv=%s
 %s
 %s
+%s
 log=%s
-""" % (universe,str(getenv),luggage,memory,log)
+""" % (universe,str(getenv),luggage,memory,disk,log)
 
     for e in executables:
         # make executable, otherwise permission error from condor

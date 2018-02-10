@@ -1515,8 +1515,7 @@ def condorstats():
     """
     show some condor stats and relevant linux commands
     """
-    print """
-Further condor help:     
+    print """Further condor help:     
 watch -n 2 condor_q
 condor_q: See my current condor jobs
 condor_q -better-analyze <job_id>

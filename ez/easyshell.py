@@ -1448,7 +1448,7 @@ def condorize(executables=[], submit=True, luggage=None, email=None, memory=None
     email=None, call shell command "mail" to send out mail when condor job done (ignored if submit=False)
     showstats=True/False, show condor stats, regardless of submit=True/False
     memory=None, request_memory, unit MB, eg, 2000
-    disk=None, request_disk, unit KB, eg, 4500000
+    disk=None, request_disk, unit KB, eg, 6500000 (choose a size for the largest file your script might generate during processing?)
     getenv=True, If getenv is set to True, then condor_submit will copy all of the user's current shell environment variables 
            at the time of job submission into the job ClassAd.
            better to be True, so that $PATH could be copied which may affect AFNI version used

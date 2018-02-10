@@ -1517,8 +1517,10 @@ def condorstats():
     """
     status = execute2('condor_status -total',0)[-1].split()
     unclaimed = '%s/%s unclaimed/total' % (status[4],status[1])
-    allqueue = 'Queue (all):\t' + execute2('condor_q -allusers -nobatch',0)[-1]
-    myqueue = 'Queue (mine):\t' + execute2('condor_q',0)[-1]
+    allqueue = 'Queue (all):\t\t' + execute2('condor_q -allusers -nobatch',0)[-1]
+    myqueue = 'Queue (mine):\t\t' + execute2('condor_q',0)[-1]
+    quotas = execute2('quota -vs',0)[-1].split()
+    quota = 'Quota (scratch):\t' +'%s/%s' % (quotas[0],quotas[1])
     
     print """
 Further condor help:     
@@ -1529,13 +1531,14 @@ condor_status: cores being used
 condor_run: run small jobs    condor_run "echo hello"
 condor_submit: use submit files to submit jobs to vendor
 condor_rm [job number/username]: condor_rm 96231.0
+quota -vs: quota
+df -h: disk usage
 """
-
     # pprint("Some users' reports...",'blue')
     # execute('condor_userprio -most',2)
     
     pprint("Some condor stats...",'blue')
-    print unclaimed + '\n' + allqueue + '\n' + myqueue + '\n'
+    print unclaimed + '\n' + allqueue + '\n' + myqueue + '\n' + quota + '\n'
 
 from contextlib import contextmanager
 @contextmanager

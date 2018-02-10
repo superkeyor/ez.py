@@ -1496,7 +1496,7 @@ queue
     print('Condor submit file saved at '+submitfile)
 
     if email:
-        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete.' %s) &" % (submitfile,log,Moment().datetime+'\n'+'\n'.join(executables),email)
+        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,Moment().date,Moment().time+'\n'+'\n'.join(executables),email)
     else:
         cmd = "condor_submit %s" % submitfile
     
@@ -2938,6 +2938,23 @@ def chunk(xs, n):
     chunks = [xs[p:p+s] for p in range(0, L, s)]
     chunks[n-1:] = [xs[-r-s:]]
     return chunks
+
+def chunk2(initialList, chunkSize):
+    """
+    This function chunks a list into sub lists 
+    that have a length equals to chunkSize.
+
+    Example:
+    lst = [3, 4, 9, 7, 1, 1, 2, 3]
+    print(chunk2(lst, 3)) 
+    returns
+    [[3, 4, 9], [7, 1, 1], [2, 3]]
+    """
+    # https://stackoverflow.com/a/28786255/2292993
+    finalList = []
+    for i in range(0, len(initialList), chunkSize):
+        finalList.append(initialList[i:i+chunkSize])
+    return finalList
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

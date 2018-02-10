@@ -1513,15 +1513,8 @@ queue
 
 def condorstats():
     """
-    show some condor stats
+    show some condor stats and relevant linux commands
     """
-    status = execute2('condor_status -total',0)[-1].split()
-    unclaimed = '%s/%s unclaimed/total' % (status[4],status[1])
-    allqueue = 'Queue (all):\t\t' + execute2('condor_q -allusers -nobatch',0)[-1]
-    myqueue = 'Queue (mine):\t\t' + execute2('condor_q',0)[-1]
-    quotas = execute2('quota -vs',0)[-1].split()
-    quota = 'Quota (scratch):\t' +'%s/%s' % (quotas[0],quotas[1])
-    
     print """
 Further condor help:     
 watch -n 2 condor_q
@@ -1531,9 +1524,20 @@ condor_status: cores being used
 condor_run: run small jobs    condor_run "echo hello"
 condor_submit: use submit files to submit jobs to vendor
 condor_rm [job number/username]: condor_rm 96231.0
+
 quota -vs: quota
 df -h: disk usage
+ps -u jzhu: processes owned by a specific user
+pgrep -u jzhu -l condor: particular processes by a user
+pkill -u jzhu condor: kill particular processes by a user
 """
+    status = execute2('condor_status -total',0)[-1].split()
+    unclaimed = '%s/%s unclaimed/total' % (status[4],status[1])
+    allqueue = 'Queue (all):\t\t' + execute2('condor_q -allusers -nobatch',0)[-1]
+    myqueue = 'Queue (mine):\t\t' + execute2('condor_q',0)[-1]
+    quotas = execute2('quota -vs',0)[-1].split()
+    quota = 'Quota (scratch):\t' +'%s/%s' % (quotas[0],quotas[1])
+
     # pprint("Some users' reports...",'blue')
     # execute('condor_userprio -most',2)
     

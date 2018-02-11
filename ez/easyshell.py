@@ -1509,7 +1509,7 @@ queue
         pprint('Submitted: \n' + cmd,'green')
     else:
         pprint('To submit, execute: \n' + cmd,'yellow')
-    if showstats: condorstats()
+    if showstats: sleep(5); condorstats()
 
 def condorstats():
     """

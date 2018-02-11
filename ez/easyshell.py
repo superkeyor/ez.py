@@ -1496,7 +1496,7 @@ queue
     print('Condor submit file saved at '+submitfile)
 
     if email:
-        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,Moment().date,Moment().time+'\n'+'\n'.join(executables),email)
+        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,Moment().time+'\n'+'\n'.join(executables),Moment().date,email)
     else:
         cmd = "condor_submit %s" % submitfile
     

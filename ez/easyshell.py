@@ -1496,13 +1496,7 @@ queue
     print('Condor submit file saved at '+submitfile)
 
     if email:
-        quotas = execute2('quota -vs',0)
-        if (quotas):
-            quotas = quotas[-1].split()
-            quota = 'Quota (scratch):\t' +'%s/%s' % (quotas[0],quotas[1])
-        else:
-            quota = 'Quota (scratch):\t' +'exceeded quota!'
-        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,quota+'\n'+Moment().time+'\n'+'\n'.join(executables),Moment().date,email)
+        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,'parentdir: %s\n'+Moment().time+'\n'+'\n'.join(executables)+' $(du -csh ../ | grep total | awk "{print $1}")',Moment().date,email)
     else:
         cmd = "condor_submit %s" % submitfile
     
@@ -1533,6 +1527,7 @@ condor_rm [job number/username]: condor_rm 96231.0
 
 quota -vs: quota
 df -h: disk usage
+du -csh . | grep total : . or any directory size
 ps -u jzhu: processes owned by a specific user
 pgrep -u jzhu -l condor: particular processes by a user
 pkill -u jzhu condor: kill particular processes by a user
@@ -1541,17 +1536,12 @@ pkill -u jzhu condor: kill particular processes by a user
     unclaimed = '%s/%s unclaimed/total' % (status[4],status[1])
     allqueue = 'Queue (all):\t\t' + execute2('condor_q -allusers -nobatch',0)[-1]
     myqueue = 'Queue (mine):\t\t' + execute2('condor_q',0)[-1]
-    quotas = execute2('quota -vs',0)
-    if (quotas):
-        quotas = quotas[-1].split()
-        quota = 'Quota (scratch):\t' +'%s/%s' % (quotas[0],quotas[1])
-    else:
-        quota = 'Quota (scratch):\t' +'exceeded quota!'
+    
     # pprint("Some users' reports...",'blue')
     # execute('condor_userprio -most',2)
     
     pprint("Some condor stats...",'blue')
-    print unclaimed + '\n' + allqueue + '\n' + myqueue + '\n' + quota + '\n'
+    print unclaimed + '\n' + allqueue + '\n' + myqueue + '\n'
 
 from contextlib import contextmanager
 @contextmanager

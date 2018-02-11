@@ -1496,7 +1496,13 @@ queue
     print('Condor submit file saved at '+submitfile)
 
     if email:
-        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,Moment().time+'\n'+'\n'.join(executables),Moment().date,email)
+        quotas = execute2('quota -vs',0)
+        if (quotas):
+            quotas = quotas[-1].split()
+            quota = 'Quota (scratch):\t' +'%s/%s' % (quotas[0],quotas[1])
+        else:
+            quota = 'Quota (scratch):\t' +'exceeded quota!'
+        cmd = "(condor_submit %s; condor_wait %s; printf '%s' | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,quota+'\n'+Moment().time+'\n'+'\n'.join(executables),Moment().date,email)
     else:
         cmd = "condor_submit %s" % submitfile
     

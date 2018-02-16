@@ -1497,7 +1497,7 @@ queue
 
     if email:
         # awk print should be single quoted (not double!)
-        cmd = "(condor_submit %s; condor_wait %s; printf '%s' %s | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,'current parentdir: %s\n'+Moment().datetime+' (started)\n'+'%s (finished)\n'+'\n'.join(executables),"$(du -csh ../ | grep total | awk '{print $1}') $(date +'%Y-%m-%d_%H-%M-%S')",Moment().date,email)
+        cmd = "(condor_submit %s; condor_wait %s; printf '%s' %s | mail -s 'Condor run complete. Scheduled on %s' %s) &" % (submitfile,log,'current parentdir: %s\n%s\n'+Moment().datetime+' (started)\n'+'%s (finished)\n'+'\n'.join(executables),"$(du -csh ../ | grep total | awk '{print $1}') $(condor_q | grep jobs| awk '{print $0}') $(date +'%Y-%m-%d_%H-%M-%S')",Moment().date,email)
     else:
         cmd = "condor_submit %s" % submitfile
     

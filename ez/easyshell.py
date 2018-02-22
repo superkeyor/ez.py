@@ -1525,6 +1525,19 @@ condor_status: cores being used
 condor_run: run small jobs    condor_run "echo hello"
 condor_submit: use submit files to submit jobs to vendor
 condor_rm [job number/username]: condor_rm 96231.0
+
+less is more: use less and forget more
+    / for search (p,n), b, f for backward, forward
+printf better than echo
+"$1", "$2": function arg list
+watch -n 2 condor_q    
+ls -ld s??? | wc -l: count directory
+quota -vs: quota
+df -h: disk usage
+du -csh . | grep total : . or any directory size
+ps -u jzhu: processes owned by a specific user
+pgrep -u jzhu -l condor: particular processes by a user
+pkill -u jzhu condor: kill particular processes by a user
 """
     status = execute2('condor_status -total',0)[-1].split()
     unclaimed = '%s/%s unclaimed/total' % (status[4],status[1])

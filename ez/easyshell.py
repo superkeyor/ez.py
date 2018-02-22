@@ -1526,6 +1526,8 @@ condor_run: run small jobs    condor_run "echo hello"
 condor_submit: use submit files to submit jobs to vendor
 condor_rm [job number/username]: condor_rm 96231.0
 
+less is more: use less and forget more
+    / for search (p,n), b, f for backward, forward
 ls -ld s??? | wc -l: count directory
 quota -vs: quota
 df -h: disk usage

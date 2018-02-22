@@ -2066,7 +2066,10 @@ def sprintf(formatString, *args, **kwargs):
     s = sprintf('$language')
     s = sprintf('$PATH')    # <--existing env variables (eg, $PATH) will not be replaced but kept as is (for later bash)
     s = sprintf('${PATH}')  # <--existing env variables (eg, ${PATH}) will not be replaced but kept as is (for later bash)
-                            # <--env vars checked via os.environ
+                            # env vars checked via os.environ (which returns a dictionary)
+                            # to skip a var replacement when needed
+                            # set env variable: os.environ['EZSPRINTF_theVar']='DummyStringValue'
+                            # then sprintf('${EZSPRINTF_theVar}')
                             
     # better do not mix different styles, ie, %s $var {var} when formating  <--except ${var}
     s = sprintf('${language} has {number:03d} quote types.')

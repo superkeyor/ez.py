@@ -939,7 +939,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
-            print('Command saved at '+save)
+            print('Command saved at \n'+save)
 
         if out is None:
             return None
@@ -961,7 +961,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
-            print('Command saved at '+save)
+            print('Command saved at \n'+save)
         return None
 
 def execute1(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
@@ -1139,7 +1139,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
                 else:
                     with open(save, 'a') as tmp:
                         tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-                print('Command saved at '+save)
+                print('Command saved at \n'+save)
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
         finally:
@@ -1155,7 +1155,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            print('Command saved at '+save)
+            print('Command saved at \n'+save)
         return None
 
 def espR1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', skipdollar=1, debugMode=False, *args, **kwargs):
@@ -1269,7 +1269,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
-            print('Command saved at '+save)
+            print('Command saved at \n'+save)
     else:
         pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
         if saveMode=='w': rm(save)
@@ -1281,7 +1281,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
-            print('Command saved at '+save)
+            print('Command saved at \n'+save)
 
 def esp(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
@@ -1384,7 +1384,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
                 else:
                     with open(save, 'a') as tmp:
                         tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-                print('Command saved at '+save)
+                print('Command saved at \n'+save)
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
         finally:
@@ -1399,7 +1399,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            print('Command saved at '+save)
+            print('Command saved at \n'+save)
         return None
 
 def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, disk=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub',showstats=True):

@@ -891,8 +891,15 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 # If shell=True, on Unix the executable argument specifies a replacement shell for the default /bin/sh
                 # this shell is not effected by the actual shell terminal used when execute python
                 # when using executable, you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
-                p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            
+                # p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                import tempfile
+                tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
+                try:
+                    with os.fdopen(tmpfd, 'w') as tmp:
+                        tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                finally:
+                    os.remove(tmpPath)
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
             # communicate() accepts optional input as stdin to the pipe (requires setting stdin=subprocess.PIPE above), return out, err as tuple
@@ -1254,9 +1261,25 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 # If shell=True, on Unix the executable argument specifies a replacement shell for the default /bin/sh
                 # this shell is not effected by the actual shell terminal used when execute python
                 # when using executable, you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
-                subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True) 
+                # subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True) 
+                import tempfile
+                tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
+                try:
+                    with os.fdopen(tmpfd, 'w') as tmp:
+                        tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, shell=True)
+                finally:
+                    os.remove(tmpPath)
             else:
-                subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                # subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                import tempfile
+                tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
+                try:
+                    with os.fdopen(tmpfd, 'w') as tmp:
+                        tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                    subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                finally:
+                    os.remove(tmpPath)
         print ""
 
         # save even if not run successfully

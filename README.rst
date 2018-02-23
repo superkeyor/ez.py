@@ -55,7 +55,9 @@ mv(source, destination)  # Moves source file(s) or folder to destination. Suppor
 
 sprintf(formatString, *args, **kwargs)
 evaluate(exp)
-execute, execute1, execute2    # Executes a shell command
+# Executes a shell command
+# execute/esp/espR no capture output (subprocess.call), execute1 discard--not return--captured, execute2 captures output (subprocess.Popen)
+execute, execute1, execute2    
 esp, esp1, esp2 # execute sprintf shell commands
 espR, espR1, espR2 # execute sprintf R codes
 with nooutput():

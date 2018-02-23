@@ -57,7 +57,9 @@ mv(source, destination)  # Moves source file(s) or folder to destination. Suppor
 
 sprintf(formatString, *args, **kwargs)
 evaluate(exp)
-execute, execute1, execute2    # Executes a shell command
+# Executes a shell command
+# execute/esp/espR no capture output (subprocess.call), execute1 discard--not return--captured, execute2 captures output (subprocess.Popen)
+execute, execute1, execute2    
 esp, esp1, esp2 # execute sprintf shell commands
 espR, espR1, espR2 # execute sprintf R codes
 with nooutput():
@@ -826,8 +828,7 @@ def lns(source, destination):
     print "Symbolic link: " + "->".join([source, destination])
 
 def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
-    """Executes a bash command.
-    (cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=False)
+    """Executes a bash command. can capture output
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -977,10 +978,9 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
 
 def execute1(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """
-    a wrapper of execute2(), but does not return the output to a python variable
+    a wrapper of execute2(), but does not return the output to a python variable, discard captures
     execute, esp (subprocess.call) seem to work better with AFNI commands, while execute1/2, esp1/2 (based on subprocess.Popen) sometimes fail
     Executes a bash command.
-    (cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=False)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -1003,14 +1003,13 @@ def execute1(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
 
 def esp2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
-    Execute a SPrintf
+    Execute a SPrintf, can capture output
     a shortcut for execute2(sprintf(cmdString))
     return: ...regardless of verbose...
         returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
         if error occurs, return None, also always print out the error message to screen
         if no output or all empty output, return [] 
            note execute2('printf "\n\n"')-->[]; but execute2('printf "\n\n3"')-->['', '', '3']
-    (cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=0, debugMode=False)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -1052,10 +1051,9 @@ echo "new line"
 
 def esp1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
-    Execute a SPrintf, but does not return the output to a python variable
+    Execute a SPrintf, but does not return the output to a python variable, discard captured
     a shortcut for execute2(sprintf(cmdString)) without return
     execute, esp (subprocess.call) seem to work better with AFNI commands, while execute1/2, esp1/2 (based on subprocess.Popen) sometimes fail
-    (cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=0, debugMode=False)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -1088,15 +1086,14 @@ echo "new line"
 
 def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
     """
+    a shortcut for execute2(sprintf(cmdString)), can capture output
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf    
-    a shortcut for execute2(sprintf(cmdString))
     return: ...regardless of verbose...
         returns shell output as a list with each elment is a line of string (whitespace stripped both sides) from output
         if error occurs, return None, also always print out the error message to screen
         if no output or all empty output, return [] 
            note execute2('printf "\n\n"')-->[]; but execute2('printf "\n\n3"')-->['', '', '3']
-    (cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=1, debugMode=False)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -1171,10 +1168,9 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
 
 def espR1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', skipdollar=1, debugMode=False, *args, **kwargs):
     """
+    a shortcut for execute2(sprintf(cmdString)) without return, dsicard captured
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf, but does not return the output to a python variable
-    a shortcut for execute2(sprintf(cmdString)) without return
-    (cmdString, verbose=3, save=None, saveMode='a', skipdollar=1, debugMode=False)
     cmdString: R codes
     verbose: any screen display here does not affect returned values
             0 = nothing to display
@@ -1202,10 +1198,9 @@ def espR1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
 
 def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """
-    a wrapper of subprocess.call, does not return the output to a python variable
+    a wrapper of subprocess.call, cannot capture output, does not return the output to a python variable
     execute, esp (subprocess.call) seem to work better with AFNI commands, while execute1/2, esp1/2 (based on subprocess.Popen) sometimes fail
     Executes a shell command.
-    (cmd, verbose=3, save=None, saveMode='a', shell='bash', debugMode=False)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -1303,10 +1298,9 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
 
 def esp(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
+    a shortcut for execute(sprintf(cmdString)), cannot capture output
     Execute a SPrintf, but does not return the output to a python variable
-    a shortcut for execute(sprintf(cmdString))
     execute, esp (subprocess.call) seem to work better with AFNI commands, while execute1/2, esp1/2 (based on subprocess.Popen) sometimes fail
-    (cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=0, debugMode=False)
     verbose: any screen display here does not affect returned values
             0 = nothing to display
             1 = only the actual command
@@ -1344,10 +1338,9 @@ echo "new line"
 
 def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
     """
+    a shortcut for execute(sprintf(cmdString)), cannot capture output
     write cmdString (R codes) to a temp file, then call "Rscript temp.R", finally remove the temp file
     Execute a SPrintf, but does not return the output to a python variable
-    a shortcut for execute(sprintf(cmdString))
-    (cmdString, verbose=3, save=None, saveMode='a', shell='bash', skipdollar=1, debugMode=False)
     cmdString: R codes
     verbose: any screen display here does not affect returned values
             0 = nothing to display

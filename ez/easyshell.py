@@ -890,8 +890,17 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 # also, The executable argument specifies a replacement program to execute. It is very seldom needed. 
                 # If shell=True, on Unix the executable argument specifies a replacement shell for the default /bin/sh
                 # this shell is not effected by the actual shell terminal used when execute python
-                # when using executable, you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
-                p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                # when using executable, i.e., subprocess.Popen(executable="/bin/"+shell), you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
+                # p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+                # well, -c seems not to be able to handle $var: eg, error for /bin/bash -c "x=33333333333333; echo $x"
+                # save the command to a temp file, then execute
+                # also the temp file solution can bypass "Argument list too long getconf ARG_MAX" issue
+                import tempfile
+                tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
+                with os.fdopen(tmpfd, 'w') as tmp:
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+                p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
             # communicate() accepts optional input as stdin to the pipe (requires setting stdin=subprocess.PIPE above), return out, err as tuple
@@ -915,6 +924,8 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 # responsible for logging STDERR 
                 if verbose in [2,3]: print "Error: " + str(err)
                 yield None
+            # delete temp file
+            os.remove(tmpPath)
 
         out = []
         for line in _execute_cmd(cmd):
@@ -1244,15 +1255,6 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 subprocess.call(cmd, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         else:
             if output:
-                # tcsh -xef 
-                # -x : echo commands to terminal before executing them
-                # -e : terminate script when encountering any error
-                # -f : do not process user's ~/.cshrc file
-                # for subprocess(), if cmd is a string, set shell=True; if a list, set shell=False
-                # also, The executable argument specifies a replacement program to execute. It is very seldom needed. 
-                # If shell=True, on Unix the executable argument specifies a replacement shell for the default /bin/sh
-                # this shell is not effected by the actual shell terminal used when execute python
-                # when using executable, you cannot pass arg to it. that's why I use prefix+cmd to implement tcsh -xef
                 # subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True) 
                 import tempfile
                 tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')

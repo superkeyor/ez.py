@@ -894,8 +894,9 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 # p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
                 # well, -c seems not to be able to handle $var: eg, error for /bin/bash -c "x=33333333333333; echo $x"
+                # another issue with -c is sometimes "Argument list too long" "getconf ARG_MAX"
                 # save the command to a temp file, then execute
-                # also the temp file solution can bypass "Argument list too long getconf ARG_MAX" issue
+                # the temp file solution can bypass both above issues
                 import tempfile
                 tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
                 with os.fdopen(tmpfd, 'w') as tmp:

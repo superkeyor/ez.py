@@ -2071,19 +2071,21 @@ def sprintf(formatString, *args, **kwargs):
     # the bash $ is not natively supported by python
     # here I hack it to support the bash style, so that cmd can be directly used by both python and bash
     # but won't support $number:03d for consistency with bash
+    # $0 ${0} $() {0} {0,1..3}  {1..$(2)} etc without a letter will be skipped
     s = sprintf('$language has $number quote types.', theDict)
     s = sprintf('$language has $number quote types.')
     s = sprintf('${language}_ has $number quote types.')
     s = sprintf('$language')
     s = sprintf('$PATH')    # <--existing env variables (eg, $PATH) will not be replaced but kept as is (for later bash)
     s = sprintf('${PATH}')  # <--existing env variables (eg, ${PATH}) will not be replaced but kept as is (for later bash)
-                            # env vars checked via os.environ (which returns a dictionary)
-                            # to skip a var replacement when needed
-                            # set env variable: os.environ['EZSPRINTF_theVar']='DummyStringValue'
-                            # then sprintf('${EZSPRINTF_theVar}')
+                            # <--env vars checked via os.environ (which returns a dictionary)
                             
     # better do not mix different styles, ie, %s $var {var} when formating  <--except ${var}
-    s = sprintf('${language} has {number:03d} quote types.')
+    s = sprintf('${language} has {number:03d} quote types.')  # OK
+    s = sprintf('${language} = {language}')  # OK
+    
+    todo:
+    # to mix different styles or env/bash variables in a complex script
 
     longString = '''
     Hello, %s
@@ -2123,10 +2125,11 @@ def sprintf(formatString, *args, **kwargs):
                 except:
                     pass
                 if 'skipdollar' not in kwargs.keys():
-                    # \w is [a-zA-Z0-9_] for valid variable naming
+                    # \w is [a-zA-Z0-9_], but I do not want pure number
+                    # so [a-zA-Z]+[0-9]* for valid variable naming
                     # replace first ${number}, ${language}_ to {number}, {language}_
                     ### but not replace ${PATH}
-                    rs = re.findall('\$\{(\w+)\}', formatString)
+                    rs = re.findall('\$\{([a-zA-Z]+[0-9]*)\}', formatString)
                     for r in rs:    
                         if r not in os.environ:
                             formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
@@ -2134,13 +2137,13 @@ def sprintf(formatString, *args, **kwargs):
                             ### trick the later .format() function ${PATH}   ->   |___|PATH|__|
                             formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
                     # not replace $varible existing in os.environ, but ${varible} was replaced above
-                    rs = re.findall('\$(\w+)', formatString)    
+                    rs = re.findall('\$([a-zA-Z]+[0-9]*)', formatString)    
                     for r in rs:
                         if r not in os.environ:
                             formatString = re.sub('\$('+r+')', r'{\1}', formatString)
                     formatString = formatString.format(**args[0])
                     ### replace back env variable |___|PATH|__|  -->  ${PATH}
-                    return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
+                    return re.sub('\|___\|([a-zA-Z]+[0-9]*)\|__\|', r'${\1}', formatString)
                 elif kwargs['skipdollar']==1:
                     return formatString
         else:
@@ -2156,19 +2159,19 @@ def sprintf(formatString, *args, **kwargs):
             except:
                 pass
             if 'skipdollar' not in kwargs.keys():
-                rs = re.findall('\$\{(\w+)\}', formatString)
+                rs = re.findall('\$\{([a-zA-Z]+[0-9]*)\}', formatString)
                 for r in rs:    
                     if r not in os.environ:
                         formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
                     else:
                         # trick the later .format() function ${PATH}->|___|PATH|__|
                         formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
-                rs = re.findall('\$(\w+)', formatString)    
+                rs = re.findall('\$([a-zA-Z]+[0-9]*)', formatString)    
                 for r in rs:
                     if r not in os.environ:
                         formatString = re.sub('\$('+r+')', r'{\1}', formatString)
                 formatString = formatString.format(**caller.f_locals)
-                return re.sub('\|___\|(\w+)\|__\|', r'${\1}', formatString)
+                return re.sub('\|___\|([a-zA-Z]+[0-9]*)\|__\|', r'${\1}', formatString)
             elif kwargs['skipdollar']==1:
                 return formatString
 

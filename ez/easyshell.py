@@ -2058,20 +2058,39 @@ def sprintf(formatString, *args, **kwargs):
     language = 'Python'; number = 2
     theDict = {"language": "Matlab", "number": 1}
     
-    # recommended usage (mixing old, new and alternative syntax):    
+    # -------------------------------------------------------------------------
+    # usage 1: you have to pass unnamed/positional args manually
+    # evaluated first before other methods in the following
+    # call formatString % args
     s = sprintf('%02d\n is bigger than\n %02d',4,3)
     s = sprintf('%02d\n is bigger than\n %02d',[4,3])
     s = sprintf('%02d\n is bigger than\n %02d',(4,3))
     s = sprintf('%s has %03d quote types', language, number)
     s = sprintf('%s', language)
     
-    s = sprintf('{language} has {number:03d} quote types.', theDict) <--auto unpack
-    s = sprintf('{language} has {number:03d} quote types.')          <--auto search
 
-    # the bash $ is not natively supported by python
+
+    # usage 2: if '%(' found in the string, call formatString % args
+    # the following methods will be skipped
+    s = sprintf('%(language)s has %(number)03d quote types.', {"language": "Python", "number": 2})
+    s = sprintf('%(language)s has %(number)03d quote types.', theDict)
+    s = sprintf('%(language)s has %(number)03d quote types.', locals()) # locals() returns a dictionary
+    s = sprintf('%(language)s has %(number)03d quote types.') # auto get dictionary from locals()
+    # 
+    # this usage is very useful for complex string mixing different styles and/or env/bash variables
+    s = sprintf('family="springer"; echo $family $HOME %(language)s')
+    
+
+
+    # usage 3: if ${var} or $var exist, replace them with regex both to {var}
+    # then send to formatString.format() for evaluation -- see usage 4 for details
+    # skipdollar will skip usage 3&4 entirely, sprintf('$packt {family}',skipdollar=1)
+    # 
+    # note: the bash $ is not natively supported by python
     # here I hack it to support the bash style, so that cmd can be directly used by both python and bash
-    # but won't support $number:03d for consistency with bash
-    # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+\w*?}--will be skipped
+    # but won't support $number:03d (ie, skipped) for consistency with bash
+    # $0 ${0} $() ${0} {} {0,1..3} {1..$(2)} $number:03d ${number:03d} {number:03d} etc
+    # other than [a-zA-Z_]+\w*? will all be skipped
     s = sprintf('$language has $number quote types.', theDict)
     s = sprintf('$language has $number quote types.')
     s = sprintf('${language}_ has $number quote types.')
@@ -2079,32 +2098,29 @@ def sprintf(formatString, *args, **kwargs):
     s = sprintf('$PATH')    # <--existing env variables (eg, $PATH) will not be replaced but kept as is (for later bash)
     s = sprintf('${PATH}')  # <--existing env variables (eg, ${PATH}) will not be replaced but kept as is (for later bash)
                             # <--env vars checked via os.environ (which returns a dictionary)
-                            
+    #
     # better do not mix different styles, ie, %s $var {var} when formating  <--except ${var}
-    s = sprintf('${language} has {number:03d} quote types.')  # OK
-    s = sprintf('${language} = {language}')  # OK
+    s = sprintf('${language} has {number:03d} quote types.')  # -> 'Python has {number:03d} quote types.'
+    s = sprintf('${language} has {number} quote types.')      # -> 'Python has 2 quote types.'
+    s = sprintf('${language} = {language}')                   # OK
     
-    todo:
-    # to mix different styles or env/bash variables in a complex script
 
+
+    # usage 4: usage 3 converges on this method, calls formatString.format()
+    # skipdollar will skip usage 3&4 entirely, sprintf('$packt {family}',skipdollar=1)
+    s = sprintf('{language} has {number} quote types.', theDict) # <--auto unpack
+    s = sprintf('{language} has {number} quote types.')          # <--auto search
+    
+
+
+    # usage 5: long string
     longString = '''
     Hello, %s
     
     Best,
     '''
     s = sprintf(longString, language)
-    
     # -------------------------------------------------------------------------
-    # old syntax (still working, though not recommended):
-    s = sprintf('%02d\n is bigger than\n %02d',4,3)
-    s = sprintf('%02d\n is bigger than\n %02d',[4,3])
-    s = sprintf('%02d\n is bigger than\n %02d',(4,3))
-    s = sprintf('%s has %03d quote types', language, number)
-    
-    s = sprintf('%(language)s has %(number)03d quote types.', {"language": "Python", "number": 2})
-    s = sprintf('%(language)s has %(number)03d quote types.', theDict)
-    s = sprintf('%(language)s has %(number)03d quote types.', locals()) # locals() returns a dictionary
-    s = sprintf('%(language)s has %(number)03d quote types.') # auto get dictionary from locals()
     """  
     # args is a tuple even when only one arg is passed in
     import re, inspect
@@ -2115,11 +2131,11 @@ def sprintf(formatString, *args, **kwargs):
         if type(args[0]) in [list, tuple]:
             return formatString % tuple(*args)
         elif type(args[0]) in [dict]:
-            # old syntax %()
+            # syntax %()
             if re.search('%\(', formatString):
                 return formatString % args[0]
             else:
-                # kwargs is {} if not specified
+                # kwargs is empty {} if not specified
                 try:
                     if kwargs['skipdollar']!=1: kwargs.pop('skipdollar')
                 except:
@@ -2127,22 +2143,24 @@ def sprintf(formatString, *args, **kwargs):
                 if 'skipdollar' not in kwargs.keys():
                     # \w is [a-zA-Z0-9_], but I do not want pure number
                     # so [a-zA-Z_]+\w*? for valid variable naming
-                    # replace first ${number}, ${language}_ to {number}, {language}_
-                    ### but not replace ${PATH}
+                    # ${number}, ${language}_ to {number}, {language}_
+                    # but skip ${number:03d}
+                    # but not replace ${PATH}
                     rs = re.findall('\$\{([a-zA-Z_]+\w*?)\}', formatString)
                     for r in rs:    
                         if r not in os.environ:
                             formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
                         else:
-                            ### trick the later .format() function ${PATH}   ->   |___|PATH|__|
+                            # trick the later .format() function ${PATH}   ->   |___|PATH|__|
                             formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
-                    # not replace $varible existing in os.environ, but ${varible} was replaced above
+                    
+                    # now $var -> {var}
                     rs = re.findall('\$([a-zA-Z_]+\w*?)', formatString)    
                     for r in rs:
                         if r not in os.environ:
                             formatString = re.sub('\$('+r+')', r'{\1}', formatString)
                     
-                    # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+\w*?}--will be skipped
+                    # $0 ${0} $() ${0} {} {0,1..3} {1..$(2)} ${number:03d} {number:03d} etc other than {[a-zA-Z_]+\w*?}--will be skipped
                     allrs = re.findall('\{(.*?)\}', formatString)
                     validrs = re.findall('\{([a-zA-Z_]+\w*?)\}', formatString)
                     for r in allrs:
@@ -2153,7 +2171,7 @@ def sprintf(formatString, *args, **kwargs):
                     formatString = formatString.format(**args[0])
                     formatString = re.sub('@__@(.*?)@___@', r'{\1}', formatString)
                     
-                    ### replace back env variable |___|PATH|__|  -->  ${PATH}
+                    # replace back env variable |___|PATH|__|  -->  ${PATH}
                     return re.sub('\|___\|([a-zA-Z_]+\w*?)\|__\|', r'${\1}', formatString)
                 elif kwargs['skipdollar']==1:
                     return formatString
@@ -2162,41 +2180,8 @@ def sprintf(formatString, *args, **kwargs):
             return formatString % args         
     else:
         caller = inspect.currentframe().f_back
-        if re.search('%\(', formatString):
-            return formatString % caller.f_locals
-        else:
-            try:
-                if kwargs['skipdollar']!=1: kwargs.pop('skipdollar')
-            except:
-                pass
-            if 'skipdollar' not in kwargs.keys():
-                rs = re.findall('\$\{([a-zA-Z_]+\w*?)\}', formatString)
-                for r in rs:    
-                    if r not in os.environ:
-                        formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
-                    else:
-                        # trick the later .format() function ${PATH}->|___|PATH|__|
-                        formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
-                rs = re.findall('\$([a-zA-Z_]+\w*?)', formatString)    
-                for r in rs:
-                    if r not in os.environ:
-                        formatString = re.sub('\$('+r+')', r'{\1}', formatString)
-
-                # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+\w*?}--will be skipped
-                allrs = re.findall('\{(.*?)\}', formatString)
-                validrs = re.findall('\{([a-zA-Z_]+\w*?)\}', formatString)
-                for r in allrs:
-                    if r not in validrs:
-                        # r may contain irregular char, therefore re.sub may not work well
-                        # formatString = re.sub('\{('+r+')\}', r'@__@\1@___@', formatString)
-                        formatString = formatString.replace('{'+r+'}','@__@'+r+'@___@')
-                formatString = formatString.format(**caller.f_locals)
-                formatString = re.sub('@__@(.*?)@___@', r'{\1}', formatString)
-
-                return re.sub('\|___\|([a-zA-Z_]+\w*?)\|__\|', r'${\1}', formatString)
-            elif kwargs['skipdollar']==1:
-                return formatString
-
+        return sprintf(formatString,caller.f_locals)
+        
 def iff(expression, result1, result2):
     """iff(expression, result1, result2)"""
     return result1 if expression else result2

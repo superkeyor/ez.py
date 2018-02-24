@@ -901,7 +901,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 import tempfile
                 tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
                 with os.fdopen(tmpfd, 'w') as tmp:
-                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
                 p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
@@ -946,10 +946,10 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('\nCommand saved at '+save+'\n')
 
@@ -968,10 +968,10 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('\nCommand saved at '+save+'\n')
         return None
@@ -1133,7 +1133,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
         fd, path = tempfile.mkstemp(suffix='.R')
         try:
             with os.fdopen(fd, 'w') as tmp:
-                tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
 
             # not save this command line
             result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
@@ -1143,10 +1143,10 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
             if save:
                 if os.path.exists(save):
                     with open(save, 'a') as tmp:
-                        tmp.write(cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n') 
+                        tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
                 else:
                     with open(save, 'a') as tmp:
-                        tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                        tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
                 print('\nCommand saved at '+save+'\n')
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
@@ -1159,10 +1159,10 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                    tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             print('\nCommand saved at '+save+'\n')
         return None
 
@@ -1256,7 +1256,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
                 try:
                     with os.fdopen(tmpfd, 'w') as tmp:
-                        tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                        tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
                     subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, shell=True)
                 finally:
                     os.remove(tmpPath)
@@ -1266,7 +1266,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
                 try:
                     with os.fdopen(tmpfd, 'w') as tmp:
-                        tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                        tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
                     subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
                 finally:
                     os.remove(tmpPath)
@@ -1277,10 +1277,10 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('\nCommand saved at '+save+'\n')
     else:
@@ -1289,10 +1289,10 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
             print('\nCommand saved at '+save+'\n')
 
@@ -1381,7 +1381,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
         fd, path = tempfile.mkstemp(suffix='.R')
         try:
             with os.fdopen(fd, 'w') as tmp:
-                tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             
             # not save this command line
             execute('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
@@ -1391,10 +1391,10 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             if save:
                 if os.path.exists(save):
                     with open(save, 'a') as tmp:
-                        tmp.write(cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n') 
+                        tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
                 else:
                     with open(save, 'a') as tmp:
-                        tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                        tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
                 print('\nCommand saved at '+save+'\n')
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
@@ -1406,10 +1406,10 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
         if save:
             if os.path.exists(save):
                 with open(save, 'a') as tmp:
-                    tmp.write(cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n') 
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
             else:
                 with open(save, 'a') as tmp:
-                    tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'").replace('\\','\\\\')+'\n\n')
+                    tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             print('\nCommand saved at '+save+'\n')
         return None
 

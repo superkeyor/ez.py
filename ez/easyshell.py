@@ -2147,7 +2147,7 @@ def sprintf(formatString, *args, **kwargs):
                     validrs = re.findall('\{([a-zA-Z_]+\w*?)\}', formatString)
                     for r in allrs:
                         if r not in validrs:
-                            formatString = re.sub('\$\{('+r+')\}', r'@__@\1@___@', formatString)
+                            formatString = re.sub('\{('+r+')\}', r'@__@\1@___@', formatString)
                     formatString = formatString.format(**args[0])
                     formatString = re.sub('@__@(.*?)@___@', r'{\1}', formatString)
                     
@@ -2185,7 +2185,7 @@ def sprintf(formatString, *args, **kwargs):
                 validrs = re.findall('\{([a-zA-Z_]+\w*?)\}', formatString)
                 for r in allrs:
                     if r not in validrs:
-                        formatString = re.sub('\$\{('+r+')\}', r'@__@\1@___@', formatString)
+                        formatString = re.sub('\{('+r+')\}', r'@__@\1@___@', formatString)
                 formatString = formatString.format(**caller.f_locals)
                 formatString = re.sub('@__@(.*?)@___@', r'{\1}', formatString)
 

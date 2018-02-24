@@ -2071,7 +2071,7 @@ def sprintf(formatString, *args, **kwargs):
     # the bash $ is not natively supported by python
     # here I hack it to support the bash style, so that cmd can be directly used by both python and bash
     # but won't support $number:03d for consistency with bash
-    # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+[0-9]*\w+}--will be skipped
+    # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+\w*?}--will be skipped
     s = sprintf('$language has $number quote types.', theDict)
     s = sprintf('$language has $number quote types.')
     s = sprintf('${language}_ has $number quote types.')
@@ -2126,10 +2126,10 @@ def sprintf(formatString, *args, **kwargs):
                     pass
                 if 'skipdollar' not in kwargs.keys():
                     # \w is [a-zA-Z0-9_], but I do not want pure number
-                    # so [a-zA-Z_]+[0-9]*\w+ for valid variable naming
+                    # so [a-zA-Z_]+\w*? for valid variable naming
                     # replace first ${number}, ${language}_ to {number}, {language}_
                     ### but not replace ${PATH}
-                    rs = re.findall('\$\{([a-zA-Z_]+[0-9]*\w+)\}', formatString)
+                    rs = re.findall('\$\{([a-zA-Z_]+\w*?)\}', formatString)
                     for r in rs:    
                         if r not in os.environ:
                             formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
@@ -2137,20 +2137,22 @@ def sprintf(formatString, *args, **kwargs):
                             ### trick the later .format() function ${PATH}   ->   |___|PATH|__|
                             formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
                     # not replace $varible existing in os.environ, but ${varible} was replaced above
-                    rs = re.findall('\$([a-zA-Z_]+[0-9]*\w+)', formatString)    
+                    rs = re.findall('\$([a-zA-Z_]+\w*?)', formatString)    
                     for r in rs:
                         if r not in os.environ:
                             formatString = re.sub('\$('+r+')', r'{\1}', formatString)
-                    # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+[0-9]*\w+}--will be skipped
-                    allrs = re.findall('\{(.*)\}', formatString)
-                    validrs = re.findall('\{([a-zA-Z_]+[0-9]*\w+)\}', formatString)
+                    
+                    # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+\w*?}--will be skipped
+                    allrs = re.findall('\{(.*?)\}', formatString)
+                    validrs = re.findall('\{([a-zA-Z_]+\w*?)\}', formatString)
                     for r in allrs:
                         if r not in validrs:
-                            formatString = re.sub('\{('+r+')\}', r'@__@\1@___@', formatString)
+                            formatString = re.sub('\$\{('+r+')\}', r'@__@\1@___@', formatString)
                     formatString = formatString.format(**args[0])
-                    formatString = re.sub('@__@(.*)@___@', r'{\1}', formatString)
+                    formatString = re.sub('@__@(.*?)@___@', r'{\1}', formatString)
+                    
                     ### replace back env variable |___|PATH|__|  -->  ${PATH}
-                    return re.sub('\|___\|([a-zA-Z_]+[0-9]*\w+)\|__\|', r'${\1}', formatString)
+                    return re.sub('\|___\|([a-zA-Z_]+\w*?)\|__\|', r'${\1}', formatString)
                 elif kwargs['skipdollar']==1:
                     return formatString
         else:
@@ -2166,26 +2168,28 @@ def sprintf(formatString, *args, **kwargs):
             except:
                 pass
             if 'skipdollar' not in kwargs.keys():
-                rs = re.findall('\$\{([a-zA-Z_]+[0-9]*\w+)\}', formatString)
+                rs = re.findall('\$\{([a-zA-Z_]+\w*?)\}', formatString)
                 for r in rs:    
                     if r not in os.environ:
                         formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
                     else:
                         # trick the later .format() function ${PATH}->|___|PATH|__|
                         formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
-                rs = re.findall('\$([a-zA-Z_]+[0-9]*\w+)', formatString)    
+                rs = re.findall('\$([a-zA-Z_]+\w*?)', formatString)    
                 for r in rs:
                     if r not in os.environ:
                         formatString = re.sub('\$('+r+')', r'{\1}', formatString)
-                # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+[0-9]*\w+}--will be skipped
-                allrs = re.findall('\{(.*)\}', formatString)
-                validrs = re.findall('\{([a-zA-Z_]+[0-9]*\w+)\}', formatString)
+
+                # $0 ${0} $() ${0} {0,1..3}  {1..$(2)} etc--other than {[a-zA-Z_]+\w*?}--will be skipped
+                allrs = re.findall('\{(.*?)\}', formatString)
+                validrs = re.findall('\{([a-zA-Z_]+\w*?)\}', formatString)
                 for r in allrs:
                     if r not in validrs:
-                        formatString = re.sub('\{('+r+')\}', r'@__@\1@___@', formatString)
+                        formatString = re.sub('\$\{('+r+')\}', r'@__@\1@___@', formatString)
                 formatString = formatString.format(**caller.f_locals)
-                formatString = re.sub('@__@(.*)@___@', r'{\1}', formatString)
-                return re.sub('\|___\|([a-zA-Z_]+[0-9]*\w+)\|__\|', r'${\1}', formatString)
+                formatString = re.sub('@__@(.*?)@___@', r'{\1}', formatString)
+
+                return re.sub('\|___\|([a-zA-Z_]+\w*?)\|__\|', r'${\1}', formatString)
             elif kwargs['skipdollar']==1:
                 return formatString
 

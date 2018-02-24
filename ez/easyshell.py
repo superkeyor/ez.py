@@ -2052,13 +2052,18 @@ def regexprepi(string, pattern, replace, count=0):
 def sprintf(formatString, *args, **kwargs):
     """
     note: if specify skipdollar=1, $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
+    see usage 3&4
 
     (formatString, *args, **kwargs)
+    data dictionary is passed as *args, right now **kwargs only for skipdollar
+
+    # -------------------------------------------------------------------------
     Examples:
     language = 'Python'; number = 2
     theDict = {"language": "Matlab", "number": 1}
     
-    # -------------------------------------------------------------------------
+    
+    
     # usage 1: you have to pass unnamed/positional args manually
     # evaluated first before other methods in the following
     # call formatString % args
@@ -2160,27 +2165,31 @@ def sprintf(formatString, *args, **kwargs):
                         if r not in os.environ:
                             formatString = re.sub('\$('+r+')', r'{\1}', formatString)
                     
-                    # $0 ${0} $() ${0} {} {0,1..3} {1..$(2)} ${number:03d} {number:03d} etc other than {[a-zA-Z_]+\w*?}--will be skipped
+                    # anything other than {[a-zA-Z_]+\w*?}--will be skipped
+                    # do not know how to construct regex for invalid names, so...
                     allrs = re.findall('\{(.*?)\}', formatString)
                     validrs = re.findall('\{([a-zA-Z_]+\w*?)\}', formatString)
                     for r in allrs:
                         if r not in validrs:
-                            # r may contain irregular char, therefore re.sub may not work well
+                            # r may contain irregular char (eg, dot .) in this case, therefore re.sub may not work well
                             # formatString = re.sub('\{('+r+')\}', r'@__@\1@___@', formatString)
                             formatString = formatString.replace('{'+r+'}','@__@'+r+'@___@')
                     formatString = formatString.format(**args[0])
+                    # replace back {invalid ...}
                     formatString = re.sub('@__@(.*?)@___@', r'{\1}', formatString)
-                    
                     # replace back env variable |___|PATH|__|  -->  ${PATH}
-                    return re.sub('\|___\|([a-zA-Z_]+\w*?)\|__\|', r'${\1}', formatString)
+                    formatString = re.sub('\|___\|([a-zA-Z_]+\w*?)\|__\|', r'${\1}', formatString)
+
+                    return formatString
                 elif kwargs['skipdollar']==1:
                     return formatString
         else:
             # a single string or int
             return formatString % args         
+    # no args passed in
     else:
         caller = inspect.currentframe().f_back
-        return sprintf(formatString,caller.f_locals)
+        return sprintf(formatString,caller.f_locals,**kwargs)
         
 def iff(expression, result1, result2):
     """iff(expression, result1, result2)"""

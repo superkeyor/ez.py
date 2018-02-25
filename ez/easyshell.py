@@ -876,6 +876,17 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
         else:
             cmdSuffix = ''
 
+        if saveMode=='w': rm(save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('chmod +x '+save, shell=True)
+            print('\nCommand saved at '+save+'\n')
+
         # https://stackoverflow.com/a/40139101/2292993
         def _execute_cmd(cmd):
             if os.name == 'nt' or platform.system() == 'Windows':
@@ -941,18 +952,6 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 out = None
 
         # post-process for returning value
-        # save even if not run successfully
-        if saveMode=='w': rm(save)
-        if save:
-            if os.path.exists(save):
-                with open(save, 'a') as tmp:
-                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
-            else:
-                with open(save, 'a') as tmp:
-                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            subprocess.call('chmod +x '+save, shell=True)
-            print('\nCommand saved at '+save+'\n')
-
         if out is None:
             return None
         else:
@@ -1128,26 +1127,25 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
             debug_mode_in_effect = False
     
     if not debug_mode_in_effect:
+        # save R source code
+        if saveMode=='w': rm(save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            print('\nCommand saved at '+save+'\n')
+        
         import tempfile
         # create temp file with specified suffix
         fd, path = tempfile.mkstemp(suffix='.R')
         try:
             with os.fdopen(fd, 'w') as tmp:
                 tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-
             # not save this command line
             result = execute2('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
-
-            # but save R source code even if not run successfully
-            if saveMode=='w': rm(save)
-            if save:
-                if os.path.exists(save):
-                    with open(save, 'a') as tmp:
-                        tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
-                else:
-                    with open(save, 'a') as tmp:
-                        tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-                print('\nCommand saved at '+save+'\n')
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
         finally:
@@ -1244,6 +1242,18 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
         else:
             cmdSuffix = ''
 
+        # save cmd
+        if saveMode=='w': rm(save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('chmod +x '+save, shell=True)
+            print('\nCommand saved at '+save+'\n')
+
         if os.name == 'nt' or platform.system() == 'Windows':
             if output:
                 subprocess.call(cmd, shell=True)
@@ -1272,17 +1282,6 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                     os.remove(tmpPath)
         print ""
 
-        # save even if not run successfully
-        if saveMode=='w': rm(save)
-        if save:
-            if os.path.exists(save):
-                with open(save, 'a') as tmp:
-                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
-            else:
-                with open(save, 'a') as tmp:
-                    tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            subprocess.call('chmod +x '+save, shell=True)
-            print('\nCommand saved at '+save+'\n')
     else:
         pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
         if saveMode=='w': rm(save)
@@ -1376,26 +1375,25 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             debug_mode_in_effect = False
     
     if not debug_mode_in_effect:
+        # save R source code
+        if saveMode=='w': rm(save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            print('\nCommand saved at '+save+'\n')
+
         import tempfile
         # create temp file with specified suffix
         fd, path = tempfile.mkstemp(suffix='.R')
         try:
             with os.fdopen(fd, 'w') as tmp:
                 tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            
             # not save this command line
             execute('Rscript --no-save --no-restore ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
-
-            # but save R source code even if not run successfully
-            if saveMode=='w': rm(save)
-            if save:
-                if os.path.exists(save):
-                    with open(save, 'a') as tmp:
-                        tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
-                else:
-                    with open(save, 'a') as tmp:
-                        tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-                print('\nCommand saved at '+save+'\n')
         # delete it when it is done (can still delete after return)
         # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
         finally:

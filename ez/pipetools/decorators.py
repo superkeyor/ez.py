@@ -1,10 +1,10 @@
 import re
 from functools import partial, wraps
 
-from pipetools.debug import repr_args, set_name, get_name
-from pipetools.ds_builder import DSBuilder, NoBuilder
-from pipetools.main import pipe, XObject, StringFormatter, xpartial
-from pipetools.compat import string_types, dict_items
+from debug import repr_args, set_name, get_name
+from ds_builder import DSBuilder, NoBuilder
+from main import pipe, XObject, StringFormatter, xpartial
+from compat import string_types, dict_items
 
 
 def pipe_util(func):

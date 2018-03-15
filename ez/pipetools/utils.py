@@ -3,11 +3,11 @@ from functools import partial
 from itertools import islice, takewhile, dropwhile
 import operator
 
-from pipetools.debug import set_name, repr_args, get_name
-from pipetools.decorators import data_structure_builder, regex_condition
-from pipetools.decorators import pipe_util, auto_string_formatter
-from pipetools.main import pipe, X, _iterable
-from pipetools.compat import map, filter, range, dict_items
+from debug import set_name, repr_args, get_name
+from decorators import data_structure_builder, regex_condition
+from decorators import pipe_util, auto_string_formatter
+from main import pipe, X, _iterable
+from compat import map, filter, range, dict_items
 
 
 KEY, VALUE = X[0], X[1]

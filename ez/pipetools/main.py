@@ -1,8 +1,8 @@
 from collections import Iterable
 from functools import partial, wraps
 
-from pipetools.debug import get_name, set_name, repr_args
-from pipetools.compat import text_type, string_types, dict_items
+from debug import get_name, set_name, repr_args
+from compat import text_type, string_types, dict_items
 
 
 class Pipe(object):

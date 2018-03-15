@@ -1,6 +1,6 @@
 from itertools import chain
 
-from pipetools.compat import map, dict_items
+from compat import map, dict_items
 
 
 def set_name(name, f):
@@ -12,7 +12,7 @@ def set_name(name, f):
 
 
 def get_name(f):
-    from pipetools.main import Pipe
+    from main import Pipe
     pipetools_name = getattr(f, '__pipetools__name__', None)
     if pipetools_name:
         return pipetools_name() if callable(pipetools_name) else pipetools_name

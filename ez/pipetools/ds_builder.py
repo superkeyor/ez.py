@@ -1,7 +1,7 @@
 from functools import partial
 
-from pipetools.main import XObject, StringFormatter
-from pipetools.compat import string_types, dict_items
+from main import XObject, StringFormatter
+from compat import string_types, dict_items
 
 
 class NoBuilder(ValueError):

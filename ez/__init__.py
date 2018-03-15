@@ -1,3 +1,4 @@
+from pipetools import pipe
 from easyshell import *
 from easyshell import __doc__ as doc1
 from pyg import Mail, mail, AddEvent, addevent, Sheet

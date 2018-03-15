@@ -126,6 +126,7 @@ keygen(length=8, complexity=3)  # generate a random key
 hashes(filename): # Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way
 pinyin()
 hanzifreq()
+pipe usage: result = [1,2,3,0] > ez.pipe | len | str (or [1,2,3,0]>ez.pipe|len|str) # http://0101.github.io/pipetools/doc/
 """
 
 # reference: abspath for ../ ./, expanduser for ~, glob to resolve wildcards, fnmatch.translate wildcards to re

@@ -1539,6 +1539,8 @@ condor_run: run small jobs    condor_run "echo hello"
 condor_submit: use submit files to submit jobs to vendor
 condor_rm [job number/username]: condor_rm 96231.0
 
+lsof +D .: check path which has "Device or resource busy"
+kill PID, kill -9 PID: 9 for force kill
 pgrep -u jzhu -l condor: particular processes by a user
 pkill -u jzhu condor: kill particular processes by a user
 ps -u jzhu: processes owned by a specific user

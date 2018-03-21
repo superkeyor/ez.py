@@ -1502,7 +1502,6 @@ error=%s.err
 queue
 """ % (e, e, e)
 
-    submitfile = 'condor.sub'
     with open(submitfile, 'w') as tmp:
         tmp.write(condor.replace('"','\"').replace("'","\'")+'\n\n')
     print('Condor submit file saved at '+submitfile)

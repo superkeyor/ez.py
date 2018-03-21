@@ -1530,6 +1530,34 @@ def condorstats():
     allqueue = 'Queue (all):\t\t' + execute2('condor_q -allusers -nobatch',0)[-1]
     myqueue = 'Queue (mine):\t\t' + execute2('condor_q',0)[-1]
     
+    pprint("\nSome condor commands...",'blue')
+    print """watch -n 2 condor_q
+condor_q: See my current condor jobs
+condor_q -better-analyze <job_id>
+condor_status: cores being used
+condor_run: run small jobs    condor_run "echo hello"
+condor_submit: use submit files to submit jobs to vendor
+condor_rm [job number/username]: condor_rm 96231.0
+
+pgrep -u jzhu -l condor: particular processes by a user
+pkill -u jzhu condor: kill particular processes by a user
+ps -u jzhu: processes owned by a specific user
+
+quota -vs: quota
+df -h: disk usage
+du -csh . | grep total : . or any directory size
+ls -ld s??? | wc -l: count directory
+
+head/tail (-n 20)
+less is more: use less and forget more
+    / for search (p,n), b, f for backward, forward
+printf better than echo
+"$1", "$2": function arg list
+2>&1 | tee -a: bash redirect file and screen (-a append)
+|& tee -a: tcsh redirect file and screen
+/path/\{file1.zip,file2.zip\}: multiple matches
+"""
+
     # pprint("Some users' reports...",'blue')
     # execute('condor_userprio -most',2)
     

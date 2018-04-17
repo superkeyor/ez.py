@@ -1549,6 +1549,9 @@ quota -vs: quota
 df -h: disk usage
 du -csh . | grep total : . or any directory size
 ls -ld s??? | wc -l: count directory
+?: single character
+*: ZERO or more characters
+echo match*: see the match
 
 head/tail (-n 20)
 less is more: use less and forget more

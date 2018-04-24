@@ -2879,6 +2879,11 @@ def savex(path, data, header=None, delimiter=",", sheet_name='Sheet1', *args, **
             a list with each column's name, eg ['company','brand','price']
         delimiter
             only for writing csv, ignored for excel
+        Example
+            stats = [['subj','average','contrast','hemisphere']] as header
+            loop:
+                avg = ez.esp2(cmd)
+                stats.append([subj,avg[0],con,hem])
     Returns:
         File is overwritten!
         Each element of list could be of different type, resulting in different format for each cell in excel file

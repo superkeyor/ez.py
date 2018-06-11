@@ -3007,6 +3007,24 @@ def chunk2(initialList, chunkSize):
         finalList.append(initialList[i:i+chunkSize])
     return finalList
 
+def pinyinauthor(names):
+    """
+    convert Yuan Zhang Zhu, Jian Zhu --> Zhu, Y. Z., Zhu, J. for APA reference list
+    """
+    names = re.sub('(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\s','\s','\s','\s'), '', names, count=0)
+    names = names.split(', ')
+    newnames = ''; i = 0
+    for name in names: 
+        i += 1
+        name = name.split(' ')
+        # name.reverse()
+        # move family to first
+        name.insert(0,name.pop())
+        if i==len(names):
+            newnames = newnames + name[0].title() + ', ' + '. '.join([x[0].upper() for x in name[1:]]) + '.'
+        else:
+            newnames = newnames + name[0].title() + ', ' + '. '.join([x[0].upper() for x in name[1:]]) + '., '
+    return newnames
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

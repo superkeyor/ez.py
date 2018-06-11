@@ -3025,6 +3025,34 @@ def pinyinauthor(names):
         else:
             newnames = newnames + name[0].title() + ', ' + '. '.join([x[0].upper() for x in name[1:]]) + '., '
     return newnames
+
+def pdfautorename(files):
+    """
+    reads meta data from pdf files and renames them accordingly
+    skips files that do not have proper meta data 
+    """
+    from pdfrw import PdfReader
+    def _autorename(fullName):
+        try:
+            meta = PdfReader(fullName).Info
+            year = meta.CreationDate.strip('()')
+            year = (year[2:6] if ('D:' in year) else year[-4:]).translate(None, string.punctuation)
+            author = meta.Author.strip('()').split(' ')[-1].translate(None, string.punctuation)
+            author = unicode(author, errors='ignore').encode('ascii', 'ignore')  # some weird author names
+            journal = meta.Subject.strip('()').split(',')[0].translate(None, '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~').replace(' ','_')
+            journal = journal[:30] if len(journal) > 30 else journal
+            newName = '_'.join([year,author,journal]) + '.pdf'
+            newFullName = ez.joinpath(ez.splitpath(fullName)[0],newName)
+            if (year=='' or author=='' or journal=='' or exists(newFullName)): raise Exception('bad meta data or existing file')
+            print( sprintf('Rename: %s --> %s', ez.splitpath(fullName)[1], ez.splitpath(newFullName)[1]) )
+            os.rename(fullName, newFullName)
+        except Exception as e:
+            pprint('Skipping file: ' + ez.splitpath(fullName)[1])
+            return
+
+    for fileName in files:
+        _autorename(fileName)
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

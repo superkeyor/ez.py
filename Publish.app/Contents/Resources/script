@@ -27,7 +27,6 @@ python setup.py sdist upload
 
 rm -r *.egg-info
 
-sleep 2
 # /Users/jerry/Library/Enthought/Canopy_64bit/User/bin/pip install $package --upgrade
 # /Users/jerry/PyEnv/bin/pip install $package --upgrade
 # /Library/Frameworks/Python.framework/Versions/2.7/bin/pip install $package --upgrade

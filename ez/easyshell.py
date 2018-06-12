@@ -2798,7 +2798,7 @@ def readx(path, sheet=0, r=[1,], c=None, *args, **kwargs):
     Args:
         path, a xlsx, xls file
         sheet, either sheet number (the first is 0) or sheet name (e.g., Sheet1)
-        r, None=start-end; 3=4th row (zero based); [3,4,5]=listed rows; [1,]=from 2nd row to end (ie, skipping first row, or header)
+        r, None=start-end; 3=4th row (zero based); [3,4,5]=listed rows; [1] or [1,]=from 2nd row to end (ie, skipping first row, or header), [3] or [3,]=from 4th row to end
         c, the same format as r
     Returns:
         if multiple rows/columns, returns a list of list [[row1],[row2]]. To further slice returned result, result[r][c]

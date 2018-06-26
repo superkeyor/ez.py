@@ -287,7 +287,7 @@ def splitpath(path):
     if type(path) in [list, tuple]:
         dirs = []; files = []; exts = []
         for p in path:
-            [dir, file, ext] = splitpath(p)
+            [dir, file, ext] = splitpath(p.strip('"').strip("'"))  # strip in case of extra quotes added in path
             dirs.append(dir); files.append(file); exts.append(ext)
         return [dirs, files, exts]
 

@@ -36,7 +36,7 @@ splitpath(path) sp() # Returns a list of path elements: [path, file, ext]. Suppo
 cd(path)    # Changes to a new working directory.
 stepfolder(-1)
 
-trim(string,how[,chars])
+trim(string,how[,chars]) quote(string)
 join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Supports vectorization.
 sort(array)
 replace(theList,theItem,replacement), remove(theList,theItem)
@@ -326,6 +326,13 @@ def trim(s, how=4, *args):
         # http://stackoverflow.com/a/25734388/2292993
         s = re.sub(expression, "", s, count=0)
     return(s)
+
+def quote(string):
+    """ add a double quote around a single string/number/logic
+    Returns a string: eg, '"3"', '"abc"', regardless of whether the string parameter is passed with 'abc', or "abc"
+    """
+    # https://stackoverflow.com/a/20056615/2292993
+    return '"{}"'.format(string)
 
 def join(sep='',*args):
     """glue together strings/array with sep

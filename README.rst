@@ -34,7 +34,7 @@ splitpath(path) sp() # Returns a list of path elements: [path, file, ext]. Suppo
 cd(path)    # Changes to a new working directory.
 stepfolder(-1)
 
-trim(string,how[,chars])
+trim(string,how[,chars]) quote(string)
 join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Supports vectorization.
 sort(array)
 replace(theList,theItem,replacement), remove(theList,theItem)

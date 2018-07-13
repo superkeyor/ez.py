@@ -1853,6 +1853,7 @@ def tree(path='./', sum=True, save=None, sort=True, case=True):
     tree([path[, sum=True]) # Prints a directory tree structure. 
     sum=True (default) prints only folders, i.e., print less to show the big structure
     sum=False prints files plus folders
+    save=None or a file path, eg, 'tree.log'
     sort=True, sort listed folders, call sorted()
     case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
           if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
@@ -1904,7 +1905,7 @@ def tree(path='./', sum=True, save=None, sort=True, case=True):
         for count, value in enumerate(sequence):
             yield count, count - length, value
 
-    if save is not None: logon(file="tree.log", mode='w', status=True, timestamp=False)
+    if save is not None: logon(file=save, mode='w', status=True, timestamp=False)
     dirs, files = listdir(path)[:2]
     print(path)
     walk(path, dirs, files)

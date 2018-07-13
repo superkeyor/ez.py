@@ -80,7 +80,7 @@ whos(name),whos() list imported functions/packages
 
 logon(file="log.txt", mode='a', status=True, timestamp=True), logoff()
 
-tree([path[, sum=True, save=None, sort=True]) # Prints a directory tree structure. 
+tree([path[, sum=True, save=None, sort=True, case=True]) # Prints a directory tree structure. 
     sum=True (default) prints only folders, i.e., print less to show the big structure
     sum=False prints files plus folders
 
@@ -476,8 +476,10 @@ def cd(path):
     os.chdir(path)
     print "Start working in " + os.getcwd()
 
-def ls(path="./", regex=".*", full=True, dotfile=False, sort=True):
+def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
     """ls([path[, regex]], full=True, dotfile=False, sort=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
+    case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
+          if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
     """
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
@@ -503,12 +505,19 @@ def ls(path="./", regex=".*", full=True, dotfile=False, sort=True):
     if full: files = [os.path.join(path,file) for file in files]
     result = [file for file in files if os.path.isfile(file)]
     if sort: 
-        return sorted(result)
+        if case:
+            return sorted(result)
+        else:
+            # https://stackoverflow.com/questions/13954841/sort-list-of-strings-ignoring-upper-lower-case
+            return sorted(result, key=lambda v: v.upper())
     else:
         return result
 
-def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True):
-    """lsd([path[, regex]], full=False, dotfolder=False, sort=True), Returns a list of all (including hidden) folders with their (optionally) full paths in path, filtered by regular expression."""
+def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True, case=True):
+    """lsd([path[, regex]], full=False, dotfolder=False, sort=True), Returns a list of all (including hidden) folders with their (optionally) full paths in path, filtered by regular expression.
+    case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
+          if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
+    """
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search
@@ -539,12 +548,18 @@ def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True):
     result = [file for file in files if not os.path.isfile(file)]
     os.chdir(olddir)
     if sort: 
-        return sorted(result)
+        if case:
+            return sorted(result)
+        else:
+            # https://stackoverflow.com/questions/13954841/sort-list-of-strings-ignoring-upper-lower-case
+            return sorted(result, key=lambda v: v.upper())
     else:
         return result
 
-def fls(path="./", regex=".*", dotf=False, sort=True):
+def fls(path="./", regex=".*", dotf=False, sort=True, case=True):
     """fls([path[, regex=".*", dotf=False], sort=True])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
+    case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
+          if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
     """
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
@@ -583,7 +598,11 @@ def fls(path="./", regex=".*", dotf=False, sort=True):
                 flatFiles.append(fileFullName)
     result = flatFiles
     if sort: 
-        return sorted(result)
+        if case:
+            return sorted(result)
+        else:
+            # https://stackoverflow.com/questions/13954841/sort-list-of-strings-ignoring-upper-lower-case
+            return sorted(result, key=lambda v: v.upper())
     else:
         return result
 
@@ -1829,12 +1848,14 @@ def logoff():
 # print directory tree structure starts
 # modified from http://code.activestate.com/recipes/577091/
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-def tree(path='./', sum=True, save=None, sort=True):
+def tree(path='./', sum=True, save=None, sort=True, case=True):
     """
     tree([path[, sum=True]) # Prints a directory tree structure. 
     sum=True (default) prints only folders, i.e., print less to show the big structure
     sum=False prints files plus folders
     sort=True, sort listed folders, call sorted()
+    case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
+          if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
     """
     import sys, os
     global PRINT_FILES; PRINT_FILES = not sum
@@ -1863,7 +1884,11 @@ def tree(path='./', sum=True, save=None, sort=True):
         dirs, files, links = [], [], []
         names = os.listdir(path)
         if sort: 
-            names = sorted(names)
+            if case:
+                names = sorted(names)
+            else:
+                # https://stackoverflow.com/questions/13954841/sort-list-of-strings-ignoring-upper-lower-case
+                names = sorted(names, key=lambda v: v.upper())
         for name in names:
             path_name = os.path.join(path, name)
             if os.path.isdir(path_name):

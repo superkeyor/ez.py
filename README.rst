@@ -78,7 +78,7 @@ whos(name),whos() list imported functions/packages
 
 logon(file="log.txt", mode='a', status=True, timestamp=True), logoff()
 
-tree([path[, sum=True, save=None, sort=True]) # Prints a directory tree structure. 
+tree([path[, sum=True, save=None, sort=True, case=True]) # Prints a directory tree structure. 
     sum=True (default) prints only folders, i.e., print less to show the big structure
     sum=False prints files plus folders
 

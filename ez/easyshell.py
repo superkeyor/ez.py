@@ -1829,11 +1829,12 @@ def logoff():
 # print directory tree structure starts
 # modified from http://code.activestate.com/recipes/577091/
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-def tree(path='./', forest=True):
+def tree(path='./', forest=True, sort=True):
     """
     tree([path[, forest=True]) # Prints a directory tree structure. 
     forest=True (default) prints only folders, i.e., print less to show the big forest
     forest=False prints files plus folders
+    sort=True, sort listed folders, call sorted()
     """
     import sys, os
     global PRINT_FILES; PRINT_FILES = not forest
@@ -1860,7 +1861,10 @@ def tree(path='./', forest=True):
 
     def listdir(path):
         dirs, files, links = [], [], []
-        for name in os.listdir(path):
+        names = os.listdir(path)
+        if sort: 
+            names = sorted(names)
+        for name in names:
             path_name = os.path.join(path, name)
             if os.path.isdir(path_name):
                 dirs.append(name)

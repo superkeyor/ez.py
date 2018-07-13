@@ -80,9 +80,9 @@ whos(name),whos() list imported functions/packages
 
 logon(file="log.txt", mode='a', status=True, timestamp=True), logoff()
 
-tree([path[, forest=True]) # Prints a directory tree structure. 
-    forest=True (default) prints only folders, i.e., print less to show the big forest
-    forest=False prints files plus folders
+tree([path[, sum=True, save=None, sort=True]) # Prints a directory tree structure. 
+    sum=True (default) prints only folders, i.e., print less to show the big structure
+    sum=False prints files plus folders
 
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi
@@ -1829,15 +1829,15 @@ def logoff():
 # print directory tree structure starts
 # modified from http://code.activestate.com/recipes/577091/
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-def tree(path='./', forest=True, sort=True):
+def tree(path='./', sum=True, save=None, sort=True):
     """
-    tree([path[, forest=True]) # Prints a directory tree structure. 
-    forest=True (default) prints only folders, i.e., print less to show the big forest
-    forest=False prints files plus folders
+    tree([path[, sum=True]) # Prints a directory tree structure. 
+    sum=True (default) prints only folders, i.e., print less to show the big structure
+    sum=False prints files plus folders
     sort=True, sort listed folders, call sorted()
     """
     import sys, os
-    global PRINT_FILES; PRINT_FILES = not forest
+    global PRINT_FILES; PRINT_FILES = not sum
     path = os.path.abspath(os.path.expanduser(path))
 
     def walk(root, dirs, files, prefix=''):
@@ -1879,11 +1879,13 @@ def tree(path='./', forest=True, sort=True):
         for count, value in enumerate(sequence):
             yield count, count - length, value
 
+    if save is not None: logon(file="tree.log", mode='w', status=True, timestamp=False)
     dirs, files = listdir(path)[:2]
     print(path)
     walk(path, dirs, files)
     if not dirs:
         print('No subfolders exist')
+    if save is not None: logoff()
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # print directory tree structure ends
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

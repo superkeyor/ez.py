@@ -78,9 +78,9 @@ whos(name),whos() list imported functions/packages
 
 logon(file="log.txt", mode='a', status=True, timestamp=True), logoff()
 
-tree([path[, forest=True]) # Prints a directory tree structure. 
-    forest=True (default) prints only folders, i.e., print less to show the big forest
-    forest=False prints files plus folders
+tree([path[, sum=True, save=None, sort=True]) # Prints a directory tree structure. 
+    sum=True (default) prints only folders, i.e., print less to show the big structure
+    sum=False prints files plus folders
 
 [starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
 regexprep(string, pattern, replace, count=0), regexprepi

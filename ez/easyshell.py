@@ -3066,6 +3066,28 @@ def pinyinauthor(names):
             newnames = newnames + name[0].title() + ', ' + '. '.join([x[0].upper() for x in name[1:]]) + '., '
     return newnames
 
+def xlcolconv(col):
+    """
+    Excel-style column name converter: 
+    Number from or to letters, e.g., 1 = A, 26 = Z, 27 = AA, 703 = AAA.
+    input a number (27), output letters ('AA')
+    input letters ('AA'), output number (27)
+    """
+    if type(col) in [int]:
+        n = col
+        letters = ''
+        while n > 0:
+            n, r = divmod (n - 1, 26)
+            letters = chr(r + ord('A')) + letters
+        return letters
+    else:
+        letters = col
+        letters = letters.upper()
+        n = 0
+        for c in letters:
+            n = n * 26 + 1 + ord(c) - ord('A')
+        return n
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -75,12 +75,12 @@ def winSetClipboard(text):
     ctypes.windll.user32.CloseClipboard()
 
 def macSetClipboard(text):
-    outf = os.popen('pbcopy', 'w')
+    outf = os.popen('LANG=en_US.UTF-8 pbcopy', 'w')
     outf.write(text)
     outf.close()
 
 def macGetClipboard():
-    outf = os.popen('pbpaste', 'r')
+    outf = os.popen('LANG=en_US.UTF-8 pbpaste', 'r')
     content = outf.read()
     outf.close()
     return content

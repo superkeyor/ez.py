@@ -124,7 +124,8 @@ content = GetClip(), content = getclip()   # Read out content from current clipb
 lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
 keygen(length=8, complexity=3)  # generate a random key
 hashes(filename): # Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way
-pinyin()
+pinyin() pinyinauthor()
+encoding_detect(), encoding_convert()
 hanzifreq()
 pipe usage: # http://0101.github.io/pipetools/doc/
     # result = [1,2,3,0] > ez.pipe | len | str
@@ -3087,6 +3088,51 @@ def xlcolconv(col):
         for c in letters:
             n = n * 26 + 1 + ord(c) - ord('A')
         return n
+
+def encoding_detect(file_path, n_lines=20):
+    """
+    try to guess file's encoding
+    n_lines: only reads the first few lines, useful for big file, n_lines > total lines in file works fine
+    returns 'utf-8', 'ascii' etc, or None if could not detect
+    """
+    import chardet
+    # Open the file as binary data
+    with open(file_path, 'rb') as f:
+        # Join binary lines for specified number of lines
+        rawdata = b''.join([f.readline() for _ in range(n_lines)])
+    result = chardet.detect(rawdata)['encoding']
+    return result
+
+def encoding_convert(file_path, source_encoding=None, backup=False):
+    """
+    convert file to utf-8 (new file is the same file_path)
+    source_encoding: if not provided, will guess. if guess fails, print out message
+    backup: T/F. if true, create file_path.bak
+    """
+    if backup:
+        import shutil
+        shutil.copyfile(file_path, file_path + '.bak')
+
+    # do not use codecs.open or io.open, simply supports encoding parameter in one function
+    # manual decoding/encoding
+    with open(file_path, 'r') as f: 
+        content = f.read()
+
+    if source_encoding is None:
+        import chardet
+        source_encoding = chardet.detect(content)['encoding']
+
+    if source_encoding is None:
+        print "I cannot guess source encoding (try GB2312 for MS-Windows?)", file_path
+        return None
+    else:
+        print source_encoding, file_path
+
+    target_encoding = 'utf-8'
+    if source_encoding != target_encoding:
+        content = content.decode(source_encoding)
+        with open(file_path, 'w') as f: 
+            f.write(content.encode(target_encoding))
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

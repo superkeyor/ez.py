@@ -479,7 +479,7 @@ def cd(path):
 
 def ce():
     """cd(csd()), Changes to csd."""
-    path = ez.csd()
+    path = csd()
     os.chdir(path)
     print "Start working in " + path
 cf = ce

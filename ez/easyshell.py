@@ -477,6 +477,13 @@ def cd(path):
     os.chdir(path)
     print "Start working in " + os.getcwd()
 
+def ce():
+    """cd(csd()), Changes to csd."""
+    path = ez.csd()
+    os.chdir(path)
+    print "Start working in " + path
+cf = ce
+
 def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
     """ls([path[, regex]], full=True, dotfile=False, sort=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
     case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']

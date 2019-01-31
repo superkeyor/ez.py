@@ -3259,8 +3259,8 @@ def opens(filepath):
 def applescript_pages_replace(searchWord, replacementString):
     """
     replace one word at a time (but all occurrences) in pages active document
-    For the best result, searchWord to be recommended using "DRFULLNAME"
-    case sensitive, can NOT have _, word bounded by spaces
+    For the best result, searchWord to be recommended using all capitalized "DRFULLNAME"
+    case sensitive, can NOT have _, word bounded by spaces, just one word, not two words or more
     this way, no recursive replacement would happen, other issues could be avoided
     ("DRFULLNAME", "My name is")
     """
@@ -3320,6 +3320,7 @@ def applescript_pages_pdfactive():
     """
     ()
     convert current/active Pages document to pdf to downloads folder, quit Pages after conversion (will save or remind to save)
+    pdf name is same as page document name, if pdf exists, will be name-1.pdf, name-2.pdf, etc
     """
     applescript = '''
     -- https://iworkautomation.com/pages/document-export.html
@@ -3463,17 +3464,18 @@ def applescript_preview_mvactive(theFolder):
 def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
     """
     (emails,subjectline,titles,body,attaches,sendout)
-    emails: if Multiple emails, 'a@a.com, b@b.com'
+    emails: if Multiple emails, 'a@a.com, b@b.com'  # , SPACE between emails, othewise Mail raises error
     subjectline: 
     titles: "Dear Dr. Zhu"  # do not add comma at the end
     body: "\nblabla"        # need to add a newline before the body, internally: titles & "," & body & "\n\n"
-    attaches: ['file/path/to/a.pdf','file/path/to/b.pdf'] # posix filepath in a python list
+    attaches: ['file/path/to/a.pdf','file/path/to/b.pdf'] # posix filepath in a python list # relative or full path
     sendout: 1/0
     """
     # a bit nasty workaround (POSIX to alias format--somehow I cannot make it work directly in applescript)
+    import os
     tmp = []
     for a in attaches:
-        aa = a.replace('/',':')
+        aa = os.path.abspath(a).replace('/',':')
         if aa.startswith(':'): aa = 'Macintosh HD'+aa
         # quote double for applescript
         tmp.append('"{}"'.format(aa))

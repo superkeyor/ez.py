@@ -3338,27 +3338,20 @@ def applescript_pages_pdfactive():
             if usePDFEncryption is true then
                 -- PROMPT FOR PASSWORD (OPTIONAL)
                 repeat
-                    display dialog "Enter a password for the PDF file:" default answer ¬
-                        "" buttons {"Cancel", "No Password", "OK"} ¬
-                        default button 3 with hidden answer
-                    copy the result to ¬
-                        {button returned:buttonPressed, text returned:firstPassword}
+                    display dialog "Enter a password for the PDF file:" default answer "" buttons {"Cancel", "No Password", "OK"} default button 3 with hidden answer
+                    copy the result to {button returned:buttonPressed, text returned:firstPassword}
                     if buttonPressed is "No Password" then
                         set usePDFEncryption to false
                         exit repeat
                     else
-                        display dialog "Enter the password again:" default answer ¬
-                            "" buttons {"Cancel", "No Password", "OK"} ¬
-                            default button 3 with hidden answer
-                        copy the result to ¬
-                            {button returned:buttonPressed, text returned:secondPassword}
+                        display dialog "Enter the password again:" default answer "" buttons {"Cancel", "No Password", "OK"} default button 3 with hidden answer
+                        copy the result to {button returned:buttonPressed, text returned:secondPassword}
                         if buttonPressed is "No Password" then
                             set usePDFEncryption to false
                             exit repeat
                         else
                             if firstPassword is not secondPassword then
-                                display dialog "Passwords do no match." buttons ¬
-                                    {"Cancel", "Try Again"} default button 2
+                                display dialog "Passwords do no match." buttons {"Cancel", "Try Again"} default button 2
                             else
                                 set providedPassword to the firstPassword
                                 set usePDFEncryption to true
@@ -3371,15 +3364,13 @@ def applescript_pages_pdfactive():
             
             -- DERIVE NAME AND FILE PATH FOR NEW EXPORT FILE
             set documentName to the name of the front document
-            if documentName ends with ".pages" then ¬
-                set documentName to text 1 thru -7 of documentName
+            if documentName ends with ".pages" then set documentName to text 1 thru -7 of documentName
             
             tell application "Finder"
                 set exportItemFileName to documentName & "." & "pdf"
                 set incrementIndex to 1
                 repeat until not (exists document file exportItemFileName of defaultDestinationFolder)
-                    set exportItemFileName to ¬
-                        documentName & "-" & (incrementIndex as string) & "." & "pdf"
+                    set exportItemFileName to documentName & "-" & (incrementIndex as string) & "." & "pdf"
                     set incrementIndex to incrementIndex + 1
                 end repeat
             end tell
@@ -3388,8 +3379,7 @@ def applescript_pages_pdfactive():
             -- EXPORT THE DOCUMENT
             with timeout of 1200 seconds
                 if usePDFEncryption is true then
-                    export front document to file targetFileHFSPath ¬
-                        as PDF with properties {password:providedPassword}
+                    export front document to file targetFileHFSPath as PDF with properties {password:providedPassword}
                 else
                     export front document to file targetFileHFSPath as PDF
                 end if

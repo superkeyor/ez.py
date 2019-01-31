@@ -3256,6 +3256,271 @@ def opens(filepath):
     elif os.name == 'posix': # For Linux
         subprocess.call(('xdg-open', filepath))
 
+def applescript_pages_replace(searchWord, replacementString):
+    """
+    replace one item in pages
+    ("DrFullName", KMVAR_DrFullName)
+    """
+    applescript = '''
+    -- does not work for symbols, eg, {  } or word pairs separated by separator
+    -- https://iworkautomation.com/pages/body-text-replace.html
+    on pagesReplace(searchWord, replacementString)
+        my replaceWordWithStringInBodyText(searchWord, replacementString)
+    end 
+
+    on replaceWordWithStringInBodyText(searchWord, replacementString)
+        tell application "Pages"
+            reopen
+            activate
+            tell the front document
+                tell body text
+                    -- start at the end and go to the beginning
+                    repeat with i from the (count of paragraphs) to 1 by -1
+                        tell paragraph i
+                            repeat
+                                try
+                                    if exists searchWord then
+                                        set (last word where it is searchWord) to replacementString
+                                    else
+                                        exit repeat
+                                    end if
+                                on error errorMessage
+                                    exit repeat
+                                end try
+                            end repeat
+                        end tell
+                    end repeat
+                end tell
+            end tell
+            -- return true
+        end tell
+    end replaceWordWithStringInBodyText
+
+    my pagesReplace("%(searchWord)s","%(replacementString)s")
+    '''
+    def myesp(cmdString):
+        import os, inspect, tempfile, subprocess
+        caller = inspect.currentframe().f_back
+        cmd =  cmdString % caller.f_locals
+        
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('osascript ' + path, shell=True, executable="/bin/bash")
+        finally:
+            os.remove(path)
+        return None
+    myesp(applescript)
+
+def applescript_pages_pdfactive():
+    """
+    convert current/active Pages document to pdf, quit Pages after conversion
+    """
+    applescript = '''
+    -- https://iworkautomation.com/pages/document-export.html
+    -- also https://github.com/gitmalong/pages2docx
+    -- https://gist.github.com/loop/7207134ed7ff7a288ee1
+    on pagesCurrent2pdf()
+    --property exportFileExtension : "pdf"
+    --property useEncryptionDefaultValue : false
+
+    -- THE DESTINATION FOLDER 
+    -- (see the "path" to command in the Standard Additions dictionary for other locations, such as movies folder, pictures folder, desktop folder)
+    set the defaultDestinationFolder to (path to documents folder)
+
+    set usePDFEncryption to false
+    tell application "Pages"
+        activate
+        try
+            if not (exists document 1) then error number -128
+            
+            if usePDFEncryption is true then
+                -- PROMPT FOR PASSWORD (OPTIONAL)
+                repeat
+                    display dialog "Enter a password for the PDF file:" default answer ¬
+                        "" buttons {"Cancel", "No Password", "OK"} ¬
+                        default button 3 with hidden answer
+                    copy the result to ¬
+                        {button returned:buttonPressed, text returned:firstPassword}
+                    if buttonPressed is "No Password" then
+                        set usePDFEncryption to false
+                        exit repeat
+                    else
+                        display dialog "Enter the password again:" default answer ¬
+                            "" buttons {"Cancel", "No Password", "OK"} ¬
+                            default button 3 with hidden answer
+                        copy the result to ¬
+                            {button returned:buttonPressed, text returned:secondPassword}
+                        if buttonPressed is "No Password" then
+                            set usePDFEncryption to false
+                            exit repeat
+                        else
+                            if firstPassword is not secondPassword then
+                                display dialog "Passwords do no match." buttons ¬
+                                    {"Cancel", "Try Again"} default button 2
+                            else
+                                set providedPassword to the firstPassword
+                                set usePDFEncryption to true
+                                exit repeat
+                            end if
+                        end if
+                    end if
+                end repeat
+            end if
+            
+            -- DERIVE NAME AND FILE PATH FOR NEW EXPORT FILE
+            set documentName to the name of the front document
+            if documentName ends with ".pages" then ¬
+                set documentName to text 1 thru -7 of documentName
+            
+            tell application "Finder"
+                set exportItemFileName to documentName & "." & "pdf"
+                set incrementIndex to 1
+                repeat until not (exists document file exportItemFileName of defaultDestinationFolder)
+                    set exportItemFileName to ¬
+                        documentName & "-" & (incrementIndex as string) & "." & "pdf"
+                    set incrementIndex to incrementIndex + 1
+                end repeat
+            end tell
+            set the targetFileHFSPath to (defaultDestinationFolder as string) & exportItemFileName
+            
+            -- EXPORT THE DOCUMENT
+            with timeout of 1200 seconds
+                if usePDFEncryption is true then
+                    export front document to file targetFileHFSPath ¬
+                        as PDF with properties {password:providedPassword}
+                else
+                    export front document to file targetFileHFSPath as PDF
+                end if
+            end timeout
+            
+        on error errorMessage number errorNumber
+            if errorNumber is not -128 then
+                display alert "EXPORT PROBLEM" message errorMessage
+            end if
+            error number -128
+        end try
+    end tell
+
+    tell application "Pages"
+        quit
+        -- or alternatively,
+        -- quit without saving
+    end tell
+
+    -- -- SHOW THE NEW PDF FILE
+    -- tell application "Finder"
+    --     activate
+    --     reveal document file targetFileHFSPath
+    -- end tell
+    end
+    my pagesCurrent2pdf()
+    '''
+    def myesp(cmdString):
+        import os, inspect, tempfile, subprocess
+        caller = inspect.currentframe().f_back
+        cmd =  cmdString % caller.f_locals
+        
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('osascript ' + path, shell=True, executable="/bin/bash")
+        finally:
+            os.remove(path)
+        return None
+    myesp(applescript)
+
+def applescript_preview_mvactive(theFolder):
+    """
+    (theFolder)
+    save the current Preview pdf, move the pdf to theFolder, quit Preview
+    """
+    applescript = '''
+    on previewCurrentMove(theFolder)
+        tell application "Preview"
+            activate
+            save front document
+            set theFile to ((path of front document) as text)
+            -- close front document
+            quit
+        end tell
+
+        do shell script "mv " & quoted form of theFile & " " & theFolder
+    end previewCurrentMove
+    my previewCurrentMove("%(theFolder)s")
+    '''
+    def myesp(cmdString):
+        import os, inspect, tempfile, subprocess
+        caller = inspect.currentframe().f_back
+        cmd =  cmdString % caller.f_locals
+        
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('osascript ' + path, shell=True, executable="/bin/bash")
+        finally:
+            os.remove(path)
+        return None
+    myesp(applescript)
+
+def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
+    """
+    (emails,subjectline,titles,body,attaches,sendout)
+    emails: if Multiple emails, 'a@a.com, b@b.com'
+    subjectline: 
+    titles: "Dear Dr. Zhu"  # do not add comma at the end
+    body: "\nblabla"        # need to add a newline before the body, internally: titles & "," & body & "\n\n"
+    attaches: ['file/path/to/a.pdf','file/path/to/b.pdf'] # posix filepath in a python list
+    sendout: 1/0
+    """
+    # a bit nasty workaround (POSIX to alias format--somehow I cannot make it work directly in applescript)
+    tmp = []
+    for a in attaches:
+        aa = a.replace('/',':')
+        if aa.startswith(':'): aa = 'Macintosh HD'+aa
+        # quote double for applescript
+        tmp.append('"{}"'.format(aa))
+    attaches = ','.join(tmp)
+    applescript = '''
+    -- attaches is a list {}
+    on applemail(emails,subjectline,titles,body,attaches,sendout)
+        tell application "Mail"
+            set theSubject to subjectline
+            set theContent to titles & "," & body & "\n\n"
+            set theAddress to emails -- the receiver 
+
+            set msg to make new outgoing message with properties {subject: theSubject, content: theContent, visible:true}
+            tell msg to make new to recipient at end of every to recipient with properties {address:theAddress}
+            repeat with theAttachmentFile in attaches
+                tell msg to make new attachment with properties {file name:theAttachmentFile as alias} at after the last paragraph
+            end repeat
+
+            delay 3
+            if sendout as number is equal to 1 then
+                send msg
+            end if
+        end tell
+    end
+    my applemail("%(emails)s", "%(subjectline)s", "%(titles)s", "%(body)s", {%(attaches)s}, %(sendout)d)
+    '''
+    def myesp(cmdString):
+        import os, inspect, tempfile, subprocess
+        caller = inspect.currentframe().f_back
+        cmd =  cmdString % caller.f_locals
+        
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('osascript ' + path, shell=True, executable="/bin/bash")
+        finally:
+            os.remove(path)
+        return None
+    myesp(applescript)
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

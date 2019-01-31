@@ -1449,6 +1449,88 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             print('\nCommand saved at '+save+'\n')
         return None
 
+def espA(cmdString, verbose=0, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
+    """
+    typical usage (generally no need to tweak other parameters):
+    key = 'm'
+    cmd = '''
+    tell application "System Events" to keystroke "%(key)s" using {command down}
+    '''
+    ez.espA(cmd)
+
+    a shortcut for execute(sprintf(cmdString)), cannot capture output
+    write cmdString (applescript codes) to a temp file, then call "osascript temp.applescript", finally remove the temp file
+    Execute a SPrintf, but does not return the output to a python variable
+    cmdString: applescript codes
+    verbose: any screen display here does not affect returned values
+            0 = nothing to display
+            1 = only the actual command
+            2 = only the command output
+            3 = both the command itself and output
+    save: None, or a file path to save the cmd, can still save even if error occurs (for debugging)
+    saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
+    redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
+    redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
+    if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for {} in applescript such as, keystroke "m" using {command down}
+    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    Example: 
+            ez.espA('''tell application "System Events" to keystroke "m" using {command down}''')
+    """
+    # # caller's caller
+    # caller = inspect.currentframe().f_back.f_back
+    import inspect
+    caller = inspect.currentframe().f_back
+    # for esp()
+    if kwargs: 
+        if kwargs['insideCalling']:
+            caller = inspect.currentframe().f_back.f_back
+    cmd = sprintf(cmdString,caller.f_locals,skipdollar=skipdollar)
+    
+    if debugMode:
+        debug_mode_in_effect = True
+    else:
+        if _DEBUG_MODE:
+            debug_mode_in_effect = True
+        else:
+            debug_mode_in_effect = False
+    
+    if not debug_mode_in_effect:
+        # save R source code
+        if saveMode=='w': rm(save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            print('\nCommand saved at '+save+'\n')
+
+        import tempfile
+        # create temp file with specified suffix
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            # not save this command line
+            execute('osascript ' + path, verbose=verbose, save=None, saveMode='a', redirect=redirect, redirectMode=redirectMode, shell=shell, debugMode=debug_mode_in_effect, *args, **kwargs)
+        # delete it when it is done (can still delete after return)
+        # A finally clause is always executed before leaving the try statement, whether an exception has occurred or not. 
+        finally:
+            os.remove(path)
+    else:
+        pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
+        if saveMode=='w': rm(save)
+        if save:
+            if os.path.exists(save):
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n') 
+            else:
+                with open(save, 'a') as tmp:
+                    tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            print('\nCommand saved at '+save+'\n')
+        return None
+
 def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, disk=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub',showstats=True):
     """
     specific for waisman server

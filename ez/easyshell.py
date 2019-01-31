@@ -3247,6 +3247,15 @@ def encoding_convert(file_path, source_encoding=None, backup=False):
         with open(file_path, 'w') as f: 
             f.write(content.encode(target_encoding))
 
+def opens(filepath):
+    import subprocess, os, sys
+    if sys.platform.startswith('darwin'):
+        subprocess.call(('open', filepath))
+    elif os.name == 'nt': # For Windows
+        os.startfile(filepath)
+    elif os.name == 'posix': # For Linux
+        subprocess.call(('xdg-open', filepath))
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

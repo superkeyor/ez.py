@@ -1476,6 +1476,30 @@ def espA(cmdString, verbose=0, save=None, saveMode='a', redirect=None, redirectM
     Example: 
             ez.espA('''tell application "System Events" to keystroke "m" using {command down}''')
     """
+
+    # a simplified, standalone version
+    # def espA(cmdString):
+    #     """
+    #     key = 'm'
+    #     cmd = '''
+    #     tell application "System Events" to keystroke "%(key)s" using {command down}
+    #     '''
+    #     ez.espA(cmd)
+    #     """
+    #     import os, inspect, tempfile, subprocess
+    #     caller = inspect.currentframe().f_back
+    #     cmd =  cmdString % caller.f_locals
+        
+    #     fd, path = tempfile.mkstemp(suffix='.applescript')
+    #     try:
+    #         with os.fdopen(fd, 'w') as tmp:
+    #             tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+    #         subprocess.call('osascript ' + path, shell=True, executable="/bin/bash")
+    #     finally:
+    #         os.remove(path)
+    #     return None
+
+
     # # caller's caller
     # caller = inspect.currentframe().f_back.f_back
     import inspect

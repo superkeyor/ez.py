@@ -3464,7 +3464,7 @@ def applescript_preview_mvactive(theFolder):
 def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
     """
     (emails,subjectline,titles,body,attaches,sendout)
-    emails: if Multiple emails, 'a@a.com, b@b.com'  # , SPACE between emails, othewise Mail raises error
+    emails: if Multiple emails, 'a@a.com, b@b.com'  # , SPACE between emails, othewise Mail raises Warning
     subjectline: 
     titles: "Dear Dr. Zhu"  # do not add comma at the end
     body: "\nblabla"        # need to add a newline before the body, internally: titles & "," & body & "\n\n"
@@ -3486,7 +3486,9 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
         tell application "Mail"
             set theSubject to subjectline
             set theContent to titles & "," & body & "\n\n"
+            set {TID, text item delimiters} to {text item delimiters, ", "}
             set theAddress to emails -- the receiver 
+            set text item delimiters to TID
 
             set msg to make new outgoing message with properties {subject: theSubject, content: theContent, visible:true}
             tell msg to make new to recipient at end of every to recipient with properties {address:theAddress}

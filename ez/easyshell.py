@@ -3258,8 +3258,11 @@ def opens(filepath):
 
 def applescript_pages_replace(searchWord, replacementString):
     """
-    replace one item in pages
-    ("DrFullName", KMVAR_DrFullName)
+    replace one word at a time (but all occurrences) in pages active document
+    For the best result, searchWord to be recommended using "DRFULLNAME"
+    case sensitive, can NOT have _, word bounded by spaces
+    this way, no recursive replacement would happen, other issues could be avoided
+    ("DRFULLNAME", "My name is")
     """
     applescript = '''
     -- does not work for symbols, eg, {  } or word pairs separated by separator
@@ -3315,7 +3318,8 @@ def applescript_pages_replace(searchWord, replacementString):
 
 def applescript_pages_pdfactive():
     """
-    convert current/active Pages document to pdf, quit Pages after conversion
+    ()
+    convert current/active Pages document to pdf to downloads folder, quit Pages after conversion (will save or remind to save)
     """
     applescript = '''
     -- https://iworkautomation.com/pages/document-export.html
@@ -3327,7 +3331,7 @@ def applescript_pages_pdfactive():
 
     -- THE DESTINATION FOLDER 
     -- (see the "path" to command in the Standard Additions dictionary for other locations, such as movies folder, pictures folder, desktop folder)
-    set the defaultDestinationFolder to (path to documents folder)
+    set the defaultDestinationFolder to (path to downloads folder)
 
     set usePDFEncryption to false
     tell application "Pages"

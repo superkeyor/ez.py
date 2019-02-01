@@ -3578,14 +3578,12 @@ def applescript_outlook(emails,subjectline,titles,body,attaches,sendout):
                 tell msg to make new recipient with properties {email address:{address:item i of theAddress}} at end of to recipients of msg
             end repeat
             repeat with theAttachmentFile in attaches
-                tell msg to make new «class cAtc» with properties {file:theAttachmentFile as alias}
+                tell msg to make new attachment with properties {file:theAttachmentFile as alias}
             end repeat
 
             delay 3
             if sendout as number is equal to 1 then
-                tell msg
-                «event mailsend»
-                end tell
+                send msg
             else
                 open msg
             end if

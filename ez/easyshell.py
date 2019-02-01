@@ -3571,7 +3571,6 @@ def applescript_outlook(emails,subjectline,titles,body,attaches,sendout):
     -- emails, attaches is a list {}
     on outlookmail(emails,subjectline,titles,body,attaches,sendout)
         tell application "Microsoft Outlook"
-            activate
             set theSubject to subjectline
             set theContent to titles & "," & body & "\n\n"
             set theAddress to emails -- the receiver 

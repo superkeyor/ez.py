@@ -3319,8 +3319,9 @@ def applescript_pages_replace(searchWord, replacementString):
 def applescript_pages_pdfactive():
     """
     ()
-    convert current/active Pages document to pdf to downloads folder, quit Pages after conversion (will save or remind to save)
+    convert current/active Pages document to pdf to the same folder as the active document, quit Pages after conversion (will save or remind to save)
     pdf name is same as page document name, if pdf exists, will be name-1.pdf, name-2.pdf, etc
+    if active document does not have a valid folder (eg, never saved), save to download folder
     """
     applescript = '''
     -- https://iworkautomation.com/pages/document-export.html
@@ -3328,15 +3329,51 @@ def applescript_pages_pdfactive():
     -- https://gist.github.com/loop/7207134ed7ff7a288ee1
     on pagesCurrent2pdf()
     --property exportFileExtension : "pdf"
-    --property useEncryptionDefaultValue : false
-
-    -- THE DESTINATION FOLDER 
-    -- (see the "path" to command in the Standard Additions dictionary for other locations, such as movies folder, pictures folder, desktop folder)
-    set the defaultDestinationFolder to (path to downloads folder)
+    --property useEncryptionDefaultValue : false    
 
     set usePDFEncryption to false
     tell application "Pages"
         activate
+
+------------------------------------------------------------------------------
+# Auth: Christopher Stone
+# dCre: 2017/05/22 15:10
+# dMod: 2017/05/22 15:18 
+# Appl: System Events
+# Task: Attempt to acquire the POSIX Path of the file associated with the front window of the front app.
+# Libs: None
+# Osax: None
+# Tags: @Applescript, @Script, @ASObjC, @System_Events, @Acquire, @POSIX_Path, @Path, @File, @Associated, @Front, @Window, @Front_App
+------------------------------------------------------------------------------
+use framework "Foundation"
+use scripting additions
+try
+    tell application "System Events"
+        set frontProcess to first process whose frontmost is true
+        set procName to name of frontProcess
+        tell frontProcess
+            tell front window
+                tell attribute "AXDocument"
+                    set fileUrlOfFrontWindow to its value
+                end tell
+            end tell
+        end tell
+    end tell
+    
+on error
+    set fileUrlOfFrontWindow to missing value
+end try
+
+if fileUrlOfFrontWindow is not missing value and fileUrlOfFrontWindow is not "file:///Irrelevent" then
+    set posixPath to (current application's class "NSURL"'s URLWithString:fileUrlOfFrontWindow)'s |path|() as text
+    set script1 to "dirname '" & posixPath & "'"
+    set dirPath to do shell script script1
+    set the defaultDestinationFolder to (POSIX file dirPath)
+else
+    set the defaultDestinationFolder to (path to downloads folder)
+end if
+------------------------------------------------------------------------------
+
         try
             if not (exists document 1) then error number -128
             
@@ -3427,7 +3464,7 @@ def applescript_pages_pdfactive():
         return None
     myesp(applescript)
 
-def applescript_preview_mvactive(theFolder):
+def applescript_preview_moveactive(theFolder):
     """
     (theFolder)
     save the current Preview pdf, move the pdf to theFolder, quit Preview
@@ -3461,7 +3498,7 @@ def applescript_preview_mvactive(theFolder):
         return None
     myesp(applescript)
 
-def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
+def applescript_mail(emails,subjectline,titles,body,attaches=[],sendout=0):
     """
     (emails,subjectline,titles,body,attaches,sendout)
     emails: if Multiple emails, 'a@a.com, b@b.com'  # with or without spaces after , or ;
@@ -3537,7 +3574,7 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
         return None
     myesp(applescript)
 
-def applescript_outlook(emails,subjectline,titles,body,attaches,sendout):
+def applescript_outlook(emails,subjectline,titles,body,attache=[],sendout=0):
     """
     (emails,subjectline,titles,body,attaches,sendout)
     emails: if Multiple emails, 'a@a.com, b@b.com'  # with or without spaces after , or ;

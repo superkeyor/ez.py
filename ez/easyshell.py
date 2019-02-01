@@ -3324,17 +3324,12 @@ def applescript_pages_pdfactive():
     if active document does not have a valid folder (eg, never saved), save to download folder
     """
     applescript = '''
+use framework "Foundation"
+use scripting additions   
     -- https://iworkautomation.com/pages/document-export.html
     -- also https://github.com/gitmalong/pages2docx
     -- https://gist.github.com/loop/7207134ed7ff7a288ee1
     on pagesCurrent2pdf()
-    --property exportFileExtension : "pdf"
-    --property useEncryptionDefaultValue : false    
-
-    set usePDFEncryption to false
-    tell application "Pages"
-        activate
-
 ------------------------------------------------------------------------------
 # Auth: Christopher Stone
 # dCre: 2017/05/22 15:10
@@ -3345,8 +3340,9 @@ def applescript_pages_pdfactive():
 # Osax: None
 # Tags: @Applescript, @Script, @ASObjC, @System_Events, @Acquire, @POSIX_Path, @Path, @File, @Associated, @Front, @Window, @Front_App
 ------------------------------------------------------------------------------
-use framework "Foundation"
-use scripting additions
+tell application "Pages"
+    activate
+end 
 try
     tell application "System Events"
         set frontProcess to first process whose frontmost is true
@@ -3368,12 +3364,17 @@ if fileUrlOfFrontWindow is not missing value and fileUrlOfFrontWindow is not "fi
     set posixPath to (current application's class "NSURL"'s URLWithString:fileUrlOfFrontWindow)'s |path|() as text
     set script1 to "dirname '" & posixPath & "'"
     set dirPath to do shell script script1
-    set the defaultDestinationFolder to (POSIX file dirPath)
+    set the defaultDestinationFolder to (POSIX file dirPath as text) & ":"
 else
     set the defaultDestinationFolder to (path to downloads folder)
 end if
 ------------------------------------------------------------------------------
+    --property exportFileExtension : "pdf"
+    --property useEncryptionDefaultValue : false    
 
+    set usePDFEncryption to false
+    tell application "Pages"
+        activate
         try
             if not (exists document 1) then error number -128
             

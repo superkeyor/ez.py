@@ -3499,7 +3499,6 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
     -- emails, attaches is a list {}
     on applemail(emails,subjectline,titles,body,attaches,sendout)
         tell application "Mail"
-            activate
             set theSubject to subjectline
             set theContent to titles & "," & body & "\n\n"
             set theAddress to emails -- the receiver 
@@ -3516,6 +3515,8 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
             delay 3
             if sendout as number is equal to 1 then
                 send msg
+            else
+                activate
             end if
         end tell
     end
@@ -3588,6 +3589,7 @@ def applescript_outlook(emails,subjectline,titles,body,attaches,sendout):
                 send msg
             else
                 open msg
+                activate
             end if
         end tell
     end

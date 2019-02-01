@@ -3499,6 +3499,7 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
     -- emails, attaches is a list {}
     on applemail(emails,subjectline,titles,body,attaches,sendout)
         tell application "Mail"
+            activate
             set theSubject to subjectline
             set theContent to titles & "," & body & "\n\n"
             set theAddress to emails -- the receiver 
@@ -3569,6 +3570,7 @@ def applescript_outlook(emails,subjectline,titles,body,attaches,sendout):
     -- emails, attaches is a list {}
     on outlookmail(emails,subjectline,titles,body,attaches,sendout)
         tell application "Microsoft Outlook"
+            activate
             set theSubject to subjectline
             set theContent to titles & "," & body & "\n\n"
             set theAddress to emails -- the receiver 
@@ -3605,7 +3607,7 @@ def applescript_outlook(emails,subjectline,titles,body,attaches,sendout):
             os.remove(path)
         return None
     myesp(applescript)
-# applescript_outlook('jerryzhujian9@gmail.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nbest,\njerry',['/Users/jerry/Downloads/Untitled.txt','Untitled-2.txt'],0)        
+# applescript_outlook('jerryzhujian9@gmail.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nbest,\njerry',['/Users/jerry/Downloads/Untitled.txt','Untitled-2.txt'],0)
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

@@ -3470,6 +3470,14 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
     body: "\nblabla"        # need to add a newline before the body, internally: titles & "," & body & "\n\n"
     attaches: ['file/path/to/a.pdf','file/path/to/b.pdf'] # posix filepath in a python list # relative or full path
     sendout: 1/0
+
+    note: (still issue with exchange/apple mail even the following configuration)
+    In Apple Mail, go to the menu Edit > Attachments
+        Make sure the following settings are checked:
+        Always Send Windows-Friendly Attachments
+        Always Insert Attachments at End of Message
+    Otherwise: Exchange creating ATT00001 attachments
+    http://kb.mit.edu/confluence/pages/viewpage.action?pageId=4981187
     """
     # workaround for warnings for multiple emails
     import re
@@ -3526,6 +3534,80 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
             os.remove(path)
         return None
     myesp(applescript)
+
+def applescript_outlook(emails,subjectline,titles,body,attaches,sendout):
+    """
+    (emails,subjectline,titles,body,attaches,sendout)
+    emails: if Multiple emails, 'a@a.com, b@b.com'  # with or without spaces after , or ;
+    subjectline: 
+    titles: "Dear Dr. Zhu"  # do not add comma at the end
+    body: "\nblabla"        # need to add a newline before the body, internally: titles & "," & body & "\n\n"
+    attaches: ['file/path/to/a.pdf','file/path/to/b.pdf'] # posix filepath in a python list # relative or full path
+    sendout: 1/0
+
+    no Exchange issue creating ATT00001 attachments with outlook!
+    """
+    # workaround for warnings for multiple emails
+    import re
+    tmp = []
+    emails = re.split('[,;]',emails)
+    for e in emails:
+        tmp.append('"{}"'.format(e.strip()))
+    emails = ','.join(tmp)
+    # a bit nasty workaround (POSIX to alias format--somehow I cannot make it work directly in applescript)
+    import os
+    tmp = []
+    for a in attaches:
+        aa = os.path.abspath(a).replace('/',':')
+        if aa.startswith(':'): aa = 'Macintosh HD'+aa
+        # quote double for applescript
+        tmp.append('"{}"'.format(aa))
+    attaches = ','.join(tmp)
+    # https://stackoverflow.com/a/35469878/2292993
+    # https://stackoverflow.com/a/30900060/2292993
+    applescript = '''
+    -- emails, attaches is a list {}
+    on outlookmail(emails,subjectline,titles,body,attaches,sendout)
+        tell application "Microsoft Outlook"
+            set theSubject to subjectline
+            set theContent to titles & "," & body & "\n\n"
+            set theAddress to emails -- the receiver 
+
+            set msg to make new outgoing message with properties {subject:theSubject, plain text content:theContent}            
+            repeat with i from 1 to count theAddress
+                tell msg to make new recipient with properties {email address:{address:item i of theAddress}} at end of to recipients of msg
+            end repeat
+            repeat with theAttachmentFile in attaches
+                tell msg to make new «class cAtc» with properties {file:theAttachmentFile as alias}
+            end repeat
+
+            delay 3
+            if sendout as number is equal to 1 then
+                tell msg
+                «event mailsend»
+                end tell
+            else
+                open msg
+            end if
+        end tell
+    end
+    my outlookmail({%(emails)s}, "%(subjectline)s", "%(titles)s", "%(body)s", {%(attaches)s}, %(sendout)d)
+    '''
+    def myesp(cmdString):
+        import os, inspect, tempfile, subprocess
+        caller = inspect.currentframe().f_back
+        cmd =  cmdString % caller.f_locals
+        
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('osascript ' + path, shell=True, executable="/bin/bash")
+        finally:
+            os.remove(path)
+        return None
+    myesp(applescript)
+# applescript_outlook('jerrywhatsoever@yahoo.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nbest,\njerry',['/Users/jerry/Downloads/Untitled.pdf','Untitled-2.pdf'],0)        
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

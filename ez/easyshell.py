@@ -3607,7 +3607,7 @@ def applescript_outlook(emails,subjectline,titles,body,attaches,sendout):
             os.remove(path)
         return None
     myesp(applescript)
-# applescript_outlook('jerrywhatsoever@yahoo.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nbest,\njerry',['/Users/jerry/Downloads/Untitled.pdf','Untitled-2.pdf'],0)        
+# applescript_outlook('jerryzhujian9@gmail.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nbest,\njerry',['/Users/jerry/Downloads/Untitled.txt','Untitled-2.txt'],0)        
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

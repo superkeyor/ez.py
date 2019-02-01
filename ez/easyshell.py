@@ -3464,13 +3464,20 @@ def applescript_preview_mvactive(theFolder):
 def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
     """
     (emails,subjectline,titles,body,attaches,sendout)
-    emails: if Multiple emails, 'a@a.com, b@b.com'  # , SPACE between emails, othewise Mail raises Warning
+    emails: if Multiple emails, 'a@a.com, b@b.com'  # with or without spaces after , or ;
     subjectline: 
     titles: "Dear Dr. Zhu"  # do not add comma at the end
     body: "\nblabla"        # need to add a newline before the body, internally: titles & "," & body & "\n\n"
     attaches: ['file/path/to/a.pdf','file/path/to/b.pdf'] # posix filepath in a python list # relative or full path
     sendout: 1/0
     """
+    # workaround for warnings for multiple emails
+    import re
+    tmp = []
+    emails = re.split('[,;]',emails)
+    for e in emails:
+        tmp.append('"{}"'.format(e.strip()))
+    emails = ','.join(tmp)
     # a bit nasty workaround (POSIX to alias format--somehow I cannot make it work directly in applescript)
     import os
     tmp = []
@@ -3481,17 +3488,18 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
         tmp.append('"{}"'.format(aa))
     attaches = ','.join(tmp)
     applescript = '''
-    -- attaches is a list {}
+    -- emails, attaches is a list {}
     on applemail(emails,subjectline,titles,body,attaches,sendout)
         tell application "Mail"
             set theSubject to subjectline
             set theContent to titles & "," & body & "\n\n"
-            set {TID, text item delimiters} to {text item delimiters, ", "}
             set theAddress to emails -- the receiver 
-            set text item delimiters to TID
 
             set msg to make new outgoing message with properties {subject: theSubject, content: theContent, visible:true}
-            tell msg to make new to recipient at end of every to recipient with properties {address:theAddress}
+            -- tell msg to make new to recipient at end of every to recipient with properties {address:theAddress}
+            repeat with i from 1 to count theAddress
+                tell msg to make new to recipient at end of every to recipient with properties {address:item i of theAddress}
+            end repeat
             repeat with theAttachmentFile in attaches
                 tell msg to make new attachment with properties {file name:theAttachmentFile as alias} at after the last paragraph
             end repeat
@@ -3502,7 +3510,7 @@ def applescript_mail(emails,subjectline,titles,body,attaches,sendout):
             end if
         end tell
     end
-    my applemail("%(emails)s", "%(subjectline)s", "%(titles)s", "%(body)s", {%(attaches)s}, %(sendout)d)
+    my applemail({%(emails)s}, "%(subjectline)s", "%(titles)s", "%(body)s", {%(attaches)s}, %(sendout)d)
     '''
     def myesp(cmdString):
         import os, inspect, tempfile, subprocess

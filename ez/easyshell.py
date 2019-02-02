@@ -3472,7 +3472,12 @@ def applescript_preview_moveactive(theFolder):
     save the current Preview pdf, move the pdf to theFolder, quit Preview
     """
     applescript = '''
+    on is_running(appName)
+            tell application "System Events" to (name of processes) contains appName
+        end is_running
+
     on previewCurrentMove(theFolder)
+        if is_running("Preview") then
         tell application "Preview"
             activate
             save front document
@@ -3482,6 +3487,7 @@ def applescript_preview_moveactive(theFolder):
         end tell
 
         do shell script "mv " & quoted form of theFile & " " & theFolder
+        end if
     end previewCurrentMove
     my previewCurrentMove("%(theFolder)s")
     '''

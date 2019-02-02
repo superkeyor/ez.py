@@ -3326,10 +3326,6 @@ def applescript_pages_pdfactive():
     applescript = '''
 use framework "Foundation"
 use scripting additions   
-    -- https://iworkautomation.com/pages/document-export.html
-    -- also https://github.com/gitmalong/pages2docx
-    -- https://gist.github.com/loop/7207134ed7ff7a288ee1
-    on pagesCurrent2pdf()
 ------------------------------------------------------------------------------
 # Auth: Christopher Stone
 # dCre: 2017/05/22 15:10
@@ -3343,6 +3339,8 @@ use scripting additions
 tell application "Pages"
     activate
 end 
+-- have to wait till Pages frontmost, otherwise the code would fail
+delay 3
 try
     tell application "System Events"
         set frontProcess to first process whose frontmost is true
@@ -3362,13 +3360,16 @@ end try
 
 if fileUrlOfFrontWindow is not missing value and fileUrlOfFrontWindow is not "file:///Irrelevent" then
     set posixPath to (current application's class "NSURL"'s URLWithString:fileUrlOfFrontWindow)'s |path|() as text
-    set script1 to "dirname '" & posixPath & "'"
-    set dirPath to do shell script script1
-    set the defaultDestinationFolder to (POSIX file dirPath as text) & ":"
+    -- parent folder instead of full path name
+    set the defaultDestinationFolder to POSIX file (posixPath & "/..")
 else
     set the defaultDestinationFolder to (path to downloads folder)
 end if
 ------------------------------------------------------------------------------
+    -- https://iworkautomation.com/pages/document-export.html
+    -- also https://github.com/gitmalong/pages2docx
+    -- https://gist.github.com/loop/7207134ed7ff7a288ee1
+    on pagesCurrent2pdf(defaultDestinationFolder)
     --property exportFileExtension : "pdf"
     --property useEncryptionDefaultValue : false    
 
@@ -3448,7 +3449,7 @@ end if
     --     reveal document file targetFileHFSPath
     -- end tell
     end
-    my pagesCurrent2pdf()
+    my pagesCurrent2pdf(defaultDestinationFolder)
     '''
     def myesp(cmdString):
         import os, inspect, tempfile, subprocess
@@ -3519,23 +3520,18 @@ def applescript_mail(emails,subjectline,titles,body,attaches=[],sendout=0):
     """
     # workaround for warnings for multiple emails
     import re
-    tmp = []
     emails = re.split('[,;]',emails)
-    for e in emails:
-        tmp.append('"{}"'.format(e.strip()))
-    emails = ','.join(tmp)
-    # a bit nasty workaround (POSIX to alias format--somehow I cannot make it work directly in applescript)
+    emails = ','.join(['"{}"'.format(e.strip()) for e in emails])
+    # add double quote
     import os
-    tmp = []
-    for a in attaches:
-        aa = os.path.abspath(a).replace('/',':')
-        if aa.startswith(':'): aa = 'Macintosh HD'+aa
-        # quote double for applescript
-        tmp.append('"{}"'.format(aa))
-    attaches = ','.join(tmp)
+    attaches = ','.join(['"{}"'.format(a.strip()) for a in attaches])
     applescript = '''
     -- emails, attaches is a list {}
     on applemail(emails,subjectline,titles,body,attaches,sendout)
+        repeat with i from 1 to count attaches
+            set item i of attaches to (POSIX file (item i of attaches) as alias)
+        end repeat
+
         tell application "Mail"
             set theSubject to subjectline
             set theContent to titles & "," & body & "\n\n"
@@ -3583,31 +3579,26 @@ def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
     titles: "Dear Dr. Zhu"  # do not add comma at the end
     body: "\nblabla"        # need to add a newline before the body, internally: titles & "," & body & "\n\n"
     attaches: ['file/path/to/a.pdf','file/path/to/b.pdf'] # posix filepath in a python list # relative or full path
-    sendout: 1/0
+    sendout: 1/0, integer
 
     no Exchange issue creating ATT00001 attachments with outlook!
     """
     # workaround for warnings for multiple emails
     import re
-    tmp = []
     emails = re.split('[,;]',emails)
-    for e in emails:
-        tmp.append('"{}"'.format(e.strip()))
-    emails = ','.join(tmp)
-    # a bit nasty workaround (POSIX to alias format--somehow I cannot make it work directly in applescript)
+    emails = ','.join(['"{}"'.format(e.strip()) for e in emails])
+    # add double quote
     import os
-    tmp = []
-    for a in attaches:
-        aa = os.path.abspath(a).replace('/',':')
-        if aa.startswith(':'): aa = 'Macintosh HD'+aa
-        # quote double for applescript
-        tmp.append('"{}"'.format(aa))
-    attaches = ','.join(tmp)
+    attaches = ','.join(['"{}"'.format(a.strip()) for a in attaches])
     # https://stackoverflow.com/a/35469878/2292993
     # https://stackoverflow.com/a/30900060/2292993
     applescript = '''
     -- emails, attaches is a list {}
     on outlookmail(emails,subjectline,titles,body,attaches,sendout)
+        repeat with i from 1 to count attaches
+            set item i of attaches to (POSIX file (item i of attaches) as alias)
+        end repeat
+
         tell application "Microsoft Outlook"
             set theSubject to subjectline
             set theContent to titles & "," & body & "\n\n"
@@ -3646,7 +3637,7 @@ def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
             os.remove(path)
         return None
     myesp(applescript)
-# applescript_outlook('jerryzhujian9@gmail.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nbest,\njerry',['/Users/jerry/Downloads/Untitled.txt','Untitled-2.txt'],0)
+# applescript_outlook('jerryzhujian9@gmail.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nbest,\njerry',['/Applications/Calculator.app/Contents/version.plist','/Applications/Calculator.app/Contents/Info.plist'],0)
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging

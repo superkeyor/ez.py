@@ -3530,7 +3530,7 @@ def applescript_mail(emails,subjectline,titles,body,attaches=[],sendout=0):
     emails = ','.join(['"{}"'.format(e.strip()) for e in emails])
     # add double quote
     import os
-    attaches = ','.join(['"{}"'.format(a.strip()) for a in attaches])
+    attaches = ','.join(['"{}"'.format(os.path.abspath(a)) for a in attaches])
     applescript = '''
     -- emails, attaches is a list {}
     on applemail(emails,subjectline,titles,body,attaches,sendout)
@@ -3595,7 +3595,7 @@ def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
     emails = ','.join(['"{}"'.format(e.strip()) for e in emails])
     # add double quote
     import os
-    attaches = ','.join(['"{}"'.format(a.strip()) for a in attaches])
+    attaches = ','.join(['"{}"'.format(os.path.abspath(a)) for a in attaches])
     # https://stackoverflow.com/a/35469878/2292993
     # https://stackoverflow.com/a/30900060/2292993
     applescript = '''

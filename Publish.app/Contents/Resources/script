@@ -31,8 +31,7 @@ rm -r *.egg-info
 # /Users/jerry/PyEnv/bin/pip install $package --upgrade
 # /Library/Frameworks/Python.framework/Versions/2.7/bin/pip install $package --upgrade
 source ~/.bash_profile
-sleep 5
-pip install $package --upgrade --no-cache-dir
+pip install $package --upgrade --no-cache-dir --disable-version-check
 
 # do not use this, seems not working??
 # Although not required, it’s common to locally install your project in “develop” or “editable” mode 

@@ -3320,7 +3320,7 @@ def applescript_pages_pdfactive():
     """
     ()
     convert current/active Pages document to pdf to the same folder as the active document, quit Pages after conversion (will save or remind to save)
-    pdf name is same as page document name, if pdf exists, will be name-1.pdf, name-2.pdf, etc
+    pdf name is same as page document name, if pdf exists, overwrites
     if active document does not have a valid folder (eg, never saved), save to download folder
     """
     applescript = '''
@@ -3412,20 +3412,20 @@ end if
             
             tell application "Finder"
                 set exportItemFileName to documentName & "." & "pdf"
-                set incrementIndex to 1
-                repeat until not (exists document file exportItemFileName of defaultDestinationFolder)
-                    set exportItemFileName to documentName & "-" & (incrementIndex as string) & "." & "pdf"
-                    set incrementIndex to incrementIndex + 1
-                end repeat
+                -- set incrementIndex to 1
+                -- repeat until not (exists document file exportItemFileName of defaultDestinationFolder)
+                --     set exportItemFileName to documentName & "-" & (incrementIndex as string) & "." & "pdf"
+                --     set incrementIndex to incrementIndex + 1
+                -- end repeat
             end tell
             set the targetFileHFSPath to (defaultDestinationFolder as string) & exportItemFileName
             
             -- EXPORT THE DOCUMENT
             with timeout of 1200 seconds
                 if usePDFEncryption is true then
-                    export front document to file targetFileHFSPath as PDF with properties {password:providedPassword}
+                    export front document to file targetFileHFSPath as PDF with properties {password:providedPassword} with replacing
                 else
-                    export front document to file targetFileHFSPath as PDF
+                    export front document to file targetFileHFSPath as PDF with replacing
                 end if
             end timeout
             

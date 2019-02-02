@@ -3583,17 +3583,22 @@ def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
     subjectline: 
     titles: "Dear Dr. Zhu"  # do not add comma at the end
     body: "\nblabla"        # need to add a newline before the body, internally: titles & "," & body & "\n\n"
+                            well, actually outlook defaults html, I replace \n with <br> internally 
+                            see https://discussions.apple.com/thread/5929457
     attaches: ['file/path/to/a.pdf','file/path/to/b.pdf'] # posix filepath in a python list # relative or full path
     sendout: 1/0, integer
 
     no Exchange issue creating ATT00001 attachments with outlook!
     """
+    body = body.replace('\n','<br>')
     # workaround for warnings for multiple emails
     import re
     emails = re.split('[,;]',emails)
     emails = ','.join(['"{}"'.format(e.strip()) for e in emails])
-    # add double quote
     import os
+    # outlook add attachement in reverse order
+    attaches.reverse()
+    # add double quote
     attaches = ','.join(['"{}"'.format(os.path.abspath(a)) for a in attaches])
     # https://stackoverflow.com/a/35469878/2292993
     # https://stackoverflow.com/a/30900060/2292993
@@ -3606,10 +3611,11 @@ def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
 
         tell application "Microsoft Outlook"
             set theSubject to subjectline
-            set theContent to titles & "," & body & "\n\n"
+            set theContent to titles & "," & body & "<br><br>"
             set theAddress to emails -- the receiver 
 
-            set msg to make new outgoing message with properties {subject:theSubject, plain text content:theContent}            
+            --set msg to make new outgoing message with properties {subject:theSubject, plain text content:theContent}            
+            set msg to make new outgoing message with properties {subject:theSubject, content:theContent}            
             repeat with i from 1 to count theAddress
                 tell msg to make new recipient with properties {email address:{address:item i of theAddress}} at end of to recipients of msg
             end repeat

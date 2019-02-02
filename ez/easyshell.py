@@ -3483,7 +3483,6 @@ def applescript_preview_moveactive(theFolder):
         end tell
 
         do shell script "mv " & quoted form of theFile & " " & theFolder
-        end if
     end previewCurrentMove
     my previewCurrentMove("%(theFolder)s")
     '''

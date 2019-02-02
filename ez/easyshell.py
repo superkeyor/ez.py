@@ -3575,7 +3575,7 @@ def applescript_mail(emails,subjectline,titles,body,attaches=[],sendout=0):
         return None
     myesp(applescript)
 
-def applescript_outlook(emails,subjectline,titles,body,attache=[],sendout=0):
+def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
     """
     (emails,subjectline,titles,body,attaches,sendout)
     emails: if Multiple emails, 'a@a.com, b@b.com'  # with or without spaces after , or ;

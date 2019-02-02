@@ -3471,13 +3471,9 @@ def applescript_preview_moveactive(theFolder):
     (theFolder)
     save the current Preview pdf, move the pdf to theFolder, quit Preview
     """
+    # https://stackoverflow.com/a/16071855/2292993
     applescript = '''
-    on is_running(appName)
-            tell application "System Events" to (name of processes) contains appName
-        end is_running
-
     on previewCurrentMove(theFolder)
-        if is_running("Preview") then
         tell application "Preview"
             activate
             save front document
@@ -3504,7 +3500,11 @@ def applescript_preview_moveactive(theFolder):
         finally:
             os.remove(path)
         return None
-    myesp(applescript)
+    # https://stackoverflow.com/a/7788702/2292993
+    import psutil
+    # if preview is running, case sensitive
+    if ("Preview" in (p.name() for p in psutil.process_iter())):
+        myesp(applescript)
 
 def applescript_mail(emails,subjectline,titles,body,attaches=[],sendout=0):
     """

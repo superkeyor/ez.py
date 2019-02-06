@@ -3553,8 +3553,8 @@ def applescript_finder_alias(theFrom, theTo):
         theType = 'file'
     else:
         theType = 'folder'
-    todir = ez.dirname(theTo)
-    toname = ez.basename(theTo)
+    todir = os.path.dirname(theTo)
+    toname = os.path.basename(theTo)
     myesp(applescript)
 
 def applescript_mail(emails,subjectline,titles,body,attaches=[],sendout=0):

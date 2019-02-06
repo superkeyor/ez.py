@@ -3178,6 +3178,11 @@ def pinyinauthor(names):
             newnames = newnames + name[0].title() + ', ' + '. '.join([x[0].upper() for x in name[1:]]) + '.'
         else:
             newnames = newnames + name[0].title() + ', ' + '. '.join([x[0].upper() for x in name[1:]]) + '., '
+    # apa: Journal article with DOl, more than seven authors
+    newnames = newnames.split('., ')
+    if len(newnames) > 7:
+        newnames = newnames[0:6] + ['. . . '+newnames[-1]]
+    newnames = '., '.join(newnames)
     return newnames
 
 def xlcolconv(col):
@@ -3507,6 +3512,43 @@ def applescript_preview_moveactive(theFolder):
     # if preview is running, case sensitive
     if ("Preview" in (p.name() for p in psutil.process_iter())):
         myesp(applescript)
+
+def applescript_finder_alias(theFrom, theTo):
+    """
+    (theFrom, theTo)
+    create a short/alias
+    theFrom, theTo: relative or abs path, both folder or both file
+    """
+    # https://apple.stackexchange.com/questions/51709
+    applescript = '''
+    tell application "Finder"
+       make new alias to %(theType)s (posix file "%(theFrom)s") at (posix file "%(todir)s")
+       set name of result to "%(toname)s"
+    end tell
+    '''
+    def myesp(cmdString):
+        import os, inspect, tempfile, subprocess
+        caller = inspect.currentframe().f_back
+        cmd =  cmdString % caller.f_locals
+        
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            subprocess.call('osascript ' + path, shell=True, executable="/bin/bash")
+        finally:
+            os.remove(path)
+        return None
+    import os
+    theFrom = os.path.abspath(theFrom)
+    theTo = os.path.abspath(theTo)
+    if os.path.isfile(theFrom): 
+        theType = 'file'
+    else:
+        theType = 'folder'
+    todir = ez.dirname(theTo)
+    toname = ez.basename(theTo)
+    myesp(applescript)
 
 def applescript_mail(emails,subjectline,titles,body,attaches=[],sendout=0):
     """

@@ -3428,8 +3428,12 @@ end if
             end tell
             set the targetFileHFSPath to (defaultDestinationFolder as string) & exportItemFileName
 
-            set script1 to "rm '" & (POSIX path of targetFileHFSPath) & "'"
-            do shell script script1
+            tell application "System Events"
+                if exists file targetFileHFSPath then
+                    set script1 to "rm '" & (POSIX path of targetFileHFSPath) & "'"
+                    do shell script script1
+                end if
+            end tell
             
             -- EXPORT THE DOCUMENT
             with timeout of 1200 seconds

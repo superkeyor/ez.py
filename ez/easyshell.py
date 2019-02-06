@@ -3419,6 +3419,9 @@ end if
                 -- end repeat
             end tell
             set the targetFileHFSPath to (defaultDestinationFolder as string) & exportItemFileName
+
+            set script1 to "rm '" & (POSIX path of targetFileHFSPath) & "'"
+            do shell script script1
             
             -- EXPORT THE DOCUMENT
             with timeout of 1200 seconds

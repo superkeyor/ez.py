@@ -3164,8 +3164,11 @@ def chunk2(initialList, chunkSize):
 def pinyinauthor(names):
     """
     convert Yuan Zhang Zhu, Jian Zhu --> Zhu, Y. Z., Zhu, J. for APA reference list
+    can auto get rid of numbers in the author names
     """
     names = re.sub('(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\s','\s','\s','\s'), '', names, count=0)
+    names = re.sub('\d', '', names, count=0)
+    names = re.sub(',{2,}', ',', names, count=0)
     names = names.split(', ')
     newnames = ''; i = 0
     for name in names: 

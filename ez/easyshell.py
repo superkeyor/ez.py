@@ -3481,26 +3481,41 @@ end if
         return None
     myesp(applescript)
 
-def applescript_preview_moveactive(theFolder):
+def applescript_preview_moveactive(theFolder,quitpreview=0):
     """
     (theFolder)
-    save the current Preview pdf, move the pdf to theFolder, quit Preview
+    save the current Preview pdf, move the pdf to theFolder, quit Preview or reopen the pdf
     """
     # https://stackoverflow.com/a/16071855/2292993
-    applescript = '''
-    on previewCurrentMove(theFolder)
-        tell application "Preview"
-            activate
-            save front document
-            set theFile to ((path of front document) as text)
-            -- close front document
-            quit
-        end tell
+    if quitpreview:
+        applescript = '''
+        on previewCurrentMove(theFolder)
+            tell application "Preview"
+                activate
+                save front document
+                set theFile to ((path of front document) as text)
+                -- close front document
+                quit
+            end tell
 
-        do shell script "mv " & quoted form of theFile & " " & theFolder
-    end previewCurrentMove
-    my previewCurrentMove("%(theFolder)s")
-    '''
+            do shell script "mv " & quoted form of theFile & " " & theFolder
+        end previewCurrentMove
+        my previewCurrentMove("%(theFolder)s")
+        '''
+    else:
+        applescript = '''
+        on previewCurrentMove(theFolder)
+            tell application "Preview"
+                activate
+                save front document
+                set theFile to ((path of front document) as text)
+            end tell
+
+            --known issue: this method would not notify Preview
+            do shell script "mv " & quoted form of theFile & " " & theFolder
+        end previewCurrentMove
+        my previewCurrentMove("%(theFolder)s")
+        '''
     def myesp(cmdString):
         import os, inspect, tempfile, subprocess
         caller = inspect.currentframe().f_back

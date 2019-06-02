@@ -16,7 +16,7 @@ packages = find_packages()
 install_requires=['']
 ######################################################################################
 # Get the long description from the relevant file
-with open(path.join(here, 'README.txt'), encoding='utf-8') as f:
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 theNameSpace = {}
@@ -94,7 +94,7 @@ setup(
     version=version,
 
     long_description=long_description,
-    long_description_content_type='text/plain',
+    long_description_content_type='text/markdown',
 
     # The project's main homepage.
     url='https://pypi.python.org/pypi/' + PACKAGE,

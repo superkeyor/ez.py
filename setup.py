@@ -93,7 +93,7 @@ setup(
     # https://packaging.python.org/en/latest/development.html#single-sourcing-the-version
     version=version,
 
-    long_description=long_description,
+    # long_description=long_description,
     long_description='This module is for easy interaction with linux, Mac OS X, Windows shell.',
 
     # The project's main homepage.

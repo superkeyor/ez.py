@@ -94,7 +94,7 @@ setup(
     version=version,
 
     long_description=long_description,
-    long_description='',
+    long_description='This module is for easy interaction with linux, Mac OS X, Windows shell.',
 
     # The project's main homepage.
     url='https://pypi.python.org/pypi/' + PACKAGE,

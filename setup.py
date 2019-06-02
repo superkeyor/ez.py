@@ -94,6 +94,7 @@ setup(
     version=version,
 
     long_description=long_description,
+    long_description='',
 
     # The project's main homepage.
     url='https://pypi.python.org/pypi/' + PACKAGE,

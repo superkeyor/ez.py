@@ -6,7 +6,6 @@ import os, sys
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, MODULE_PATH)
 here = path.abspath(path.dirname(__file__))
-sys.path.insert(1,here)
 
 # readme
 from __init__ import __doc__ as doc
@@ -14,7 +13,7 @@ with open(path.join(os.path.dirname(here), 'README.rst'), encoding='utf-8', mode
     f.write(doc)
 
 # version
-from .version import __version__ as ver
+from version import __version__ as ver
 ver = ver.replace('.','')
 ver=int(ver)
 ver += 1

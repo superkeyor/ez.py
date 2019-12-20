@@ -6,6 +6,7 @@ import os, sys
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, MODULE_PATH)
 here = path.abspath(path.dirname(__file__))
+sys.path.insert(1,here)
 
 # readme
 from .__init__ import __doc__ as doc

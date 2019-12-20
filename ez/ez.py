@@ -3589,12 +3589,12 @@ def GetClip():
 getclip=GetClip
 
 try:
-    # import os, sys
-    # MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
-    # sys.path.insert(1, MODULE_PATH)
+    import os, sys
+    HERE = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, HERE)
     
     # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-    from . pygmailconfig import EMAIL, PASSWORD
+    from pygmailconfig import EMAIL, PASSWORD
     def Mail(to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None):
         """Mail(to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
@@ -3606,7 +3606,7 @@ try:
         gclient = GMail(EMAIL,PASSWORD)
         msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=None,html=body,attachments=attachments,sender=None,reply_to=reply_to)
         return gclient.send(msg)
-except ModuleNotFoundError:
+except:
     def Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None):
         """Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'

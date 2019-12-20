@@ -1,6 +1,6 @@
-import gdata.calendar.data
-import gdata.calendar.client
-import atom
+from . import gdata.calendar.data
+from . import gdata.calendar.client
+from . import atom
 
 
 class GoogleCalendar:

@@ -1,10 +1,10 @@
 import re
 from functools import partial, wraps
 
-from debug import repr_args, set_name, get_name
-from ds_builder import DSBuilder, NoBuilder
-from main import pipe, XObject, StringFormatter, xpartial
-from compat import string_types, dict_items
+from .debug import repr_args, set_name, get_name
+from .ds_builder import DSBuilder, NoBuilder
+from .main import pipe, XObject, StringFormatter, xpartial
+from .compat import string_types, dict_items
 
 
 def pipe_util(func):
@@ -22,7 +22,7 @@ def pipe_util(func):
             function = xpartial(function, *args, **kwargs)
 
         name = lambda: '%s(%s)' % (get_name(func), ', '.join(
-            filter(None, (get_name(original_function), repr_args(*args, **kwargs)))))
+            [_f for _f in (get_name(original_function), repr_args(*args, **kwargs)) if _f]))
 
         f = func(function)
 

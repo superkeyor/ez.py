@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+
 
 import os.path
 import re
 
 PinyinToneMark = {
-    0: u"aoeiuv\u00fc",
-    1: u"\u0101\u014d\u0113\u012b\u016b\u01d6\u01d6",
-    2: u"\u00e1\u00f3\u00e9\u00ed\u00fa\u01d8\u01d8",
-    3: u"\u01ce\u01d2\u011b\u01d0\u01d4\u01da\u01da",
-    4: u"\u00e0\u00f2\u00e8\u00ec\u00f9\u01dc\u01dc",
+    0: "aoeiuv\u00fc",
+    1: "\u0101\u014d\u0113\u012b\u016b\u01d6\u01d6",
+    2: "\u00e1\u00f3\u00e9\u00ed\u00fa\u01d8\u01d8",
+    3: "\u01ce\u01d2\u011b\u01d0\u01d4\u01da\u01da",
+    4: "\u00e0\u00f2\u00e8\u00ec\u00f9\u01dc\u01dc",
 }
 
 
@@ -106,7 +106,7 @@ class Pinyin(object):
         if convert == 'upper':
             return word.upper()
 
-    def get_pinyin(self, chars=u'你好', splitter=u'-',
+    def get_pinyin(self, chars='你好', splitter='-',
                    show_tone_marks=False, convert='lower'):
         result = []
         flag = 1
@@ -128,13 +128,13 @@ class Pinyin(object):
                 flag = 0
         return splitter.join(result)
 
-    def get_initial(self, char=u'你'):
+    def get_initial(self, char='你'):
         try:
             return self.dict["%X" % ord(char)].split(" ")[0][0]
         except KeyError:
             return char
 
-    def get_initials(self, chars=u'你好', splitter=u'-'):
+    def get_initials(self, chars='你好', splitter='-'):
         result = []
         flag = 1
         for char in chars:
@@ -162,10 +162,10 @@ def pinyin(chr,case='capitalize',splitter=None,tone=False):
     reference: xpinyin, pypinyin
     """
     p = Pinyin()
-    print p.get_pinyin(chr,u' ',True,'capitalize')  # print tone
+    print(p.get_pinyin(chr,' ',True,'capitalize'))  # print tone
     if case=='initial':
-        if not splitter: splitter=u''
+        if not splitter: splitter=''
         return p.get_initials(chr,splitter)
     else:
-        if not splitter: splitter=u' '
+        if not splitter: splitter=' '
         return p.get_pinyin(chr,splitter,tone,case)

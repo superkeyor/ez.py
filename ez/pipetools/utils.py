@@ -1,13 +1,13 @@
-from __future__ import print_function
+
 from functools import partial
 from itertools import islice, takewhile, dropwhile
 import operator
 
-from debug import set_name, repr_args, get_name
-from decorators import data_structure_builder, regex_condition
-from decorators import pipe_util, auto_string_formatter
-from main import pipe, X, _iterable
-from compat import map, filter, range, dict_items
+from .debug import set_name, repr_args, get_name
+from .decorators import data_structure_builder, regex_condition
+from .decorators import pipe_util, auto_string_formatter
+from .main import pipe, X, _iterable
+from .compat import map, filter, range, dict_items
 
 
 KEY, VALUE = X[0], X[1]
@@ -201,7 +201,7 @@ def unless(exception_class_or_tuple, func, *args, **kwargs):
         return _unless
 
     name = lambda: 'unless(%s, %s)' % (exception_class_or_tuple, ', '.join(
-        filter(None, (get_name(func), repr_args(*args, **kwargs)))))
+        [_f for _f in (get_name(func), repr_args(*args, **kwargs)) if _f]))
 
     return set_name(name, construct_unless(func, *args, **kwargs))
 

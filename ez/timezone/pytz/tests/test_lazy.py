@@ -27,7 +27,7 @@ class LazyListTestCase(unittest.TestCase):
     def test_unary_ops(self):
         unary_ops = [str, repr, len, bool, not_]
         try:
-            unary_ops.append(unicode)
+            unary_ops.append(str)
         except NameError:
             pass  # unicode no longer exists in Python 3.
 
@@ -169,7 +169,7 @@ class LazyListTestCase(unittest.TestCase):
         for i in range(-len(self.base), len(self.base)):
             for j in range(-len(self.base), len(self.base)):
                 for step in [-1, 1]:
-                    replacement = range(0, len(self.base[i:j:step]))
+                    replacement = list(range(0, len(self.base[i:j:step])))
                     self.base[i:j:step] = replacement
                     self.lazy[i:j:step] = replacement
                     self.assertEqual(self.lazy, self.base)
@@ -195,7 +195,7 @@ class LazySetTestCase(unittest.TestCase):
         # These ops just need to work.
         unary_ops = [str, repr]
         try:
-            unary_ops.append(unicode)
+            unary_ops.append(str)
         except NameError:
             pass  # unicode no longer exists in Python 3.
 

@@ -17,7 +17,7 @@ def Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None,
     msg.set_charset('utf8')
 
     msg['From'] = "Memory Lab"
-    if type(to) not in [str, unicode]: to = ', '.join(to)
+    if type(to) not in [str, str]: to = ', '.join(to)
     msg['To'] = to
     msg['Subject'] = Header(subject.encode('utf-8'), 'UTF-8').encode()
     #This solve the problem with the encode on the subject.
@@ -25,7 +25,7 @@ def Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None,
     to = [to]
     if cc:
         # cc gets added to the text header as well as list of recipients
-        if type(cc) in [str, unicode]:
+        if type(cc) in [str, str]:
             msg.add_header('Cc', cc)
             cc = [cc]
         else:
@@ -33,7 +33,7 @@ def Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None,
         to += cc
     if bcc:
         # bcc does not get added to the headers, but is a recipient
-        if type(bcc) in [str, unicode]:
+        if type(bcc) in [str, str]:
             bcc = [bcc]
         to += bcc
     if reply_to:
@@ -47,7 +47,7 @@ def Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None,
         msg.attach(MIMEText(body.encode('utf-8'), 'plain', 'UTF-8'))
 
     if attachment:
-        if type(attachment) in [str, unicode]: attachment = [attachment]
+        if type(attachment) in [str, str]: attachment = [attachment]
         for att in attachment:
             mimetype, encoding = guess_type(att)
             if mimetype is None or encoding is not None:
@@ -82,11 +82,11 @@ def Mail(EMAIL, PASSWORD, to, subject, body, attachment=None, bcc=None, cc=None,
     mailServer.ehlo()
     mailServer.starttls()
     mailServer.ehlo()
-    print 'logging into email account...'
+    print('logging into email account...')
     mailServer.login(EMAIL, PASSWORD)
-    print 'sending...'
+    print('sending...')
     mailServer.sendmail(EMAIL, to, msg.as_string())
     # Should be mailServer.quit(), but that crashes...
-    print 'finishing...'
+    print('finishing...')
     mailServer.close()
-    print 'done!'
+    print('done!')

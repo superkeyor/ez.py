@@ -4,12 +4,12 @@ sys.path.insert(1, MODULE_PATH)
 
 # __doc__ at the bottom
 
-import atom
-import atom.data    #essential to pygcal
-import gdata
-import pygcal
-import pygmail
-import pygsheet
+from . import atom
+from . import atom.data    #essential to pygcal
+from . import gdata
+from . import pygcal
+from . import pygmail
+from . import pygsheet
 
 try:
     # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"

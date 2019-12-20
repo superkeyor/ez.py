@@ -133,7 +133,7 @@ pipe usage: # http://0101.github.io/pipetools/doc/
 """
 
 # reference: abspath for ../ ./, expanduser for ~, glob to resolve wildcards, fnmatch.translate wildcards to re
-import os, sys, platform, string, random, shutil, re, subprocess, glob, ConfigParser, fnmatch
+import os, sys, platform, string, random, shutil, re, subprocess, glob, configparser, fnmatch
 from os.path import abspath, basename, dirname, splitext, isfile, isdir, realpath, expanduser
 
 _DEBUG_MODE = 0
@@ -475,13 +475,13 @@ def cd(path):
     """cd(path), Changes to a new directory."""
     path = fullpath(path)
     os.chdir(path)
-    print "Start working in " + os.getcwd()
+    print("Start working in " + os.getcwd())
 
 def ce():
     """cd(csd()), Changes to csd."""
     path = csd()
     os.chdir(path)
-    print "Start working in " + path
+    print("Start working in " + path)
 cf = ce
 
 def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
@@ -492,7 +492,7 @@ def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search
-        return filter(match_pattern, list)
+        return list(filter(match_pattern, list))
     def _ListingParse(path="./", pattern_regex=".*"):
         # ls() or ls('homebrew'), ls("homebrew", "\.py$")
         if os.path.isdir(path):
@@ -529,7 +529,7 @@ def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True, case=True
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search
-        return filter(match_pattern, list)
+        return list(filter(match_pattern, list))
     def _ListingParse(path="./", pattern_regex=".*"):
         # ls() or ls('homebrew'), ls("homebrew", "\.py$")
         if os.path.isdir(path):
@@ -572,7 +572,7 @@ def fls(path="./", regex=".*", dotf=False, sort=True, case=True):
     def _FilterList(list, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search
-        return filter(match_pattern, list)
+        return list(filter(match_pattern, list))
     def _ListingParse(path="./", pattern_regex=".*"):
         # ls() or ls('homebrew'), ls("homebrew", "\.py$")
         if os.path.isdir(path):
@@ -619,7 +619,7 @@ def mkdir(path):
     path = fullpath(path)
     if not os.path.exists(path):
         os.makedirs(path)
-        print "Created: " + path
+        print("Created: " + path)
 
 def exists(path):
     """Returns the existence of path (0 or 1, supports wildcards such as "../homebrew/*.pyc" but not regular expression)."""
@@ -863,7 +863,7 @@ def lns(source, destination):
     destination = fullpath(destination)
 
     os.symlink(source, destination)
-    print "Symbolic link: " + "->".join([source, destination])
+    print("Symbolic link: " + "->".join([source, destination]))
 
 def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """Executes a bash command. can capture output
@@ -923,7 +923,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
 
         # https://stackoverflow.com/a/40139101/2292993
         def _execute_cmd(cmd):
@@ -973,7 +973,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             err = p.stderr.read()
             if p.returncode != 0:
                 # responsible for logging STDERR 
-                if verbose in [2,3]: print "Error: " + str(err)
+                if verbose in [2,3]: print("Error: " + str(err))
                 yield None
             # delete temp file
             os.remove(tmpPath)
@@ -983,7 +983,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             # error did not occur earlier
             if line is not None:
                 # trailing comma to avoid a newline (by print itself) being printed
-                if verbose in [2,3]: print line,
+                if verbose in [2,3]: print(line, end=',')
                 out.append(line.strip())
             else:
                 # error occured earlier
@@ -995,7 +995,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
         else:
             # https://stackoverflow.com/a/3845453/2292993
             # filter() check if one or all empty string
-            if len(out)==0 or len(filter(None,out))==0:
+            if len(out)==0 or len([_f for _f in out if _f])==0:
                 return []
             else:
                 return out
@@ -1010,7 +1010,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
         return None
 
 def execute1(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
@@ -1174,7 +1174,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
         
         import tempfile
         # create temp file with specified suffix
@@ -1199,7 +1199,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
         return None
 
 def espR1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', skipdollar=1, debugMode=False, *args, **kwargs):
@@ -1290,7 +1290,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
 
         if os.name == 'nt' or platform.system() == 'Windows':
             if output:
@@ -1318,7 +1318,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                     subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, shell=True, executable="/bin/bash", stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
                 finally:
                     os.remove(tmpPath)
-        print ""
+        print("")
 
     else:
         pprint("Simulation! Execute command: " + cmd + "\n< < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ", 'yellow')
@@ -1331,7 +1331,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
             subprocess.call('chmod +x '+save, shell=True)
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
 
 def esp(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=0, debugMode=False, *args, **kwargs):
     """
@@ -1422,7 +1422,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
 
         import tempfile
         # create temp file with specified suffix
@@ -1446,7 +1446,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
             else:
                 with open(save, 'a') as tmp:
                     tmp.write('#!/bin/Rscript \n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
         return None
 
 def espA(cmdString, verbose=0, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', skipdollar=1, debugMode=False, *args, **kwargs):
@@ -1528,7 +1528,7 @@ def espA(cmdString, verbose=0, save=None, saveMode='a', redirect=None, redirectM
             else:
                 with open(save, 'a') as tmp:
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
 
         import tempfile
         # create temp file with specified suffix
@@ -1552,7 +1552,7 @@ def espA(cmdString, verbose=0, save=None, saveMode='a', redirect=None, redirectM
             else:
                 with open(save, 'a') as tmp:
                     tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
-            print('\nCommand saved at '+save+'\n')
+            print(('\nCommand saved at '+save+'\n'))
         return None
 
 def condorize(executables=[], submit=True, luggage=None, email=None, memory=None, disk=None, getenv=True, universe='vanilla', log='condor.log', submitfile='condor.sub',showstats=True):
@@ -1645,7 +1645,7 @@ queue
 
     with open(submitfile, 'w') as tmp:
         tmp.write(condor.replace('"','\"').replace("'","\'")+'\n\n')
-    print('Condor submit file saved at '+submitfile)
+    print(('Condor submit file saved at '+submitfile))
 
     if email:
         # awk print should be single quoted (not double!)
@@ -1672,7 +1672,7 @@ def condorstats():
     myqueue = 'Queue (mine):\t\t' + execute2('condor_q',0)[-1]
     
     pprint("\nSome condor commands...",'blue')
-    print """watch -n 2 condor_q
+    print("""watch -n 2 condor_q
 condor_q: See my current condor jobs
 condor_q -better-analyze <job_id>
 condor_status: cores being used
@@ -1702,13 +1702,13 @@ printf better than echo
 2>&1 | tee -a: bash redirect file and screen (-a append)
 |& tee -a: tcsh redirect file and screen
 /path/\{file1.zip,file2.zip\}: multiple matches
-"""
+""")
 
     # pprint("Some users' reports...",'blue')
     # execute('condor_userprio -most',2)
     
     pprint("\nSome condor stats...",'blue')
-    print unclaimed + '\n' + allqueue + '\n' + myqueue + '\n'
+    print(unclaimed + '\n' + allqueue + '\n' + myqueue + '\n')
 
 from contextlib import contextmanager
 @contextmanager
@@ -1770,18 +1770,18 @@ def which(name):
     name_no_prefix = name.split('.')[-1]
     if name_no_prefix == 'python':
         from distutils.sysconfig import get_python_lib
-        print get_python_lib()
-        print (sys.version)
+        print(get_python_lib())
+        print((sys.version))
     else:
         try:
-            print sys.modules[name_no_prefix]
+            print(sys.modules[name_no_prefix])
         except:
-            for module in sys.modules.keys():
+            for module in list(sys.modules.keys()):
                 try:
                     import inspect
                     caller = inspect.currentframe().f_back
                     if name_no_prefix in eval('dir('+ module + ')', caller.f_locals):
-                        print 'function ' + name_no_prefix + '() in ' + module
+                        print('function ' + name_no_prefix + '() in ' + module)
                         # print sys.modules[module]
                         # print ''
                 except:
@@ -1801,21 +1801,21 @@ def doc(package_prefixed_name):
     """
     import inspect
     caller = inspect.currentframe().f_back
-    print eval(package_prefixed_name + '.__doc__', caller.f_locals)
+    print(eval(package_prefixed_name + '.__doc__', caller.f_locals))
 help = doc
 
 def ver(package_name='python'):
     """
     ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
     """
-    print package_name + ' version installed:'
+    print(package_name + ' version installed:')
     if package_name == 'python':
-        print (sys.version)
+        print((sys.version))
     else:
         # https://docs.python.org/2.7/reference/simple_stmts.html#exec
         theNameSpace = {}
         exec('import ' + package_name, theNameSpace)
-        print theNameSpace[package_name].__version__
+        print(theNameSpace[package_name].__version__)
 version = ver
 
 def evaluate(exp):
@@ -1842,13 +1842,13 @@ def who(name=''):
     theList = eval('dir('+ name + ')', caller.f_locals)
     theList = sorted(theList)
     theNameSpace = name if name != '' else 'Current'
-    print theNameSpace + ' namespace has the following existing functions/modules:\n'
+    print(theNameSpace + ' namespace has the following existing functions/modules:\n')
     # http://stackoverflow.com/questions/19863388/modify-print-function-for-multiple-columns-python
     def pretty_print(theList, ncols):
         columns = len(theList)//200+ncols
         lines = ("".join(s.ljust(20) for s in theList[i:i+columns-1])+theList[i:i+columns][-1] for i in range(0, len(theList), columns))
         return "\n".join(lines)
-    print pretty_print(theList,4)
+    print(pretty_print(theList,4))
 whos = who
 
 # def sedawk(path, regex=".*", search=None, replace=None, recursion=True):
@@ -1888,7 +1888,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
         def __init__(self, file):
             self.file = file
             sys.stdout = sys.__stdout__
-            print "log on with " + fullpath(self.file)
+            print("log on with " + fullpath(self.file))
             self.terminal = sys.stdout
             self.log = open(file, mode)
             if timestamp:
@@ -1914,7 +1914,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
             self.log.flush()
             self.log.close()
             sys.stdout = sys.__stdout__
-            print "log off with " + fullpath(self.file)
+            print("log off with " + fullpath(self.file))
 
     if status:
         # restore first if it has been changed
@@ -1980,7 +1980,7 @@ def tree(path='./', sum=True, save=None, sort=True, case=True):
         if PRINT_FILES and files:
             file_prefix = prefix + ('|' if dirs else ' ') + '   '
             for name in files:
-                print(file_prefix + name)
+                print((file_prefix + name))
             print(file_prefix)
         dir_prefix, walk_prefix = prefix + '+---', prefix + '|   '
         for pos, neg, name in enumerate2(dirs):
@@ -1989,9 +1989,9 @@ def tree(path='./', sum=True, save=None, sort=True, case=True):
             path = os.path.join(root, name)
             try:
                 dirs, files = listdir(path)[:2]
-                print(dir_prefix + name + '\t(' + str(len(files)) +  ' files)')
+                print((dir_prefix + name + '\t(' + str(len(files)) +  ' files)'))
             except:
-                print(dir_prefix + name)
+                print((dir_prefix + name))
             else:
                 walk(path, dirs, files, walk_prefix)
 
@@ -2332,7 +2332,7 @@ def sprintf(formatString, *args, **kwargs):
                     if kwargs['skipdollar']!=1: kwargs.pop('skipdollar')
                 except:
                     pass
-                if 'skipdollar' not in kwargs.keys():
+                if 'skipdollar' not in list(kwargs.keys()):
                     # \w is [a-zA-Z0-9_], but I do not want pure number
                     # so [a-zA-Z_]+\w*? for valid variable naming
                     # ${number}, ${language}_ to {number}, {language}_
@@ -2388,7 +2388,7 @@ def clear(module, recursive=False):
     remove a module from sys.modules so it cannot be searched.
     when recursive=True, remove the module and its submodules"""
     if recursive:
-        for mod in sys.modules.keys():
+        for mod in list(sys.modules.keys()):
             if mod.startswith(module):
                 del(sys.modules[mod])
     else:
@@ -2471,7 +2471,7 @@ def unique(seq):
     # a = [1,5,2,3,2,1,5,6,5,5,5]
     # duplicate(a) # yields [2, 1, 5]
     """
-    from orderedset import OrderedSet
+    from .orderedset import OrderedSet
     return list(OrderedSet(seq))
 
 def union(seq1,seq2):
@@ -2493,7 +2493,7 @@ def union(seq1,seq2):
     # a = [1,5,2,3,2,1,5,6,5,5,5]
     # duplicate(a) # yields [2, 1, 5]
     """
-    from orderedset import OrderedSet
+    from .orderedset import OrderedSet
     return list(OrderedSet(seq1) | OrderedSet(seq2))
 
 def intersect(seq1,seq2):
@@ -2515,7 +2515,7 @@ def intersect(seq1,seq2):
     # a = [1,5,2,3,2,1,5,6,5,5,5]
     # duplicate(a) # yields [2, 1, 5]
     """
-    from orderedset import OrderedSet
+    from .orderedset import OrderedSet
     return list(OrderedSet(seq1) & OrderedSet(seq2))
 
 def setdiff(seq1,seq2):
@@ -2537,7 +2537,7 @@ def setdiff(seq1,seq2):
     # a = [1,5,2,3,2,1,5,6,5,5,5]
     # duplicate(a) # yields [2, 1, 5]
     """
-    from orderedset import OrderedSet
+    from .orderedset import OrderedSet
     return list(OrderedSet(seq1) - OrderedSet(seq2))
 
 def duplicate(seq):
@@ -2559,7 +2559,7 @@ def duplicate(seq):
     # a = [1,5,2,3,2,1,5,6,5,5,5]
     # duplicate(a) # yields [2, 1, 5]
     """
-    from orderedset import OrderedSet
+    from .orderedset import OrderedSet
     seen = OrderedSet()
     seen_add = seen.add
     # adds all elements it doesn't know yet to seen and all other to seen_twice
@@ -2615,9 +2615,9 @@ class JDict(OrderedDict):
         # prev for recursive call
         if prev == None: prev = self
 
-        for (newKey,newVal) in theDict.items():
+        for (newKey,newVal) in list(theDict.items()):
             # if no newKey, this is easy, simply initialize
-            if not prev.has_key(newKey):
+            if newKey not in prev:
                 prev[newKey] = newVal
             else:
             # key exisiting
@@ -2636,7 +2636,7 @@ class JDict(OrderedDict):
     def sort(self, reverse=False):
         # self = JDict(sorted(self.items(),reverse=reverse)) will not work, see
         # http://stackoverflow.com/questions/1216356/
-        return JDict(sorted(self.items(),reverse=reverse))
+        return JDict(sorted(list(self.items()),reverse=reverse))
 
 class Moment(object):
     """A datetime like class, but with convenient attributes and methods
@@ -2879,15 +2879,15 @@ def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
         try:
             file_count += 1
             c = read_line_count(file)
-            print "%s : %d" % (os.path.basename(file), c)
+            print("%s : %d" % (os.path.basename(file), c))
             line_count += c
         except:
             pass
 
-    print '-----------------------------'
-    print 'File counted: %d' % file_count
-    print 'Line counted: %d' % line_count
-    print 'Done!'
+    print('-----------------------------')
+    print('File counted: %d' % file_count)
+    print('Line counted: %d' % line_count)
+    print('Done!')
 
 def keygen(length=8, complexity=3):
     """generate a random key
@@ -2934,16 +2934,16 @@ def hashes(filename, reference=None):
             sha1.update(chunk)
     if reference:
         if reference.lower() == md5.hexdigest().lower():
-            print 'md5 32: ' + md5.hexdigest() + ' (matched)!'
+            print('md5 32: ' + md5.hexdigest() + ' (matched)!')
         else:
-            print 'md5 32: ' + md5.hexdigest() + ' (NOT MATCHED)!'
+            print('md5 32: ' + md5.hexdigest() + ' (NOT MATCHED)!')
         if reference.lower() == sha1.hexdigest().lower():
-            print 'sha1 32: ' + sha1.hexdigest() + ' (matched)!'
+            print('sha1 32: ' + sha1.hexdigest() + ' (matched)!')
         else:
-            print 'sha1 32: ' + sha1.hexdigest() + ' (NOT MATCHED)!'
+            print('sha1 32: ' + sha1.hexdigest() + ' (NOT MATCHED)!')
     else:
-        print 'md5 32: ' + md5.hexdigest()
-        print 'sha1 32: ' + sha1.hexdigest()
+        print('md5 32: ' + md5.hexdigest())
+        print('sha1 32: ' + sha1.hexdigest())
 
 def readx(path, sheet=0, r=[1,], c=None, *args, **kwargs):
     """
@@ -2975,24 +2975,24 @@ def readx(path, sheet=0, r=[1,], c=None, *args, **kwargs):
     sheetobj = wbobj.sheet_by_name(sheet)
 
     if r == None:
-        r = range(0,sheetobj.nrows)     # all rows
+        r = list(range(0,sheetobj.nrows))     # all rows
     elif type(r) in [int]:
         r = [r]     # a single row
     elif type(r) in [list]:
         if len(r) == 1:
-            r = range(r[0],sheetobj.nrows)  # from r to end
+            r = list(range(r[0],sheetobj.nrows))  # from r to end
         else:
             r = r   # multiple rows
     else:
         raise Exception('Invalid row number(s)')
 
     if c == None:
-        c = range(0,sheetobj.ncols)     # all cols
+        c = list(range(0,sheetobj.ncols))     # all cols
     elif type(c) in [int]:
         c = [c]    # a single col
     elif type(c) in [list]:
         if len(c) == 1:
-            c = range(c[0],sheetobj.ncols)  # from c to end
+            c = list(range(c[0],sheetobj.ncols))  # from c to end
         else:
             c = c   # multiple cols
     else:
@@ -3111,19 +3111,19 @@ def hanzifreq(filename, size=10, outfile=None, encoding='utf8'):
     count = {}  
     for line in codecs.open(filename, 'r', encoding):  
         for chr in line:  
-            if u'\u4E00' <= chr <= u'\u9FA5' or  u'\uF900' <= chr <= u'\uFA2D':  
+            if '\u4E00' <= chr <= '\u9FA5' or  '\uF900' <= chr <= '\uFA2D':  
                 count[chr] = 1 + count.get(chr, 0)
 
-    hanzifreq = sorted(count.iteritems(), key=itemgetter(1), reverse=True)
+    hanzifreq = sorted(iter(count.items()), key=itemgetter(1), reverse=True)
     result = hanzifreq  # for return
     if size: hanzifreq = hanzifreq[:size]
 
-    print '\n'.join([u'%s\t%s' % (chr, times) for chr, times in hanzifreq]) 
+    print('\n'.join(['%s\t%s' % (chr, times) for chr, times in hanzifreq])) 
     if outfile:
         with codecs.open(outfile, mode='w', encoding='utf-8') as outFile:
-            outFile.write('\n'.join([u'%s,%s' % (chr, times) for chr, times in hanzifreq]))
+            outFile.write('\n'.join(['%s,%s' % (chr, times) for chr, times in hanzifreq]))
     
-    print 'Done! Elapsed %s seconds.' % (time()-begin)
+    print('Done! Elapsed %s seconds.' % (time()-begin))
     return result
 
 def chunk(xs, n):
@@ -3244,10 +3244,10 @@ def encoding_convert(file_path, source_encoding=None, backup=False):
         source_encoding = chardet.detect(content)['encoding']
 
     if source_encoding is None:
-        print "I cannot guess source encoding (try GB2312 for MS-Windows?)", file_path
+        print("I cannot guess source encoding (try GB2312 for MS-Windows?)", file_path)
         return None
     else:
-        print source_encoding, file_path
+        print(source_encoding, file_path)
 
     target_encoding = 'utf-8'
     if source_encoding != target_encoding:

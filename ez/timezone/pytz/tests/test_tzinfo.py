@@ -3,7 +3,7 @@
 import sys, os, os.path
 import unittest, doctest
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 from datetime import datetime, time, timedelta, tzinfo
@@ -51,11 +51,11 @@ def prettydt(dt):
 
 
 try:
-    unicode
+    str
 except NameError:
     # Python 3.x doesn't have unicode(), making writing code
     # for Python 2.3 and Python 3.x a pain.
-    unicode = str
+    str = str
 
 
 class BasicTest(unittest.TestCase):
@@ -107,12 +107,12 @@ class BasicTest(unittest.TestCase):
         # and traditional strings, and that the desired singleton is
         # returned.
         self.clearCache()
-        eastern = pytz.timezone(unicode('US/Eastern'))
+        eastern = pytz.timezone(str('US/Eastern'))
         self.assertTrue(eastern is pytz.timezone('US/Eastern'))
 
         self.clearCache()
         eastern = pytz.timezone('US/Eastern')
-        self.assertTrue(eastern is pytz.timezone(unicode('US/Eastern')))
+        self.assertTrue(eastern is pytz.timezone(str('US/Eastern')))
 
 
 class PicklingTest(unittest.TestCase):
@@ -136,7 +136,7 @@ class PicklingTest(unittest.TestCase):
         tz = pytz.timezone('Europe/Amsterdam')
         dt = datetime(2004, 2, 1, 0, 0, 0)
 
-        for localized_tz in tz._tzinfos.values():
+        for localized_tz in list(tz._tzinfos.values()):
             self._roundtrip_tzinfo(localized_tz)
             self._roundtrip_datetime(dt.replace(tzinfo=localized_tz))
 

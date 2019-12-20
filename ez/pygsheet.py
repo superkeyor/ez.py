@@ -16,7 +16,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import gdata.spreadsheet.service
+from . import gdata.spreadsheet.service
 
 
 ID_FIELD = '__rowid__'
@@ -63,8 +63,7 @@ class SpreadsheetAPI(object):
             A list with information about the spreadsheets available
         """
         sheets = self._get_client().GetSpreadsheetsFeed()
-        return map(lambda e: (e.title.text, e.id.text.rsplit('/', 1)[1]),
-            sheets.entry)
+        return [(e.title.text, e.id.text.rsplit('/', 1)[1]) for e in sheets.entry]
 
     def list_worksheets(self, spreadsheet_key):
         """List Spreadsheets.
@@ -74,8 +73,7 @@ class SpreadsheetAPI(object):
         """
         wks = self._get_client().GetWorksheetsFeed(
             key=spreadsheet_key)
-        return map(lambda e: (e.title.text, e.id.text.rsplit('/', 1)[1]),
-            wks.entry)
+        return [(e.title.text, e.id.text.rsplit('/', 1)[1]) for e in wks.entry]
 
     def get_worksheet(self, spreadsheet_key, worksheet_key):
         """Get Worksheet.
@@ -210,7 +208,7 @@ class Worksheet(object):
         rows = [self._row_to_dict(row)
             for row in self._get_row_entries(query=self.query)]
         if filter_func:
-            rows = filter(filter_func, rows)
+            rows = list(filter(filter_func, rows))
         return rows
 
     def update_row(self, row_data):

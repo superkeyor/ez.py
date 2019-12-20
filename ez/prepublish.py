@@ -8,7 +8,7 @@ sys.path.insert(1, MODULE_PATH)
 here = path.abspath(path.dirname(__file__))
 
 # readme
-from __init__ import __doc__ as doc
+from .__init__ import __doc__ as doc
 with open(path.join(os.path.dirname(here), 'README.rst'), encoding='utf-8', mode='w') as f:
     f.write(doc)
 

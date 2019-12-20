@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 __author__ = "jerryzhujian9@gmail.com"
 
 __doc__ = """This module is for easy interaction with linux, Mac OS X, Windows shell 
-(Switching to Python 3)...
+(Should Support both Python 2 and 3)...
 =============================================
 jerryzhujian9_at_gmail.com
 To see your python version

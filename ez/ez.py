@@ -3589,12 +3589,12 @@ def GetClip():
 getclip=GetClip
 
 try:
-    import os, sys
-    HERE = os.path.dirname(os.path.abspath(__file__))
-    sys.path.insert(0, HERE)
+    # import os, sys
+    # HERE = os.path.dirname(os.path.abspath(__file__))
+    # sys.path.insert(0, HERE)
     
     # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-    from pygmailconfig import EMAIL, PASSWORD
+    from . pygmailconfig import EMAIL, PASSWORD
     def Mail(to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None):
         """Mail(to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'

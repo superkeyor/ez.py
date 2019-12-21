@@ -506,10 +506,10 @@ def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
     case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
           if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
     """
-    def _FilterList(list, pattern_regex):
+    def _FilterList(flist, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search
-        return list(filter(match_pattern, list))
+        return list(filter(match_pattern, flist))
     def _ListingParse(path="./", pattern_regex=".*"):
         # ls() or ls('homebrew'), ls("homebrew", "\.py$")
         if os.path.isdir(path):
@@ -543,10 +543,10 @@ def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True, case=True
     case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
           if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
     """
-    def _FilterList(list, pattern_regex):
+    def _FilterList(flist, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search
-        return list(filter(match_pattern, list))
+        return list(filter(match_pattern, flist))
     def _ListingParse(path="./", pattern_regex=".*"):
         # ls() or ls('homebrew'), ls("homebrew", "\.py$")
         if os.path.isdir(path):
@@ -586,10 +586,10 @@ def fls(path="./", regex=".*", dotf=False, sort=True, case=True):
     case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
           if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
     """
-    def _FilterList(list, pattern_regex):
+    def _FilterList(flist, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
         match_pattern = re.compile(pattern_regex).search
-        return list(filter(match_pattern, list))
+        return list(filter(match_pattern, flist))
     def _ListingParse(path="./", pattern_regex=".*"):
         # ls() or ls('homebrew'), ls("homebrew", "\.py$")
         if os.path.isdir(path):

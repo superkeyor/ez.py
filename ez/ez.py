@@ -505,6 +505,7 @@ def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
     """ls([path[, regex]], full=True, dotfile=False, sort=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
     case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
           if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
+    to sort by modification time: when get the results, call results.sort(key=os.path.getmtime)
     """
     def _FilterList(flist, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
@@ -542,6 +543,7 @@ def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True, case=True
     """lsd([path[, regex]], full=False, dotfolder=False, sort=True), Returns a list of all (including hidden) folders with their (optionally) full paths in path, filtered by regular expression.
     case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
           if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
+    to sort by modification time: when get the results, call results.sort(key=os.path.getmtime)          
     """
     def _FilterList(flist, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search

@@ -2500,6 +2500,11 @@ class JDict(OrderedDict):
 
 class Moment(object):
     """A datetime like class, but with convenient attributes and methods
+    Moment(moment=datetime.datetime(2020,05,30,15,30,00,100)).moment                 -> naive 15:30 datetime
+    Moment('US/Mountain',moment=datetime.datetime(2020,05,30,15,30,00,100)).moment   -> 15:30 in mountain time
+    Moment('US/Mountain').moment                                                     -> current time converted to mountain
+    Moment().Convert('US/Mountain').moment                                           -> current time converted to mountain
+    Moment().moment                                                                  -> current naive time
 
     Has common datetime attributes as strings.
     Wraps timedelta for easy calling.
@@ -2527,7 +2532,7 @@ class Moment(object):
     """
     def __init__(self, timezone=None, moment=None):
         """Generates the current datetime in specified timezone, or local naive datetime if omitted, (when moment omitted).
-
+        
         Args:
             timezone is the specified timezone string
                 UTC: Coordinated Universal Time (not a time zone, but a time standard)
@@ -2554,17 +2559,25 @@ class Moment(object):
             else:
                 moment = moment
         else:
+            timezone = pytz.timezone(timezone)
             if not moment:
+                # if moment is not provided, use now
                 moment = datetime.datetime.now()
-                moment = pytz.timezone(timezone).localize(moment)
+                # first: assign local timezone
+                tz = tzlocal.get_localzone()
+                moment = tz.localize(moment)
+                # second: convert to desired timezone
+                moment = timezone.normalize(moment.astimezone(timezone))
             else:
                 if not moment.tzinfo:
+                    # if provided moment is naive
                     # simply attach timezone to it
-                    moment = pytz.timezone(timezone).localize(moment)
+                    moment = timezone.localize(moment)
                 else:
+                    # if provided moment is aware
                     # convert to desired timezone
                     # add normalize to correct potential DST after Moment().Shift() Methods
-                    moment = pytz.timezone(timezone).normalize(moment.astimezone(pytz.timezone(timezone)))
+                    moment = timezone.normalize(moment.astimezone(timezone))
 
         self.moment = moment
         self.timezone = str(moment.tzinfo) if moment.tzinfo else None

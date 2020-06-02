@@ -2555,14 +2555,16 @@ class Moment(object):
                 moment = moment
         else:
             if not moment:
-                moment = datetime.datetime.now(pytz.timezone(timezone))
+                moment = datetime.datetime.now()
+                moment = pytz.timezone(timezone).localize(moment)
             else:
                 if not moment.tzinfo:
                     # simply attach timezone to it
-                    moment = moment.replace(tzinfo=pytz.timezone(timezone))
+                    moment = pytz.timezone(timezone).localize(moment)
                 else:
                     # convert to desired timezone
-                    moment = moment.astimezone(pytz.timezone(timezone))
+                    # add normalize to correct potential DST after Moment().Shift() Methods
+                    moment = pytz.timezone(timezone).normalize(moment.astimezone(pytz.timezone(timezone)))
 
         self.moment = moment
         self.timezone = str(moment.tzinfo) if moment.tzinfo else None
@@ -2625,7 +2627,7 @@ class Moment(object):
         else:
             dt = self.moment
         timezone = pytz.timezone(timezone)
-        newdt = dt.astimezone(timezone)
+        newdt = timezone.normalize(dt.astimezone(timezone))
         return Moment(timezone=None, moment=newdt)
 
     @classmethod

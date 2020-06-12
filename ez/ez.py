@@ -2964,6 +2964,27 @@ def savex(path, data, header=None, delimiter=",", sheet_name='Sheet1', *args, **
             wr.writerows(data)
 writex = savex
 
+def readp(*args,**kwargs):
+    import pandas as pd
+    return pd.read_parquet(*args,**kwargs)
+
+def savep(df,*args,**kwargs):
+    return df.to_parquet(*args,**kwargs)
+writep = savep
+
+def savexlist(xlist,file='Data.xlsx',engine=None,date_format=None,datetime_format=None,mode='w',*args,**kwargs):
+    """
+    xlist: a list of pandas df
+    *args,**kwargs pass to pandas.DataFrame.to_excel (sheet_name ignored, instead auto: Sheet1, Sheet2)
+    """
+    import pandas as pd
+    with pd.ExcelWriter(file,engine=engine,date_format=date_format,datetime_format=datetime_format,mode=mode) as writer:
+            for df in xlist:
+                i=1
+                df.to_excel(writer, sheet_name=f'Sheet{i}', *args,**kwargs)
+                i+=1
+writexlist=savexlist
+
 def hanzifreq(filename, size=10, outfile=None, encoding='utf8'):  
     """
     (filename, size, outfile, encoding)

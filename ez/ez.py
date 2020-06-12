@@ -2972,10 +2972,11 @@ def savep(df,*args,**kwargs):
     return df.to_parquet(*args,**kwargs)
 writep = savep
 
-def savexlist(xlist,file='Data.xlsx',engine=None,date_format=None,datetime_format=None,mode='w',*args,**kwargs):
+def savexlist(xlist,file='Data.xlsx',engine='openpyxl',date_format=None,datetime_format=None,mode='w',*args,**kwargs):
     """
     xlist: a list of pandas df
     *args,**kwargs pass to pandas.DataFrame.to_excel (sheet_name ignored, instead auto: Sheet1, Sheet2)
+    engine "has" to be openpyxl
     """
     import pandas as pd
     with pd.ExcelWriter(file,engine=engine,date_format=date_format,datetime_format=datetime_format,mode=mode) as writer:

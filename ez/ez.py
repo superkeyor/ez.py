@@ -2968,6 +2968,18 @@ def readp(*args,**kwargs):
     import pandas as pd
     return pd.read_parquet(*args,**kwargs)
 
+def readplist(plist,ignore_index=False,*args,**kwargs):
+    """
+    plist: [list of parquet files]
+    ignore_index: internally read each parquet file and then pd.concat
+    """
+    import pandas as pd
+    res = []
+    for p in plist:
+        res.append(pd.read_parquet(p,*args,**kwargs))
+    res = pd.concat(res,ignore_index=ignore_index)
+    return res
+
 def savep(df,*args,**kwargs):
     return df.to_parquet(*args,**kwargs)
 writep = savep

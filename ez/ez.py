@@ -3173,8 +3173,43 @@ def opens(filepath):
     elif os.name == 'posix': # For Linux
         subprocess.call(('xdg-open', filepath))
 
+def docx_replace(docx_path, replacedict, save_path=None):
+    """
+    replacedict: {'src':'replace','src2':'replace2'} auto translated to regex
+    save_path: if None, overwrite the original file, style also kept
+    requires pip install python-docx
+    """
+    import re
+    from docx import Document
+    # https://stackoverflow.com/a/42829667/2292993
+    # doc_obj change in place?
+    def _docx_replace_regex(doc_obj, regex, replace):
+        for p in doc_obj.paragraphs:
+            if regex.search(p.text):
+                inline = p.runs
+                # Loop added to work with runs (strings with same style)
+                for i in range(len(inline)):
+                    if regex.search(inline[i].text):
+                        text = regex.sub(replace, inline[i].text)
+                        inline[i].text = text
+
+        for table in doc_obj.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    _docx_replace_regex(cell, regex, replace)
+
+    doc = Document(docx_path)
+    for key,value in replacedict.items():
+        regex = re.compile(key)
+        replace = value
+        _docx_replace_regex(doc, regex, replace)
+    if save_path is None: save_path=docx_path
+    doc.save(save_path)
+
 def applescript_pages_replace(searchWord, replacementString):
     """
+    >>> depricated: use docx_replace <<<
+
     replace one word at a time (but all occurrences) in pages active document
     For the best result, searchWord to be recommended using all capitalized "DRFULLNAME"
     case sensitive, can NOT have _, word bounded by spaces, just one word, not two words or more

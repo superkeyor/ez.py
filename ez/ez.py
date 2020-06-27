@@ -3231,6 +3231,7 @@ def getkmvar(var):
     # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
     # Keyboard Maestro only allows Get env variable from shell script
     # eg., getkmvar('PathFinderSelection')
+    # if not exist, return None
     import os
     var = 'KMVAR_'+var
     try:
@@ -3257,9 +3258,14 @@ def office_pdf_compress(inputpdfs):
         doc.save(outputpdf,garbage=4,clean=True,deflate=True)
         doc.close()
 
-def office_pdf_merge(inputpdfs,outputpdf=None,compress=True):
+def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
     """
     inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    mergeorder: reorder inputpdfs
+        # if called from Keyboard Maestro
+        # Specify pdf files merge order
+        # e.g., 4 3 2 1 (1 based, total numbers should be equal to files selected)
+        # Default Empty, no particular order assigned
     outputpdf: path for merged file. if None, auto name
     compress: compress merged file
     requires pip install PyMuPDF
@@ -3270,11 +3276,6 @@ def office_pdf_merge(inputpdfs,outputpdf=None,compress=True):
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
 
-    # if called from Keyboard Maestro
-    # Specify pdf files merge order
-    # e.g., 4 3 2 1 (1 based, total numbers should be equal to files selected)
-    # Default '' no particular order assigned
-    mergeorder = getkmvar('MergeOrder')
     if mergeorder is not None: 
         mergeorder = mergeorder.split(' ')
         if len(mergeorder)>1:

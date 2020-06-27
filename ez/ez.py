@@ -3270,7 +3270,7 @@ def applescript_pages_replace(searchWord, replacementString):
 
 def applescript_pages_pdfactive():
     """
-    ()
+    >>> depricated: use libreoffice headless <<<
     convert current/active Pages document to pdf to the same folder as the active document, quit Pages after conversion (will save or remind to save)
     pdf name is same as page document name, if pdf exists, overwrites
     if active document does not have a valid folder (eg, never saved), save to download folder
@@ -3518,6 +3518,8 @@ def applescript_finder_alias(theFrom, theTo):
 
 def applescript_mail(emails,subjectline,titles,body,attaches=[],sendout=0):
     """
+    >>> recommend: applescript_outlook <<<
+
     (emails,subjectline,titles,body,attaches,sendout)
     emails: if Multiple emails, 'a@a.com, b@b.com'  # with or without spaces after , or ;
     subjectline: 
@@ -3659,7 +3661,7 @@ def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
             os.remove(path)
         return None
     myesp(applescript)
-# applescript_outlook('jerryzhujian9@gmail.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nbest,\njerry',['/Applications/Calculator.app/Contents/version.plist','/Applications/Calculator.app/Contents/Info.plist'],0)
+# applescript_outlook('jerryzhujian9@gmail.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nBest,\nJerry',['/Applications/Calculator.app/Contents/version.plist','/Applications/Calculator.app/Contents/Info.plist'],0)
 
 def SetClip(content):
     """

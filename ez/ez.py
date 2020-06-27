@@ -3272,7 +3272,7 @@ def office_pdf_merge(inputpdfs,outputpdf=None,compress=True):
 
     # if called from Keyboard Maestro
     # Specify pdf files merge order
-    # e.g., 4 3 2 1 (1 based)
+    # e.g., 4 3 2 1 (1 based, total numbers should be equal to files selected)
     # Default '' no particular order assigned
     mergeorder = getkmvar('MergeOrder')
     if mergeorder is not None: 
@@ -3311,6 +3311,8 @@ def office_pdf_merge(inputpdfs,outputpdf=None,compress=True):
     doc1.setMetadata(pdf_dict)      # put in meta data
 
     # https://pymupdf.readthedocs.io/en/latest/document/#Document.save
+    # doc.save cannot overwrite
+    if exists(outputpdf): rm(outputdir)
     if compress:
         doc1.save(outputpdf,garbage=4,clean=True,deflate=True)
     else:

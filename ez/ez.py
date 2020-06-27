@@ -3206,6 +3206,22 @@ def docx_replace(docx_path, replacedict, save_path=None):
     if save_path is None: save_path=docx_path
     doc.save(save_path)
 
+def libre_convert_to_pdf(inputfile,outputfile):
+    """
+    call libreoffice headless mode to convert to pdf
+    """
+    import sys
+    import subprocess
+
+    # TODO: Provide support for more platforms
+    if sys.platform == 'darwin':
+        libreoffice='~/Dropbox/Apps/PDF/LibreOffice.app/Contents/MacOS/soffice'
+    else:
+        libreoffice='libreoffice'
+
+    args = [libreoffice, '--headless', '--convert-to', 'pdf', '--outdir', outputfile, inputfile]
+    subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+
 def applescript_pages_replace(searchWord, replacementString):
     """
     >>> depricated: use docx_replace <<<

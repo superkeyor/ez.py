@@ -3279,7 +3279,7 @@ def office_pdf_merge(inputpdfs,outputpdf=None,compress=True):
         mergeorder = mergeorder.split(' ')
         if len(mergeorder)>1:
             mergeorder = [int(e)-1 for e in mergeorder]
-            inputpdfs=inputpdfs[mergeorder]
+            inputpdfs = [inputpdfs[e] for e in mergeorder]
 
     pdf1 = inputpdfs[0]
     doc1 = fitz.open(pdf1)         # must be a PDF

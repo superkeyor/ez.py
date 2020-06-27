@@ -3173,7 +3173,7 @@ def opens(filepath):
     elif os.name == 'posix': # For Linux
         subprocess.call(('xdg-open', filepath))
 
-def docx_replace(docx_path, replacedict, save_path=None):
+def office_docx_replace(docx_path, replacedict, save_path=None):
     """
     replacedict: {'src':'replace','src2':'replace2'} auto translated to regex
     save_path: if None, overwrite the original file, style also kept
@@ -3206,12 +3206,13 @@ def docx_replace(docx_path, replacedict, save_path=None):
     if save_path is None: save_path=docx_path
     doc.save(save_path)
 
-def libre_convert_to_pdf(inputfile,outputdir=None):
+def office_pdf_from(inputfile,outputdir=None):
     """
     call libreoffice headless mode to convert to pdf
     inputfile: single file, or *.docx
     outputdir: if none, same directory as inputfile
     outputfile will be the same name with .pdf
+    some format will be different due to libreoffice's rendering
     """
     import sys, os, subprocess
 
@@ -3225,6 +3226,91 @@ def libre_convert_to_pdf(inputfile,outputdir=None):
     args = [libreoffice, '--headless', '--convert-to', 'pdf', '--outdir', outputdir, inputfile]
     # subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
     esp(' '.join(args))
+
+def getkmvar(var):
+    # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
+    # Keyboard Maestro only allows Get env variable from shell script
+    import os
+    var = 'KMVAR_'+var
+    try:
+        value = os.environ[var]
+    except KeyError:
+        value = None
+    return value
+
+def office_pdf_compress(inputpdfs):
+    """
+    inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    new file in the same folder suffixed _compressed
+    less effective than acrobat pro's Save Reduced Size
+    """
+    if type(inputpdfs) not in [list]:
+        inputpdfs = inputpdfs.split(' ')
+    import fitz
+    for pdf in inputpdfs:
+        doc=fitz.open(pdf)
+        [path,file,ext]=splitpath(pdf)
+        outputpdf=joinpath(path,file+'_compressed'+ext)
+        doc.save(outputpdf,garbage=4,clean=True,deflate=True)
+        doc.close()
+
+def office_pdf_merge(inputpdfs,outputpdf=None,compress=True):
+    """
+    inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    outputpdf: path for merged file. if None, auto name
+    compress: compress merged file
+    requires pip install PyMuPDF
+    """
+    if type(inputpdfs) not in [list]:
+        inputpdfs = inputpdfs.split(' ')
+    import fitz
+
+    # if called from Keyboard Maestro
+    # Specify pdf files merge order
+    # e.g., 4 3 2 1 (1 based)
+    # Default '' no particular order assigned
+    mergeorder = getkmvar('MergeOrder')
+    if mergeorder is not None: 
+        mergeorder = mergeorder.split(' ')
+        if len(mergeorder)>1:
+            mergeorder = [int(e)-1 for e in mergeorder]
+            inputpdfs=inputpdfs[mergeorder]
+
+    pdf1 = inputpdfs[0]
+    doc1 = fitz.open(pdf1)         # must be a PDF
+    for pdf2 in inputpdfs[1:]:
+        doc2 = fitz.open(pdf2)                 # must be a PDF
+        pages1 = len(doc1)                     # save doc1's page count
+        toc1 = doc1.getToC(simple=True)        # save TOC 1
+        toc2 = doc2.getToC(simple=True)        # save TOC 2
+        # https://pymupdf.readthedocs.io/en/latest/document/#Document.getToC
+        # [lvl, title, page] page is 1 based
+        if len(toc1)==0: toc1=[[1,splitpath(pdf1)[1],1]]
+        if len(toc2)==0: toc2=[[1,splitpath(pdf2)[1],1]]
+        doc1.insertPDF(doc2)                   # doc2 at end of doc1
+        for t in toc2:                         # increase toc2 page numbers
+            t[2] += pages1                     # by old len(doc1)
+        doc1.setToC(toc1 + toc2)               # now result has total TOC
+
+    if outputpdf is None: outputpdf=joinpath(splitpath(pdf1)[0],'AllCombined.pdf')
+    # create time zone value in PDF format
+    cdate = fitz.getPDFnow()
+    pdf_dict = {"creator": "PDF Joiner",
+               "producer": "PyMuPDF",
+               "creationDate": cdate,
+               "modDate": cdate,
+               "title": splitpath(outputpdf)[1],
+               "author": "Jerry",
+               "subject": "",
+               "keywords": ""}
+    doc1.setMetadata(pdf_dict)      # put in meta data
+
+    # https://pymupdf.readthedocs.io/en/latest/document/#Document.save
+    if compress:
+        doc1.save(outputpdf,garbage=4,clean=True,deflate=True)
+    else:
+        doc1.save(outputpdf)
+    doc1.close()
 
 def applescript_pages_replace(searchWord, replacementString):
     """
@@ -3622,6 +3708,7 @@ def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
     sendout: 1/0, integer
 
     no Exchange issue creating ATT00001 attachments with outlook!
+    >>> todo: if applescript not working, consider python+outlook <<<
     """
     body = body.replace('\n','<br>')
     # workaround for warnings for multiple emails

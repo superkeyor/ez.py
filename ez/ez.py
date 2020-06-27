@@ -3230,6 +3230,7 @@ def office_pdf_from(inputfile,outputdir=None):
 def getkmvar(var):
     # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
     # Keyboard Maestro only allows Get env variable from shell script
+    # eg., getkmvar('PathFinderSelection')
     import os
     var = 'KMVAR_'+var
     try:
@@ -3246,6 +3247,8 @@ def office_pdf_compress(inputpdfs):
     """
     if type(inputpdfs) not in [list]:
         inputpdfs = inputpdfs.split(' ')
+        # strip "" from both ends that might be present from keyboardmaestro
+        inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
         doc=fitz.open(pdf)
@@ -3263,6 +3266,8 @@ def office_pdf_merge(inputpdfs,outputpdf=None,compress=True):
     """
     if type(inputpdfs) not in [list]:
         inputpdfs = inputpdfs.split(' ')
+        # strip "" from both ends that might be present from keyboardmaestro
+        inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
 
     # if called from Keyboard Maestro

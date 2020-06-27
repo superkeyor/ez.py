@@ -3312,7 +3312,7 @@ def office_pdf_merge(inputpdfs,outputpdf=None,compress=True):
 
     # https://pymupdf.readthedocs.io/en/latest/document/#Document.save
     # doc.save cannot overwrite
-    if exists(outputpdf): rm(outputdir)
+    if exists(outputpdf): rm(outputpdf)
     if compress:
         doc1.save(outputpdf,garbage=4,clean=True,deflate=True)
     else:

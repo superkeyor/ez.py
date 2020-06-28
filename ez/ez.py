@@ -3252,7 +3252,7 @@ def office_pdf_compress(inputpdfs):
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
-        doc=fitz.open(f"'{pdf}'")
+        doc=fitz.open(fr"{pdf}")
         [path,file,ext]=splitpath(pdf)
         outputpdf=joinpath(path,file+'_compressed'+ext)
         doc.save(outputpdf,garbage=4,clean=True,deflate=True)
@@ -3283,9 +3283,9 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
             inputpdfs = [inputpdfs[e] for e in mergeorder]
 
     pdf1 = inputpdfs[0]
-    doc1 = fitz.open(f"'{pdf1}'")         # must be a PDF
+    doc1 = fitz.open(fr"{pdf1}")               # must be a PDF
     for pdf2 in inputpdfs[1:]:
-        doc2 = fitz.open(f"'{pdf2}'")                 # must be a PDF
+        doc2 = fitz.open(fr"{pdf2}")           # must be a PDF
         pages1 = len(doc1)                     # save doc1's page count
         toc1 = doc1.getToC(simple=False)        # save TOC 1
         toc2 = doc2.getToC(simple=False)        # save TOC 2
@@ -3333,7 +3333,7 @@ def office_pdf_autoname(inputpdfs):
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
-        doc=fitz.open(f"'{pdf}'")
+        doc=fitz.open(fr"{pdf}")
 
         meta = doc.metadata
         #) year

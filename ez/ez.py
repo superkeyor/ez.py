@@ -3240,6 +3240,48 @@ def getkmvar(var):
         value = None
     return value
 
+def office_pdf_unlock(inputpdfs):
+    """
+    inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    new file in the same folder suffixed _compressed
+    less effective than acrobat pro's Save Reduced Size
+    """
+    if type(inputpdfs) not in [list]:
+        # hack for filename with space
+        # assume "quoted form of " applescript returns single quote
+        inputpdfs = inputpdfs.split("' '")  
+        # strip "" from both ends that might be present from keyboardmaestro
+        inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
+    for pdf in inputpdfs:
+        [path,file,ext]=splitpath(pdf)
+        outputpdf=joinpath(path,file+'_unlocked'+ext)
+
+        # # windows version
+        # gswin32c -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sFONTPATH=%windir%/fonts;xfonts;. -sPDFPassword= -dPDFSETTINGS=/prepress -dPassThroughJPEGImages=true -sOutputFile=OUTPUT.pdf INPUT.pdf
+        cmd = f"/usr/local/bin/gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile='{outputpdf}' -c .setpdfwrite -f '{pdf}'"
+        execute(cmd, False)
+
+        # # to download ghostscript:
+        # mac: https://pages.uoregon.edu/koch/
+        # windows: https://www.ghostscript.com/download/gsdnld.html
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # internal help
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # http://www.verypdf.com/app/pdf-password-remover-mac/index.html
+        # An owner password is always used for control the printing, copying, modifying permissions of PDF. 
+        # With removing the owner password, you will directly access these permissions of the PDF.
+        # A user password is to control the permission of opening a PDF. 
+        # If there is a user password, it is needed to unlock a pdf to begin with.
+
+        # use ghostscript to remove owner password
+        # http://www.commandlinefu.com/commands/view/4345/remove-security-limitations-from-pdf-documents-using-ghostscript
+        # http://www.localizingjapan.com/blog/2013/02/23/unlocking-secured-password-protected-pdf-files/
+
+        # "$*" All of the positional parameters, seen as a single word
+        # "$@" Same as $*, but each parameter is a quoted string, that is, 
+        # the parameters are passed on intact, without interpretation or expansion. 
+        # This means, among other things, that each parameter in the argument list is seen as a separate word.
+
 def office_pdf_compress(inputpdfs):
     """
     inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'

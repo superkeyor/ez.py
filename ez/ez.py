@@ -3247,12 +3247,14 @@ def office_pdf_compress(inputpdfs):
     less effective than acrobat pro's Save Reduced Size
     """
     if type(inputpdfs) not in [list]:
-        inputpdfs = inputpdfs.split(' ')
+        # hack for filename with space
+        # assume "quoted form of " applescript returns single quote
+        inputpdfs = inputpdfs.split("' '")  
         # strip "" from both ends that might be present from keyboardmaestro
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
-        doc=fitz.open(fr"{pdf}")
+        doc=fitz.open(pdf)
         [path,file,ext]=splitpath(pdf)
         outputpdf=joinpath(path,file+'_compressed'+ext)
         doc.save(outputpdf,garbage=4,clean=True,deflate=True)
@@ -3271,7 +3273,9 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
     requires pip install PyMuPDF
     """
     if type(inputpdfs) not in [list]:
-        inputpdfs = inputpdfs.split(' ')
+        # hack for filename with space
+        # assume quoted form
+        inputpdfs = inputpdfs.split("' '")  
         # strip "" from both ends that might be present from keyboardmaestro
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
@@ -3283,9 +3287,9 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
             inputpdfs = [inputpdfs[e] for e in mergeorder]
 
     pdf1 = inputpdfs[0]
-    doc1 = fitz.open(fr"{pdf1}")               # must be a PDF
+    doc1 = fitz.open(pdf1)         # must be a PDF
     for pdf2 in inputpdfs[1:]:
-        doc2 = fitz.open(fr"{pdf2}")           # must be a PDF
+        doc2 = fitz.open(pdf2)                 # must be a PDF
         pages1 = len(doc1)                     # save doc1's page count
         toc1 = doc1.getToC(simple=False)        # save TOC 1
         toc2 = doc2.getToC(simple=False)        # save TOC 2
@@ -3328,12 +3332,14 @@ def office_pdf_autoname(inputpdfs):
     if cannot rename for whatever reasons, silently skip
     """
     if type(inputpdfs) not in [list]:
-        inputpdfs = inputpdfs.split(' ')
+        # hack for filename with space
+        # assume quoted form
+        inputpdfs = inputpdfs.split("' '")  
         # strip "" from both ends that might be present from keyboardmaestro
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
-        doc=fitz.open(fr"{pdf}")
+        doc=fitz.open(pdf)
 
         meta = doc.metadata
         #) year

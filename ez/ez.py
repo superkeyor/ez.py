@@ -3328,6 +3328,8 @@ def office_pdf_autoname(inputpdfs):
     """
     if type(inputpdfs) not in [list]:
         inputpdfs = inputpdfs.split(' ')
+        # strip "" from both ends that might be present from keyboardmaestro
+        inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
         doc=fitz.open(pdf)

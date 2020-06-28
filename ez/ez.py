@@ -3296,6 +3296,7 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
         # https://pymupdf.readthedocs.io/en/latest/document/#Document.getToC
         # [lvl, title, page, dest] page is 1 based
         # dest – (dict) included only if simple=False. Contains details of the link destination.
+        # dest contains additional fine position of bookmark
         if len(toc1)==0: toc1=[[1,splitpath(pdf1)[1],1]]
         if len(toc2)==0: toc2=[[1,splitpath(pdf2)[1],1]]
         doc1.insertPDF(doc2)                   # doc2 at end of doc1

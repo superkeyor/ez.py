@@ -3368,6 +3368,7 @@ def office_pdf_autoname(inputpdfs):
         for page in doc:
             # text = page.getText("text")
             html_text = page.getText("html")
+            from bs4 import BeautifulSoup
             soup = BeautifulSoup(html_text,"lxml")
             # https://stackoverflow.com/a/39016902/2292993
             patt = re.compile("font-size:(\d+)")

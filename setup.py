@@ -13,7 +13,8 @@ packages = find_packages()
 # packages.append('ez.timezone.pytz')
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
 # install_requires=['peppercorn']
-install_requires=['']
+# install_requires=['']
+install_requires=['pytz', 'tzlocal', 'pyperclip', 'gmail', 'chardet', 'psutil', 'xlsxwriter', 'xlwt', 'xlrd']
 ######################################################################################
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:

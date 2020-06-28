@@ -3252,7 +3252,7 @@ def office_pdf_compress(inputpdfs):
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
-        doc=fitz.open(pdf)
+        doc=fitz.open(f"'{pdf}'")
         [path,file,ext]=splitpath(pdf)
         outputpdf=joinpath(path,file+'_compressed'+ext)
         doc.save(outputpdf,garbage=4,clean=True,deflate=True)
@@ -3283,14 +3283,15 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
             inputpdfs = [inputpdfs[e] for e in mergeorder]
 
     pdf1 = inputpdfs[0]
-    doc1 = fitz.open(pdf1)         # must be a PDF
+    doc1 = fitz.open(f"'{pdf1}'")         # must be a PDF
     for pdf2 in inputpdfs[1:]:
-        doc2 = fitz.open(pdf2)                 # must be a PDF
+        doc2 = fitz.open(f"'{pdf2}'")                 # must be a PDF
         pages1 = len(doc1)                     # save doc1's page count
-        toc1 = doc1.getToC(simple=True)        # save TOC 1
-        toc2 = doc2.getToC(simple=True)        # save TOC 2
+        toc1 = doc1.getToC(simple=False)        # save TOC 1
+        toc2 = doc2.getToC(simple=False)        # save TOC 2
         # https://pymupdf.readthedocs.io/en/latest/document/#Document.getToC
-        # [lvl, title, page] page is 1 based
+        # [lvl, title, page, dest] page is 1 based
+        # dest – (dict) included only if simple=False. Contains details of the link destination.
         if len(toc1)==0: toc1=[[1,splitpath(pdf1)[1],1]]
         if len(toc2)==0: toc2=[[1,splitpath(pdf2)[1],1]]
         doc1.insertPDF(doc2)                   # doc2 at end of doc1
@@ -3332,7 +3333,7 @@ def office_pdf_autoname(inputpdfs):
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
-        doc=fitz.open(pdf)
+        doc=fitz.open(f"'{pdf}'")
 
         meta = doc.metadata
         #) year

@@ -3231,7 +3231,7 @@ def getkmvar(var):
     # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
     # Keyboard Maestro only allows Get env variable from shell script
     # eg., getkmvar('PathFinderSelection')
-    # if not exist, return None
+    # if not exist or empty in user input in KM, return None
     import os
     var = 'KMVAR_'+var
     try:
@@ -3264,7 +3264,7 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
     mergeorder: reorder inputpdfs
         # if called from Keyboard Maestro
         # Specify pdf files merge order
-        # e.g., 4 3 2 1 (1 based, total numbers should be equal to files selected)
+        # e.g., '4 3 2 1' (1 based, total numbers should be equal to files selected)
         # Default Empty, no particular order assigned
     outputpdf: path for merged file. if None, auto name
     compress: compress merged file
@@ -3277,7 +3277,7 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
     import fitz
 
     if mergeorder is not None: 
-        mergeorder = mergeorder.split(' ')
+        mergeorder = mergeorder.strip("'").strip('"').split(' ')
         if len(mergeorder)>1:
             mergeorder = [int(e)-1 for e in mergeorder]
             inputpdfs = [inputpdfs[e] for e in mergeorder]
@@ -3319,6 +3319,76 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
     else:
         doc1.save(outputpdf)
     doc1.close()
+
+def office_pdf_autoname(inputpdfs):
+    """
+    inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    new file in the same folder: year_author_journal_title
+    if cannot rename for whatever reasons, silently skip
+    """
+    if type(inputpdfs) not in [list]:
+        inputpdfs = inputpdfs.split(' ')
+    import fitz
+    for pdf in inputpdfs:
+        doc=fitz.open(pdf)
+
+        meta = doc.metadata
+        #) year
+        year = meta['creationDate']
+        if year is None:
+            year = ''
+        else:
+            # https://stackoverflow.com/a/40916306/2292993
+            # translate/remap/replace from '' to '', and delete string.punctuation
+            year = (year[2:6] if ('D:' in year) else year[-4:]).translate(str.maketrans('','', string.punctuation))
+        #) author
+        author = meta['author']
+        if author is None: 
+            author = ''
+        else:
+            # last name
+            author = author.strip(' ').split(' ')[-1].translate(str.maketrans('','', string.punctuation))
+            author = author.encode('ascii',errors='ignore').decode('utf-8')  # some weird author names, get rid of nonascii
+
+        #) journal
+        journal = meta['subject']
+        if journal is None: 
+            journal = ''
+        else:
+            journal = journal.strip(' ').split(',')[0].translate(str.maketrans('','', '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~')).replace(' ','_')
+            journal = journal.encode('ascii',errors='ignore').decode('utf-8')
+            journal = journal[:20] if len(journal) > 20 else journal
+
+        #) title
+        output = JDict()
+        # first 4 pages
+        i = 0; j = min(3,len(doc))
+        for page in doc:
+            # text = page.getText("text")
+            html_text = page.getText("html")
+            soup = BeautifulSoup(html_text,"lxml")
+            # https://stackoverflow.com/a/39016902/2292993
+            patt = re.compile("font-size:(\d+)")
+            for tag in soup.select("[style*=font-size]"):
+                output.update({float(patt.search(tag["style"]).group(1)): [tag.text.strip()]})
+            i += 1
+            if i>j: break
+        # largest font size (title may have multiple lines, therefore join)
+        largestfontsize = max(output.keys())
+        # ignore if too large (may be a watermark)
+        if largestfontsize>40: output.pop(largestfontsize)
+        title = ' '.join(output[max(output.keys())])
+        title = title.translate(str.maketrans('','', '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~')).replace(' ','_')
+        title = title.encode('ascii',errors='ignore').decode('utf-8')
+        title = title[:20] if len(title) > 20 else title
+
+        fullName = pdf
+        newName = '_'.join([year,author,journal,title]) + '.pdf'
+        if not newName[0].isdigit(): newName = Moment().datetime + '.pdf'
+        newFullName = joinpath(splitpath(fullName)[0],newName)
+        if (newName=='___.pdf' or ('%' in newName) or exists(newFullName)): continue
+        print( sprintf('Rename: %s --> %s', splitpath(fullName)[1], splitpath(newFullName)[1]) )
+        os.rename(fullName, newFullName)
 
 def applescript_pages_replace(searchWord, replacementString):
     """

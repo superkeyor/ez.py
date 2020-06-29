@@ -3242,7 +3242,7 @@ def getkmvar(var):
 
 def office_pdf_unlock(inputpdfs):
     """
-    inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
     new file in the same folder suffixed _compressed
     less effective than acrobat pro's Save Reduced Size
     """
@@ -3284,7 +3284,7 @@ def office_pdf_unlock(inputpdfs):
 
 def office_pdf_compress(inputpdfs):
     """
-    inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
     new file in the same folder suffixed _compressed
     less effective than acrobat pro's Save Reduced Size
     """
@@ -3304,7 +3304,7 @@ def office_pdf_compress(inputpdfs):
 
 def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
     """
-    inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
     mergeorder: reorder inputpdfs
         # if called from Keyboard Maestro
         # Specify pdf files merge order
@@ -3370,7 +3370,7 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
 
 def office_pdf_autoname(inputpdfs):
     """
-    inputpdfs: ['pdf1','doc2'], or 'pdf1 pdf2', or 'pdf1'
+    inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
     new file in the same folder: year_author_journal_title
     if cannot rename for whatever reasons, silently skip
     """

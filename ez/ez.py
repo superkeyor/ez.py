@@ -3119,17 +3119,21 @@ def xlcolconv(col):
             n = n * 26 + 1 + ord(c) - ord('A')
         return n
 
-def encoding_detect(file_path, n_lines=20):
+def encoding_detect(character_or_file_path, n_lines=20):
     """
-    try to guess file's encoding
-    n_lines: only reads the first few lines, useful for big file, n_lines > total lines in file works fine
+    try to guess a character's or file's encoding
+    character_or_file_path: a character string, or a file path
+    n_lines: only reads the first few lines, useful for big file, n_lines > total lines in file works fine. Ignored if pass a character
     returns 'utf-8', 'ascii' etc, or None if could not detect
     """
     import chardet
-    # Open the file as binary data
-    with open(file_path, 'rb') as f:
-        # Join binary lines for specified number of lines
-        rawdata = b''.join([f.readline() for _ in range(n_lines)])
+    if exists(character_or_file_path): 
+        # Open the file as binary data
+        with open(file_path, 'rb') as f:
+            # Join binary lines for specified number of lines
+            rawdata = b''.join([f.readline() for _ in range(n_lines)])
+    else:
+        rawdata = character_or_file_path
     result = chardet.detect(rawdata)['encoding']
     return result
 

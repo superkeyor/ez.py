@@ -3133,7 +3133,7 @@ def encoding_detect(character_or_file_path, n_lines=20):
             # Join binary lines for specified number of lines
             rawdata = b''.join([f.readline() for _ in range(n_lines)])
     else:
-        rawdata = character_or_file_path
+        rawdata = str.encode(character_or_file_path)
     result = chardet.detect(rawdata)['encoding']
     return result
 

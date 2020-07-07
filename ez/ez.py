@@ -16,8 +16,7 @@ Install:
 https://pypi.python.org/pypi/ez
 pip install ez
 dependencies:
-conda install chardet psutil xlsxwriter xlwt xlrd
-dependencies/recommends:
+pip install chardet psutil xlsxwriter xlwt xlrd
 pip install pytz tzlocal pyperclip gmail
 
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).

@@ -16,8 +16,7 @@ Install:
 https://pypi.python.org/pypi/ez
 pip install ez
 dependencies:
-pip install chardet psutil xlsxwriter xlwt xlrd
-pip install pytz tzlocal pyperclip gmail
+pip install chardet psutil xlsxwriter xlwt xlrd pytz tzlocal pyperclip gmail
 
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.

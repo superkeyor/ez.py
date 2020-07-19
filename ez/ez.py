@@ -3147,7 +3147,7 @@ def encoding_convert(file_path, source_encoding=None, backup=False):
 
     # do not use codecs.open or io.open, simply supports encoding parameter in one function
     # manual decoding/encoding
-    with open(file_path, 'r') as f: 
+    with open(file_path, 'rb') as f: 
         content = f.read()
 
     if source_encoding is None:
@@ -3163,7 +3163,7 @@ def encoding_convert(file_path, source_encoding=None, backup=False):
     target_encoding = 'utf-8'
     if source_encoding != target_encoding:
         content = content.decode(source_encoding)
-        with open(file_path, 'w') as f: 
+        with open(file_path, 'wb') as f: 
             f.write(content.encode(target_encoding))
 
 def opens(filepath):

@@ -3384,66 +3384,69 @@ def office_pdf_autoname(inputpdfs):
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
-        doc=fitz.open(pdf)
+        try:
+            doc=fitz.open(pdf)
 
-        meta = doc.metadata
-        #) year
-        year = meta['creationDate']
-        if year is None:
-            year = ''
-        else:
-            # https://stackoverflow.com/a/40916306/2292993
-            # translate/remap/replace from '' to '', and delete string.punctuation
-            year = (year[2:6] if ('D:' in year) else year[-4:]).translate(str.maketrans('','', string.punctuation))
-        #) author
-        author = meta['author']
-        if author is None: 
-            author = ''
-        else:
-            # last name
-            author = author.strip(' ').split(' ')[-1].translate(str.maketrans('','', string.punctuation))
-            author = author.encode('ascii',errors='ignore').decode('utf-8')  # some weird author names, get rid of nonascii
+            meta = doc.metadata
+            #) year
+            year = meta['creationDate']
+            if year is None:
+                year = ''
+            else:
+                # https://stackoverflow.com/a/40916306/2292993
+                # translate/remap/replace from '' to '', and delete string.punctuation
+                year = (year[2:6] if ('D:' in year) else year[-4:]).translate(str.maketrans('','', string.punctuation))
+            #) author
+            author = meta['author']
+            if author is None: 
+                author = ''
+            else:
+                # last name
+                author = author.strip(' ').split(' ')[-1].translate(str.maketrans('','', string.punctuation))
+                author = author.encode('ascii',errors='ignore').decode('utf-8')  # some weird author names, get rid of nonascii
 
-        #) journal
-        journal = meta['subject']
-        if journal is None: 
-            journal = ''
-        else:
-            journal = journal.strip(' ').split(',')[0].translate(str.maketrans('','', '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~')).replace(' ','_')
-            journal = journal.encode('ascii',errors='ignore').decode('utf-8')
-            journal = journal[:20] if len(journal) > 20 else journal
+            #) journal
+            journal = meta['subject']
+            if journal is None: 
+                journal = ''
+            else:
+                journal = journal.strip(' ').split(',')[0].translate(str.maketrans('','', '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~')).replace(' ','_')
+                journal = journal.encode('ascii',errors='ignore').decode('utf-8')
+                journal = journal[:20] if len(journal) > 20 else journal
 
-        #) title
-        output = JDict()
-        # first 4 pages
-        i = 0; j = min(3,len(doc))
-        for page in doc:
-            # text = page.getText("text")
-            html_text = page.getText("html")
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(html_text,"lxml")
-            # https://stackoverflow.com/a/39016902/2292993
-            patt = re.compile("font-size:(\d+)")
-            for tag in soup.select("[style*=font-size]"):
-                output.update({float(patt.search(tag["style"]).group(1)): [tag.text.strip()]})
-            i += 1
-            if i>j: break
-        # largest font size (title may have multiple lines, therefore join)
-        largestfontsize = max(output.keys())
-        # ignore if too large (may be a watermark)
-        if largestfontsize>40: output.pop(largestfontsize)
-        title = ' '.join(output[max(output.keys())])
-        title = title.translate(str.maketrans('','', '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~')).replace(' ','_')
-        title = title.encode('ascii',errors='ignore').decode('utf-8')
-        title = title[:20] if len(title) > 20 else title
+            #) title
+            output = JDict()
+            # first 4 pages
+            i = 0; j = min(3,len(doc))
+            for page in doc:
+                # text = page.getText("text")
+                html_text = page.getText("html")
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html_text,"lxml")
+                # https://stackoverflow.com/a/39016902/2292993
+                patt = re.compile("font-size:(\d+)")
+                for tag in soup.select("[style*=font-size]"):
+                    output.update({float(patt.search(tag["style"]).group(1)): [tag.text.strip()]})
+                i += 1
+                if i>j: break
+            # largest font size (title may have multiple lines, therefore join)
+            largestfontsize = max(output.keys())
+            # ignore if too large (may be a watermark)
+            if largestfontsize>40: output.pop(largestfontsize)
+            title = ' '.join(output[max(output.keys())])
+            title = title.translate(str.maketrans('','', '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~')).replace(' ','_')
+            title = title.encode('ascii',errors='ignore').decode('utf-8')
+            title = title[:20] if len(title) > 20 else title
 
-        fullName = pdf
-        newName = '_'.join([year,author,journal,title]) + '.pdf'
-        if not newName[0].isdigit(): newName = Moment().datetime + '.pdf'
-        newFullName = joinpath(splitpath(fullName)[0],newName)
-        if (newName=='___.pdf' or ('%' in newName) or exists(newFullName)): continue
-        print( sprintf('Rename: %s --> %s', splitpath(fullName)[1], splitpath(newFullName)[1]) )
-        os.rename(fullName, newFullName)
+            fullName = pdf
+            newName = '_'.join([year,author,journal,title]) + '.pdf'
+            if not newName[0].isdigit(): newName = Moment().datetime + '.pdf'
+            newFullName = joinpath(splitpath(fullName)[0],newName)
+            if (newName=='___.pdf' or ('%' in newName) or exists(newFullName)): continue
+            print( sprintf('Rename: %s --> %s', splitpath(fullName)[1], splitpath(newFullName)[1]) )
+            os.rename(fullName, newFullName)
+        except:
+            continue
 
 def applescript_pages_replace(searchWord, replacementString):
     """

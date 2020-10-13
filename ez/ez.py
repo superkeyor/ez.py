@@ -703,6 +703,37 @@ def rn(*args):
     # else:
     #     print source + " not renamed to " + destination
 
+def trash(path):
+    """Move a file or folder to trash. Requires: pip install Send2Trash
+    trash(path)
+    removes a folder recursively or a file; file supports wildcards
+    if a path does not exist, nothing happens.
+    note: input could be a list/tuple, vectorization supported
+    """
+
+    # vectorization
+    if type(path) in [list,tuple]:
+        for p in path:
+            trash(p)
+        return
+
+    if not path: return  # trash('')
+    path = fullpath(path)
+    paths = glob.glob(path)
+    if not paths: return # wildcard found nothing to remove
+
+    from send2trash import send2trash
+
+    for path in paths:
+        if os.path.isfile(path):
+            send2trash(path)
+            # print "Trashed file: " + path
+        elif os.path.isdir(path):
+            send2trash(path)
+            # print "Trashed folder: " + path
+        # else:
+            # print path + " not trashed"
+
 def rm(path):
     """Deletes a file or folder.
     rm(path)

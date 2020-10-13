@@ -14,7 +14,7 @@ packages = find_packages()
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
 # install_requires=['peppercorn']
 # install_requires=['']
-install_requires=['pytz', 'tzlocal', 'pyperclip', 'gmail', 'chardet', 'psutil', 'xlsxwriter', 'xlwt', 'xlrd']
+install_requires=['pytz', 'tzlocal', 'Send2Trash', 'pyperclip', 'gmail', 'chardet', 'psutil', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'python-docx']
 ######################################################################################
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:

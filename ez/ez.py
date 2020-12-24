@@ -803,7 +803,11 @@ def rm(path):
             os.remove(path)
             # print "Removed file: " + path
         elif os.path.isdir(path):
-            shutil.rmtree(path)
+            if os.path.islink(path):
+                # remove symbolic link to folder
+                os.remove(path)
+            else:
+                shutil.rmtree(path)
             # print "Removed folder: " + path
         # else:
             # print path + " not removed"

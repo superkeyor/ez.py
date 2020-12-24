@@ -486,18 +486,64 @@ def sort(*args, **kwargs):
     """wrapper of sorted, passed in list does not change, returns a sorted list"""
     return sorted(*args, **kwargs)
 
-def cd(path):
+def cd(path=None):
     """cd(path), Changes to a new directory."""
+    if path is None: path = csd()
     path = fullpath(path)
     os.chdir(path)
     print("Start working in " + os.getcwd())
 
 def ce():
-    """cd(csd()), Changes to csd."""
-    path = csd()
+    """Changes to working directory in Finder"""
+    applescript = '''
+    tell app "Finder" to return the POSIX path of (target of window 1 as alias)
+    '''
+    def myesp(cmdString):
+        import os, inspect, tempfile, subprocess
+        caller = inspect.currentframe().f_back
+        cmd =  cmdString % caller.f_locals
+        
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        res = os.getcwd()
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            # res = subprocess.Popen('osascript ' + path, shell=True, executable="/bin/bash", stdout=subprocess.PIPE)
+            # res.stdout.read()
+            # https://stackoverflow.com/questions/41171791
+            res = subprocess.run('osascript ' + path, shell=True, executable="/bin/bash", capture_output=True, text=True)
+        finally:
+            os.remove(path)
+        return res.stdout.strip("\n")
+    path = myesp(applescript)
     os.chdir(path)
-    print("Start working in " + path)
-cf = ce
+    print("Start working in " + os.getcwd())
+
+def cf():
+    """Changes to working directory in Pather Finder"""
+    applescript = '''
+    tell app "Path Finder" to return the POSIX path of the target of the front finder window
+    '''
+    def myesp(cmdString):
+        import os, inspect, tempfile, subprocess
+        caller = inspect.currentframe().f_back
+        cmd =  cmdString % caller.f_locals
+        
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        res = os.getcwd()
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
+            # res = subprocess.Popen('osascript ' + path, shell=True, executable="/bin/bash", stdout=subprocess.PIPE)
+            # res.stdout.read()
+            # https://stackoverflow.com/questions/41171791
+            res = subprocess.run('osascript ' + path, shell=True, executable="/bin/bash", capture_output=True, text=True)
+        finally:
+            os.remove(path)
+        return res.stdout.strip("\n")
+    path = myesp(applescript)
+    os.chdir(path)
+    print("Start working in " + os.getcwd())
 
 def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
     """ls([path[, regex]], full=True, dotfile=False, sort=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.

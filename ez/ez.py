@@ -38,7 +38,7 @@ csf() # Returns current script name without ext.
 parentdir(path) pr() # Returns the parent directory of a path.
 joinpath(path1[, path2[, ...]])   jp() # Returns the joined path. Supports vectorization.
 splitpath(path) sp() # Returns a list of path elements: [path, file, ext]. Supports vectorization.
-cd(path)    # Changes to a new working directory.
+cd(path), ce(), cf()    # Changes to a new working directory.
 stepfolder(-1)
 
 trim(string,how[,chars]) quote(string)

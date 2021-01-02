@@ -2366,6 +2366,19 @@ permute = Permute
 
 from time import sleep
 
+def pause():
+    """
+    print("Are you going to do sth?")
+    if ez.pause():
+        do sth
+    """
+    try:
+        input("Press <Enter> to continue..., or Ctrl+c to exit.")
+        return True
+    except KeyboardInterrupt:
+        # raise Exception('User cancelled.')
+        return False
+
 def num(s):
     """num(s)
     num(3),num(3.7)-->3

@@ -157,6 +157,17 @@ def ShellDebug(debugMode=1):
     _DEBUG_MODE = debugMode
 debug = ShellDebug    
 
+# todo: make retry a function that can accept paramters
+# Usage: @retry as a decorator, but cannot accept parameters
+# https://stackoverflow.com/a/62132401/2292993
+import tenacity
+import functools
+retry = functools.partial(
+    tenacity.retry,
+    stop=tenacity.stop_after_attempt(15),wait=tenacity.wait_exponential(multiplier=1, min=4, max=10*60),
+    retry=tenacity.retry_if_exception_type(),after=lambda retry_state: print(f"Retry... {retry_state.attempt_number}")
+)()   
+
 #def ReadConfig(item):
 #    """Read a variable from the config.ini file"""
 #    config = ConfigParser.RawConfigParser()

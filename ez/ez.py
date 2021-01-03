@@ -158,7 +158,10 @@ def ShellDebug(debugMode=1):
 debug = ShellDebug    
 
 # todo: make retry a function that can accept paramters
-# Usage: @retry as a decorator, but cannot accept parameters
+# Usage: 
+#       @retry as a decorator, but cannot accept parameters
+#       retry(pd.read_html)(another_url)
+#       f = retry(lambda x: pd.read_html(x)); f(another_url)
 # https://stackoverflow.com/a/62132401/2292993
 # https://tenacity.readthedocs.io/en/latest/
 # https://github.com/jd/tenacity

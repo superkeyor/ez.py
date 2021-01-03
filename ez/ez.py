@@ -160,6 +160,9 @@ debug = ShellDebug
 # todo: make retry a function that can accept paramters
 # Usage: @retry as a decorator, but cannot accept parameters
 # https://stackoverflow.com/a/62132401/2292993
+# https://tenacity.readthedocs.io/en/latest/
+# https://github.com/jd/tenacity
+# use parameter "after" not "before", which prints even when first try
 import tenacity
 import functools
 retry = functools.partial(

@@ -4037,7 +4037,7 @@ try:
     
     # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
     from . pygmailconfig import EMAIL, PASSWORD
-    def Mail(to, subject, body, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None):
+    def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None):
         """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
@@ -4052,7 +4052,7 @@ try:
         msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
         return gclient.send(msg)
 except:
-    def Mail(to, subject, body, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None, password=None):
+    def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None, password=None):
         """Mail(EMAIL, PASSWORD, to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'

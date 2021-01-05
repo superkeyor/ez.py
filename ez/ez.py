@@ -4037,28 +4037,30 @@ try:
     
     # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
     from . pygmailconfig import EMAIL, PASSWORD
-    def Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None):
+    def Mail(to, subject, body, text=None, attachments=None, bcc=None, cc=None, reply_to=None):
         """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
         body: html code or text
+        text: if there is weird text that is incompatible with html, set body=None, and assigned to text
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
         """
         from gmail import GMail, Message
         gclient = GMail(EMAIL,PASSWORD)
-        msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=None,html=body,attachments=attachments,sender=None,reply_to=reply_to)
+        msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
         return gclient.send(msg)
 except:
-    def Mail(EMAIL, PASSWORD, to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None):
+    def Mail(EMAIL, PASSWORD, to, subject, body, text=None, attachments=None, bcc=None, cc=None, reply_to=None):
         """Mail(EMAIL, PASSWORD, to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
         body: html code or text
+        text: if there is weird text that is incompatible with html, set body=None, and assigned to text
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
         """
         from gmail import GMail, Message
         gclient = GMail(EMAIL,PASSWORD)
-        msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=None,html=body,attachments=attachments,sender=None,reply_to=reply_to)
+        msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
         return gclient.send(msg)
 mail = Mail
 gmail = Mail

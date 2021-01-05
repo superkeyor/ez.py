@@ -4042,12 +4042,13 @@ try:
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
         body: html code or text
-        text: if there is weird text that is incompatible with html, set body=None, and assigned to text
+        text: specified for weird text that is incompatible with html; when set, body is ignored
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
         email,password: not used, kept so to have the same api interface as the one requires password
         """
         from gmail import GMail, Message
         gclient = GMail(EMAIL,PASSWORD)
+        if text is not None: body=None
         msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
         return gclient.send(msg)
 except:
@@ -4056,11 +4057,12 @@ except:
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
         body: html code or text
-        text: if there is weird text that is incompatible with html, set body=None, and assigned to text
+        text: specified for weird text that is incompatible with html; when set, body is ignored
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
         """
         from gmail import GMail, Message
         gclient = GMail(email,password)
+        if text is not None: body=None
         msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
         return gclient.send(msg)
 mail = Mail

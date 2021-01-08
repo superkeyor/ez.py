@@ -2615,7 +2615,6 @@ class JDict(OrderedDict):
         return JDict(sorted(list(self.items()),reverse=reverse))
 
 class TimeStamp(object):
-    import pandas as pd
     """
     Essentially pd timestamp with default timezone
     ts=TimeStamp(pd_timestamp_obj) # default, current time 
@@ -2626,6 +2625,7 @@ class TimeStamp(object):
     ts.todatetime()     # returns TimeStamp obj
     """
     def __init__(self, timestamp=None, tz="US/Eastern"):
+        import pandas as pd
         if timestamp is None: 
             self.ts = pd.Timestamp.now(tz=tz)
         else:
@@ -2642,11 +2642,13 @@ class TimeStamp(object):
 
     @classmethod
     def fromtimestamp(cls,timestamp,unit='ms',local='UTC',convertto='US/Eastern',*args,**kwargs):
+        import pandas as pd
         ts = pd.to_datetime(timestamp,unit=unit,*args,**kwargs).tz_localize(local).tz_convert(convertto)
         return TimeStamp(ts)
     
     @classmethod
     def todatetime(cls,arg,tz='US/Eastern',*args,**kwargs):
+        import pandas as pd
         ts = pd.to_datetime(*args,**kwargs).tz_localize(tz)
         return TimeStamp(ts)
 

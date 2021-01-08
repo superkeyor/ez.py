@@ -2619,7 +2619,7 @@ class TimeStamp(object):
     Essentially pd timestamp with default timezone that has a "candy coat"
     ts=TimeStamp(pd_timestamp_obj) # default, current time 
     ts.datestr
-    ts.timestampms      # in milli seconds
+    ts.timestampms      # in milli seconds. A date without time will be calculationed using 00:00:00.
     ts.ts               # access the pd timestamp object
     ts.fromtimestamp(1610079792506).datestr  # returns TimeStamp obj then .datestr
     ts.todatetime()     # parse to a datetime/timestamp as US/Eastern, returns TimeStamp obj

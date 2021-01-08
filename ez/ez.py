@@ -2614,6 +2614,41 @@ class JDict(OrderedDict):
         # http://stackoverflow.com/questions/1216356/
         return JDict(sorted(list(self.items()),reverse=reverse))
 
+class TimeStamp(object):
+    import pandas as pd
+    """
+    Essentially pd timestamp with default timezone
+    ts=TimeStamp(pd_timestamp_obj) # default, current time 
+    ts.datestr
+    ts.timestampms
+    ts.ts               # access the pd timestamp object
+    ts.fromtimestamp(1610079792506).datestr  # returns TimeStamp obj
+    ts.todatetime()     # returns TimeStamp obj
+    """
+    def __init__(self, timestamp=None, tz="US/Eastern"):
+        if timestamp is None: 
+            self.ts = pd.Timestamp.now(tz=tz)
+        else:
+            self.ts = timestamp
+
+    @property
+    def datestr(self):
+        return self.ts.strftime("%Y-%m-%d")
+
+    @property
+    def timestampms(self):
+        return int(self.ts.timestamp()*1000)
+
+    @classmethod
+    def fromtimestamp(cls,timestamp,unit='ms',local='UTC',convertto='US/Eastern',*args,**kwargs):
+        ts = pd.to_datetime(timestamp,unit=unit,*args,**kwargs).tz_localize(local).tz_convert(convertto)
+        return TimeStamp(ts)
+    
+    @classmethod
+    def todatetime(cls,arg,tz='US/Eastern',*args,**kwargs):
+        ts = pd.to_datetime(*args,**kwargs).tz_localize(tz)
+        return TimeStamp(ts)
+
 class Moment(object):
     """A datetime like class, but with convenient attributes and methods
     Moment(moment=datetime.datetime(2020,05,30,15,30,00,100)).moment                 -> naive 15:30 datetime

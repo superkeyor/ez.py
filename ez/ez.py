@@ -2625,6 +2625,10 @@ class TimeStamp(object):
     ts.ts               # access the pd timestamp object
     ts.fromtimestamp(1610079792506).datestr  # returns TimeStamp obj then .datestr
     ts.todatetime()     # parse to a datetime/timestamp as US/Eastern, returns TimeStamp obj
+
+    Still sometimes, naive datetime is preferred, eg, pd.to_datetime(ts.datestr) - pd.offsets.Day(120); 
+    pd.to_datetime(ts.datestr) does not accept a tz parameter
+    But note that, pd.date_range('2020-09-16','2020-11-16',freq='B',tz='US/Central') accepts a tz parameter
     """
     def __init__(self, timestamp=None, tz="US/Eastern"):
         import pandas as pd

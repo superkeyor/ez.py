@@ -2649,7 +2649,7 @@ class TimeStamp(object):
     @classmethod
     def todatetime(cls,arg,tz='US/Eastern',*args,**kwargs):
         import pandas as pd
-        ts = pd.to_datetime(*args,**kwargs).tz_localize(tz)
+        ts = pd.to_datetime(arg,*args,**kwargs).tz_localize(tz)
         return TimeStamp(ts)
 
 class Moment(object):

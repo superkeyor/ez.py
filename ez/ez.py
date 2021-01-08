@@ -2637,6 +2637,7 @@ class TimeStamp(object):
 
     @property
     def timestampms(self):
+        # int() would introduce very tiny error, if convert back
         return int(self.ts.timestamp()*1000)
 
     @classmethod

@@ -1778,6 +1778,11 @@ def ver(package_name='python'):
         theNameSpace = {}
         exec('import ' + package_name, theNameSpace)
         print(theNameSpace[package_name].__version__)
+    HERE = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(HERE,'version.py'),'r') as f:
+        ezv=f.readline()
+    ezv = ezv.split(" = ")[1].strip("'").strip('"')
+    print(f'ez: {ezv}')
 version = ver
 
 def evaluate(exp):

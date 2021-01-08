@@ -2616,13 +2616,13 @@ class JDict(OrderedDict):
 
 class TimeStamp(object):
     """
-    Essentially pd timestamp with default timezone
+    Essentially pd timestamp with default timezone that has a "candy coat"
     ts=TimeStamp(pd_timestamp_obj) # default, current time 
     ts.datestr
-    ts.timestampms
+    ts.timestampms      # in milli seconds
     ts.ts               # access the pd timestamp object
-    ts.fromtimestamp(1610079792506).datestr  # returns TimeStamp obj
-    ts.todatetime()     # returns TimeStamp obj
+    ts.fromtimestamp(1610079792506).datestr  # returns TimeStamp obj then .datestr
+    ts.todatetime()     # parse to a datetime/timestamp as US/Eastern, returns TimeStamp obj
     """
     def __init__(self, timestamp=None, tz="US/Eastern"):
         import pandas as pd

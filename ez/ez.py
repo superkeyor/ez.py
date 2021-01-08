@@ -1773,16 +1773,16 @@ def ver(package_name='python'):
     print(package_name + ' version installed:')
     if package_name == 'python':
         print((sys.version))
+        HERE = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(HERE,'version.py'),'r') as f:
+            ezv=f.readline()
+        ezv = ezv.split(" = ")[1].strip("'").strip('"')
+        print(f'\nez: {ezv}')
     else:
         # https://docs.python.org/2.7/reference/simple_stmts.html#exec
         theNameSpace = {}
         exec('import ' + package_name, theNameSpace)
         print(theNameSpace[package_name].__version__)
-    HERE = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(HERE,'version.py'),'r') as f:
-        ezv=f.readline()
-    ezv = ezv.split(" = ")[1].strip("'").strip('"')
-    print(f'ez: {ezv}')
 version = ver
 
 def evaluate(exp):

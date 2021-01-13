@@ -3365,6 +3365,108 @@ def opens(filepath):
     elif os.name == 'posix': # For Linux
         subprocess.call(('xdg-open', filepath))
 
+def office_pptx_replace_font(pptx_path: str, replacedict: dict, save_path=None):
+    """
+    partially working so far, it will replace any font, regardless of the specified condition
+    replacedict: {'Arial':'Garamond', 'Any':'Garamond'} auto translated to regex
+    save_path: if None, overwrite the original file, style also kept
+    requires pip install python-pptx    
+    Currently not implemented for charts or graphics.
+    office_pptx_replace('input.pptx',{'Any':'Garamond'},'output.pptx') 
+    """
+    # https://stackoverflow.com/questions/37924808
+    import re
+    from pptx import Presentation
+    from pptx.util import Pt
+    prs = Presentation(pptx_path)
+
+    # todo: change font size also not working...
+
+    # todo: prs.slide_masters only one master!
+    # slide.slide_layout.slide_master.placeholders also not working...
+    # for master in prs.slide_masters:
+    #     for shape in master.placeholders:
+    #         for key, replace in replacedict.items():
+    #             regex = re.compile(key);
+    #             if shape.has_text_frame:
+    #                 text_frame = shape.text_frame
+    #                 for paragraph in text_frame.paragraphs:
+    #                     for run in paragraph.runs:
+    #                         # todo: I cannot make the condition if... to work, or python-pptx not work?
+    #                         run.font.name = replace
+
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            for key, replace in replacedict.items():
+                regex = re.compile(key)
+                if shape.has_text_frame:
+                    text_frame = shape.text_frame
+                    for paragraph in text_frame.paragraphs:
+                        for run in paragraph.runs:
+                            # todo: I cannot make the condition if... to work, or python-pptx not work?
+                            run.font.name = replace
+                            # if run.font.name is not None:
+                            #     # font = run.font
+                            #     # font.name = 'Calibri'
+                            #     # font.size = Pt(18)
+                            #     # font.bold = True
+                            #     # font.italic = None  # cause value to be inherited from theme
+                            #     # font.color.theme_color = MSO_THEME_COLOR.ACCENT_1
+                            #     # # If you prefer, you can set the font color to an absolute RGB value. Note that this will not change color when the theme is changed:
+                            #     # font.color.rgb = RGBColor(0xFF, 0x7F, 0x50)
+                            #     # # A run can also be made into a hyperlink by providing a target URL:
+                            #     # run.hyperlink.address = 'https://github.com/scanny/python-pptx'
+                            #     if regex.search(run.font.name) or key=='Any':
+                            #         run.font.name = replace
+                if shape.has_table:
+                    for row in shape.table.rows:
+                        for cell in row.cells:
+                            text_frame = cell.text_frame
+                            for paragraph in text_frame.paragraphs:
+                                for run in paragraph.runs:
+                                    run.font.name = replace
+                                    # if run.font.name is not None:
+                                    #     if regex.search(run.font.name) or key=='any':
+                                    #         run.font.name = replace
+
+    if save_path is None: save_path=pptx_path
+    prs.save(save_path)
+
+def office_pptx_replace(pptx_path: str, replacedict: dict, save_path=None):
+    """
+    replacedict: {'src':'replace','src2':'replace2'} auto translated to regex
+    save_path: if None, overwrite the original file, style also kept
+    requires pip install python-pptx    
+    Currently not implemented for charts or graphics.
+    office_pptx_replace('input.pptx',{'string to replace': 'replacement text'},'output.pptx') 
+    """
+    # https://stackoverflow.com/questions/37924808
+    import re
+    from pptx import Presentation
+    prs = Presentation(pptx_path)
+
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            for key, value in replacedict.items():
+                regex = re.compile(key); replace = value
+                if shape.has_text_frame:
+                    if regex.search(shape.text):
+                        text_frame = shape.text_frame
+                        for paragraph in text_frame.paragraphs:
+                            for run in paragraph.runs:
+                                cur_text = run.text
+                                new_text = regex.sub(replace,cur_text)
+                                run.text = new_text
+                if shape.has_table:
+                    for row in shape.table.rows:
+                        for cell in row.cells:
+                            if regex.search(cell.text):
+                                new_text = regex.sub(replace,cell.text)
+                                cell.text = new_text
+
+    if save_path is None: save_path=pptx_path
+    prs.save(save_path)
+
 def office_docx_replace(docx_path, replacedict, save_path=None):
     """
     replacedict: {'src':'replace','src2':'replace2'} auto translated to regex

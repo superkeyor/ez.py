@@ -168,7 +168,7 @@ debug = ShellDebug
 # use parameter "after" not "before", which prints even when first try
 import tenacity
 import functools
-# when attempt reaches 12, it is ~30min; after that wait the max, thus, 15 is ~ 1 hr
+# when attempt reaches 10, it is ~20min, 12 is ~30min; after that wait the max, thus, 15 is ~ 1 hr
 # the error raised by retry would be RetryError
 retry = functools.partial(
     tenacity.retry,

@@ -166,6 +166,15 @@ debug = ShellDebug
 # https://tenacity.readthedocs.io/en/latest/
 # https://github.com/jd/tenacity
 # use parameter "after" not "before", which prints even when first try
+
+# reference:
+# ez.retry(lambda x:x/0)()
+# from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+# @retry(stop=stop_after_attempt(5),wait=wait_exponential(multiplier=1, min=4, max=10*60),retry=retry_if_exception_type(), 
+#        after=lambda retry_state: print(f"Retry... {retry_state.attempt_number}"))
+# def getfunc(*args,**kwargs):
+#     return func(*args,**kwargs)
+
 import tenacity
 import functools
 # when attempt reaches 10, it is ~20min, 12 is ~30min; after that wait the max, thus, 15 is ~ 1 hr

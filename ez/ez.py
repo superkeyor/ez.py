@@ -185,6 +185,12 @@ retry = functools.partial(
     retry=tenacity.retry_if_exception_type(),after=lambda retry_state: print(f"Retry... {retry_state.attempt_number}")
 )()   
 
+retry2 = functools.partial(
+    tenacity.retry,
+    stop=tenacity.stop_after_attempt(4),wait=tenacity.wait_exponential(multiplier=1, min=4, max=10*60),
+    retry=tenacity.retry_if_exception_type(),after=lambda retry_state: print(f"Retry... {retry_state.attempt_number}")
+)()
+
 #def ReadConfig(item):
 #    """Read a variable from the config.ini file"""
 #    config = ConfigParser.RawConfigParser()

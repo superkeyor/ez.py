@@ -3591,6 +3591,27 @@ def office_pdf_unlock(inputpdfs):
         # the parameters are passed on intact, without interpretation or expansion. 
         # This means, among other things, that each parameter in the argument list is seen as a separate word.
 
+def office_pdf_crop(inputpdfs):
+    """
+    inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
+    new file in the same folder suffixed _compressed
+    less effective than acrobat pro's Save Reduced Size
+    """
+    if type(inputpdfs) not in [list]:
+        # hack for filename with space
+        # assume "quoted form of " applescript returns single quote
+        inputpdfs = inputpdfs.split("' '")  
+        # strip "" from both ends that might be present from keyboardmaestro
+        inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
+    from pdfCropMargins import crop
+    for pdf in inputpdfs:
+        # https://github.com/abarker/pdfCropMargins
+        # crop defaults to pwd to output the generated file?
+        # strip quotes from applescript input (quoted form of filepath)
+        path=os.path.split(pdf.strip("'").strip('"'))[0]
+        os.chdir(path)
+        crop([pdf])
+
 def office_pdf_compress(inputpdfs):
     """
     inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'

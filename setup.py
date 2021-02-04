@@ -15,7 +15,7 @@ packages = find_packages()
 # install_requires=['peppercorn']
 # install_requires=['']
 install_requires=['pytz', 'tzlocal', 'Send2Trash', 'pyperclip', 'gmail', 'chardet', 'psutil', 
-                 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'python-docx', 'python-pptx',
+                 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
                  'pynput', 'gspread', 'tenacity']
 ######################################################################################
 # Get the long description from the relevant file

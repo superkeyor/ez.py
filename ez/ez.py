@@ -3615,7 +3615,7 @@ def office_pdf_crop(inputpdfs,parameters=''):
         # https://github.com/abarker/pdfCropMargins
         # crop defaults to pwd to output the generated file?
         # strip quotes from applescript input (quoted form of filepath)
-        path=os.path.split(pdf.strip("'").strip('"'))[0]
+        path=os.path.split( os.path.abspath(pdf.strip("'").strip('"')) )[0]
         os.chdir(path)
         parameters = parameters.split(' ') if parameters!='' else []
         crop(parameters+[pdf])

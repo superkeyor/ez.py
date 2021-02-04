@@ -3617,7 +3617,7 @@ def office_pdf_crop(inputpdfs,parameters=''):
         # strip quotes from applescript input (quoted form of filepath)
         path=os.path.split(pdf.strip("'").strip('"'))[0]
         os.chdir(path)
-        parameters = parameters.split(' ')
+        parameters = parameters.split(' ') if parameters!='' else []
         crop(parameters+[pdf])
 
 def office_pdf_compress(inputpdfs):

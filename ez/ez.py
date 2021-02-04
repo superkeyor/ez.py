@@ -3591,11 +3591,18 @@ def office_pdf_unlock(inputpdfs):
         # the parameters are passed on intact, without interpretation or expansion. 
         # This means, among other things, that each parameter in the argument list is seen as a separate word.
 
-def office_pdf_crop(inputpdfs):
+def office_pdf_crop(inputpdfs,parameters=''):
     """
     inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
-    new file in the same folder suffixed _compressed
+    new file in the same folder suffixed _cropped
     less effective than acrobat pro's Save Reduced Size
+    # https://github.com/abarker/pdfCropMargins
+    parameters:'-u -s -a4 left bottom right top' separated by space. 
+                left bottom right top are the margin to crop in unit of bp (72 bp = 1 inch)
+                -u Crop all the pages uniformly
+                -s force each page to the same size
+                -a4 Decrease the margin sizes individually with four absolute offset values
+                -gui requires pip install PySimpleGUI
     """
     if type(inputpdfs) not in [list]:
         # hack for filename with space
@@ -3610,7 +3617,8 @@ def office_pdf_crop(inputpdfs):
         # strip quotes from applescript input (quoted form of filepath)
         path=os.path.split(pdf.strip("'").strip('"'))[0]
         os.chdir(path)
-        crop([pdf])
+        parameters = parameters.split(' ')
+        crop(parameters+[pdf])
 
 def office_pdf_compress(inputpdfs):
     """

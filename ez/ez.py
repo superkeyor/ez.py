@@ -3618,7 +3618,14 @@ def office_pdf_crop(inputpdfs,parameters=''):
         path=os.path.split( os.path.abspath(pdf.strip("'").strip('"')) )[0]
         os.chdir(path)
         parameters = parameters.split(' ') if parameters!='' else []
+        # not working for kindle dx..., but works for goodreader
         crop(parameters+[pdf])
+        # ['-b','m','-b','c','-b','t','-b','a','-b','b']
+        # https://www.prepressure.com/pdf/basics/page-boxes
+        # When you use the Crop tool in Acrobat to resize a page it displays correctly in Acrobat, however when you place it into another application (eg InDesign) it loads the pdf displaying the original size.
+        # When you use the Crop tool and then save the PDF, the cropping is applied like a mask… the dimension can be restored at any time.
+        # To make the cropped size permanent… you need to save the page as am EPS file and redistill it.
+        # But Briss works for kindle...
 
 def office_pdf_compress(inputpdfs):
     """

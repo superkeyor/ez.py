@@ -1782,7 +1782,9 @@ def doc(package_prefixed_name):
 help = doc
 
 def getos():
-    # returns Windows, Linux or Darwin
+    """
+    returns Windows, Linux or Darwin
+    """
     # https://stackoverflow.com/a/58071295/2292993
     return platform.system()
 

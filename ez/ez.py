@@ -2409,6 +2409,7 @@ def Permute(iterable=[]):
 permute = Permute
 
 from time import sleep
+wait = sleep
 
 def pause():
     """

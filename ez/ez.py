@@ -1781,6 +1781,11 @@ def doc(package_prefixed_name):
     print(eval(package_prefixed_name + '.__doc__', caller.f_locals))
 help = doc
 
+def getos():
+    # returns Windows, Linux or Darwin
+    # https://stackoverflow.com/a/58071295/2292993
+    return platform.system()
+
 def ver(package_name='python'):
     """
     ver(package_name) version(package_name), see a package's version.  package_name could be 'python'

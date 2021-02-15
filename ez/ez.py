@@ -2423,7 +2423,7 @@ def pause():
         # raise Exception('User cancelled.')
         return False
 
-def num(s):
+def num(s,silent=True):
     """num(s)
     num(3),num(3.7)-->3
     num('3')-->3, num('3.7')-->3.7
@@ -2431,6 +2431,7 @@ def num(s):
     num('3a'),num('a3'),-->ValueError
     num('3e4') --> 30000.0
     num(' '),num('') -->ValueError
+    if silent, not raise error, but returns s as is
     """
     try:
         return int(s)
@@ -2438,6 +2439,7 @@ def num(s):
         try:
             return float(s)
         except ValueError:
+            if silent: return s
             raise ValueError('argument is not a string of number')
 
 def isempty(s):

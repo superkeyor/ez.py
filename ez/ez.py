@@ -3548,6 +3548,27 @@ def office_pdf_from(inputfile,outputdir=None):
     # subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
     esp(' '.join(args))
 
+def office_doc2docx(inputfile,outputdir=None):
+    """
+    call libreoffice headless mode to convert to docx
+    inputfile: single file, or *.doc
+    outputdir: if none, same directory as inputfile
+    outputfile will be the same name with .pdf
+    some format will be different due to libreoffice's rendering
+    """
+    import sys, os, subprocess
+
+    # TODO: Provide support for more platforms
+    if sys.platform == 'darwin':
+        libreoffice=os.path.expanduser('~/Dropbox/Apps/PDF/LibreOffice.app/Contents/MacOS/soffice')
+    else:
+        libreoffice='libreoffice'
+
+    if outputdir is None: outputdir=splitpath(inputfile)[0]
+    args = [libreoffice, '--headless', '--convert-to', 'docx', '--outdir', outputdir, inputfile]
+    # subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+    esp(' '.join(args))
+
 def getkmvar(var):
     # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
     # Keyboard Maestro only allows Get env variable from shell script

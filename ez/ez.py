@@ -3397,6 +3397,33 @@ def opens(filepath):
     elif os.name == 'posix': # For Linux
         subprocess.call(('xdg-open', filepath))
 
+def getkmvar(var):
+    # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
+    # Keyboard Maestro only allows Get env variable from shell script
+    # eg., getkmvar('PathFinderSelection')
+    # returns stripped string, or none if not exist or empty in user input in KM
+    import os
+    var = 'KMVAR_'+var
+    try:
+        value = os.environ[var].strip()
+    except KeyError:
+        value = None
+    return value
+
+def setpassword(acount,password):
+    """
+    under Keychains-->login-->km.py
+    """
+    import keyring
+    keyring.set_password("km.py", acount, password)
+
+def getpassword(acount):
+    """
+    under Keychains-->login-->km.py
+    """
+    import keyring
+    return keyring.get_password("km.py", acount)
+
 def office_pptx_replace_font(pptx_path: str, replacedict: dict, save_path=None):
     """
     partially working so far, it will replace any font, regardless of the specified condition
@@ -3573,19 +3600,6 @@ def office_doc2docx(inputfile,outputdir=None):
     args = [libreoffice, '--headless', '--convert-to', 'docx', '--outdir', outputdir, inputfile]
     # subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
     esp(' '.join(args))
-
-def getkmvar(var):
-    # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
-    # Keyboard Maestro only allows Get env variable from shell script
-    # eg., getkmvar('PathFinderSelection')
-    # returns stripped string, or none if not exist or empty in user input in KM
-    import os
-    var = 'KMVAR_'+var
-    try:
-        value = os.environ[var].strip()
-    except KeyError:
-        value = None
-    return value
 
 def office_pdf_unlock(inputpdfs):
     """

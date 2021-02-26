@@ -157,41 +157,46 @@ def ShellDebug(debugMode=1):
     _DEBUG_MODE = debugMode
 debug = ShellDebug    
 
-# todo: make retry a function that can accept paramters
-# Usage: 
-#       @retry as a decorator, but cannot accept parameters
-#       retry(pd.read_html)(another_url)
-#       f = retry(lambda x: pd.read_html(x)); f(another_url)
-# https://stackoverflow.com/a/62132401/2292993
-# https://tenacity.readthedocs.io/en/latest/
-# https://github.com/jd/tenacity
-# use parameter "after" not "before", which prints even when first try
+def retry(*args,timeout=20,n=None,min=4/60,max=10):
+    """
+    args: positional arguments, supports both @retry and @retry() as valid syntax
+          @retry as a decorator
+          retry(pd.read_html)(another_url)
+          f = retry(lambda x: pd.read_html(x)); f(another_url)
+    timeout: in minutes
+    n: number of retries; if specified, ignore timeout
+          4->10 min
+          10->20 min
+          12->30 min
+          15->60 min (after 15 tries, wait the max)
+    min: in minutes, min time to wait between retries
+    max: in minutes, max time to wait between retries
+    """
+    # debug: ez.retry(lambda x:x/0)()
+    # https://stackoverflow.com/a/62132401/2292993
+    # https://tenacity.readthedocs.io/en/latest/
+    # https://github.com/jd/tenacity
+    # use parameter "after" not "before", which prints even when first try
+    # https://github.com/jd/tenacity/blob/master/tenacity/__init__.py
+    if len(args) == 1 and callable(args[0]):
+        return retry(timeout=timeout,n=n,min=min,max=max)(args[0])
+    else:
+        import tenacity
+        import functools
+        if n is None:
+            stop=tenacity.stop_after_delay(timeout*60)
+        else:
+            stop=tenacity.stop_after_attempt(n)
+        myretry=functools.partial(
+            tenacity.retry,
+            reraise=True,
+            stop=stop,wait=tenacity.wait_random_exponential(multiplier=1, min=min*60, max=max*60),
+            retry=tenacity.retry_if_exception_type(),after=lambda retry_state: print(f"Retry... {retry_state.attempt_number}")
+        )()
+        return myretry
 
-# reference:
-# ez.retry(lambda x:x/0)()
-# from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-# @retry(stop=stop_after_attempt(5),wait=wait_exponential(multiplier=1, min=4, max=10*60),retry=retry_if_exception_type(), 
-#        after=lambda retry_state: print(f"Retry... {retry_state.attempt_number}"))
-# def getfunc(*args,**kwargs):
-#     return func(*args,**kwargs)
-
-import tenacity
-import functools
-# when attempt reaches 10, it is ~20min, 12 is ~30min; after that wait the max, thus, 15 is ~ 1 hr
-# the error raised by retry would be RetryError
-retry = functools.partial(
-    tenacity.retry,
-    stop=tenacity.stop_after_attempt(15),wait=tenacity.wait_exponential(multiplier=1, min=4, max=10*60),
-    retry=tenacity.retry_if_exception_type(),after=lambda retry_state: print(f"Retry... {retry_state.attempt_number}")
-)()   
-
-retry2 = functools.partial(
-    tenacity.retry,
-    stop=tenacity.stop_after_attempt(4),wait=tenacity.wait_exponential(multiplier=1, min=4, max=10*60),
-    retry=tenacity.retry_if_exception_type(),after=lambda retry_state: print(f"Retry... {retry_state.attempt_number}")
-)()
-
-#def ReadConfig(item):
+# json is recommended for config
+# def ReadConfig(item):
 #    """Read a variable from the config.ini file"""
 #    config = ConfigParser.RawConfigParser()
 #    config.read("config.ini")

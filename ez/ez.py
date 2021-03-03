@@ -3207,7 +3207,7 @@ writep = savep
 def readj(file='data.json',*args,**kwargs):
     import json
     with open(file, 'r') as f:
-        return json.loads(f.read(),*args,**kwargs)
+        return JDict(json.loads(f.read(),*args,**kwargs))
 
 def savej(x,file='data.json',indent=4,*args,**kwargs):
     """

@@ -222,13 +222,12 @@ def fullpath(path):
     return os.path.abspath(os.path.expanduser(path))
 fp = fullpath
 
-def csd(insertpath=False):
-    """(),Returns full path of current script directory, i.e. the directory where the running script is.
+def csd():
+    """(),Returns full path of current script directory, i.e. the directory where the running script is (not the location of imported file).
     if in interactive mode, return current working directory
     It should always be the best to call csd() at the top of a script, 
     during which the running script has not change any working directory yet. 
     Therefore the internal call of sys.argv[0], if given not in full path, can be resolved to correct full path
-    insertpath: insert the path to top of sys.path
     """
     # https://stackoverflow.com/a/22424821/2292993
     import __main__ as main
@@ -241,15 +240,12 @@ def csd(insertpath=False):
         # os.path.split returns (head,tail), here for path = , same effect as splitpath
         path = os.path.split(os.path.abspath(sys.argv[0]))[0]
         # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
-        path = os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
-        if (sys.path[0]!=path) and insertpath: sys.path.insert(0,path)
-        return path
+        return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
 def here(insertpath=True):
     """(),Returns full path of current file directory, i.e. the directory where the imported file is.
     if in interactive mode, return current working directory
     insertpath: insert the path to top of sys.path
-    internal call __file__
     """
     # https://stackoverflow.com/a/22424821/2292993
     import __main__ as main
@@ -260,7 +256,9 @@ def here(insertpath=True):
         # for difference between __file__ and sys.argv[0]
         # see https://stackoverflow.com/questions/5851588/difference-between-file-and-sys-argv0
         # os.path.split returns (head,tail), here for path = , same effect as splitpath
-        path = os.path.split(os.path.abspath(__file__))[0]
+        import inspect
+        caller = inspect.currentframe().f_back
+        path = os.path.split(os.path.abspath(caller.__file__))[0]
         if (sys.path[0]!=path) and insertpath: sys.path.insert(0,path)
         return path
 

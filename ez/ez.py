@@ -242,6 +242,24 @@ def csd():
         # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
         return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
+def here():
+    """(),Returns full path of current file directory, i.e. the directory where the imported file is.
+    if in interactive mode, return current working directory; also insert here to sys.path
+    internal call __file__
+    """
+    # https://stackoverflow.com/a/22424821/2292993
+    import __main__ as main
+    is_interactive = not hasattr(main, '__file__')
+    if is_interactive:
+        return os.getcwd()
+    else:
+        # for difference between __file__ and sys.argv[0]
+        # see https://stackoverflow.com/questions/5851588/difference-between-file-and-sys-argv0
+        # os.path.split returns (head,tail), here for path = , same effect as splitpath
+        path = os.path.split(os.path.abspath(__file__))[0]
+        sys.path.insert(0,path)
+        return path
+
 def stepfolder(step=-1):
     """
     folder = stepfolder(step)

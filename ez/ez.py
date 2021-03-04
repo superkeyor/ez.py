@@ -243,9 +243,9 @@ def csd():
         return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
 def here(imported,insertpath=True):
-    """(imported,insertpath=True),Returns full path of imported file.
+    """(imported,insertpath=True),Returns full path of dirname of imported file.
     if in interactive mode, ignore all parameters, return current working directory
-    imported: must be specified as __file__ in the caller
+    imported: 99% of time, should be specified as __file__ in the caller
     insertpath: insert the path to top of sys.path
                 the sys.path will survive (remain effective) outside caller
     """

@@ -246,6 +246,7 @@ def here(insertpath=True):
     """(),Returns full path of imported file.
     if in interactive mode, return current working directory
     insertpath: insert the path to top of sys.path; ignored if in interactive mode
+                the sys.path will survive (remain effective) outside caller
     """
     # https://stackoverflow.com/a/22424821/2292993
     import __main__ as main

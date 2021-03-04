@@ -256,7 +256,9 @@ def here(insertpath=True):
         import inspect
         caller = inspect.currentframe().f_back
         path = os.path.split(os.path.abspath(inspect.getabsfile(caller)))[0]
-        if (sys.path[0]!=path) and insertpath: sys.path.insert(0,path)
+        if insertpath:
+            if path in sys.path: sys.path.remove(path)
+            sys.path.insert(0,path)
         return path
 
 def stepfolder(step=-1):

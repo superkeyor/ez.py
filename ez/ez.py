@@ -242,10 +242,10 @@ def csd():
         # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
         return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
-def here(imported=__file__,insertpath=True):
-    """(imported=__file__,insertpath=True),Returns full path of imported file.
+def here(imported,insertpath=True):
+    """(imported,insertpath=True),Returns full path of imported file.
     if in interactive mode, ignore all parameters, return current working directory
-    imported: 
+    imported: must be specified as __file__ in the caller
     insertpath: insert the path to top of sys.path
                 the sys.path will survive (remain effective) outside caller
     """

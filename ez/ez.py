@@ -255,8 +255,11 @@ def here(insertpath=True):
         return os.getcwd()
     else:
         import inspect
-        caller = inspect.currentframe()
-        print(inspect.getabsfile(caller))
+        caller = inspect.currentframe().f_back
+        import inspect
+        stack=inspect.stack()
+        for s in stack:
+            print(s.filename)
         path = os.path.split(os.path.abspath(inspect.getabsfile(caller)))[0]
         if insertpath:
             if path in sys.path: sys.path.remove(path)

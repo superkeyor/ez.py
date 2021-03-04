@@ -257,7 +257,7 @@ def here():
         # see https://stackoverflow.com/questions/5851588/difference-between-file-and-sys-argv0
         # os.path.split returns (head,tail), here for path = , same effect as splitpath
         path = os.path.split(os.path.abspath(__file__))[0]
-        sys.path.insert(0,path)
+        if sys.path[0]!=path: sys.path.insert(0,path)
         return path
 
 def stepfolder(step=-1):

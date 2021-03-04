@@ -256,6 +256,7 @@ def here(insertpath=True):
     else:
         import inspect
         caller = inspect.currentframe().f_back
+        print(inspect.getabsfile(caller))
         path = os.path.split(os.path.abspath(inspect.getabsfile(caller)))[0]
         if insertpath:
             if path in sys.path: sys.path.remove(path)

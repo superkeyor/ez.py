@@ -259,7 +259,7 @@ def here(imported=__file__,insertpath=True):
         # import inspect
         # caller = inspect.stack()[1]
         # path = os.path.split(os.path.abspath(caller.filename))[0]
-        path = os.path.split(os.path.abspath(imported)[0])
+        path = os.path.dirname(os.path.abspath(imported))
         if insertpath:
             if path in sys.path: sys.path.remove(path)
             sys.path.insert(0,path)

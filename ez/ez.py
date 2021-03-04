@@ -242,29 +242,6 @@ def csd():
         # hack when a script is packed into an app, which returns xxx.app/Contents/Resources
         return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
-def here(imported,insertpath=True):
-    """(imported,insertpath=True),Returns full path of dirname of imported file.
-    if in interactive mode, ignore all parameters, return current working directory
-    imported: 99% of time, should be specified as __file__ in the caller
-    insertpath: insert the path to top of sys.path
-                the sys.path will survive (remain effective) outside caller
-    """
-    # https://stackoverflow.com/a/22424821/2292993
-    import __main__ as main
-    is_interactive = not hasattr(main, '__file__')
-    if is_interactive:
-        return os.getcwd()
-    else:
-        # not reliable across different environment/platform
-        # import inspect
-        # caller = inspect.stack()[1]
-        # path = os.path.split(os.path.abspath(caller.filename))[0]
-        path = os.path.dirname(os.path.abspath(imported))
-        if insertpath:
-            if path in sys.path: sys.path.remove(path)
-            sys.path.insert(0,path)
-        return path
-
 def stepfolder(step=-1):
     """
     folder = stepfolder(step)

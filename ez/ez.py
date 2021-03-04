@@ -243,7 +243,7 @@ def csd():
         return os.path.abspath(os.path.join(path,os.pardir,os.pardir,os.pardir)) if path.endswith('.app/Contents/Resources') else path
 
 def here(insertpath=True):
-    """(),Returns full path of current file directory, i.e. the directory where the imported file is.
+    """(),Returns full path of imported file.
     if in interactive mode, return current working directory
     insertpath: insert the path to top of sys.path
     """
@@ -253,12 +253,9 @@ def here(insertpath=True):
     if is_interactive:
         return os.getcwd()
     else:
-        # for difference between __file__ and sys.argv[0]
-        # see https://stackoverflow.com/questions/5851588/difference-between-file-and-sys-argv0
-        # os.path.split returns (head,tail), here for path = , same effect as splitpath
         import inspect
         caller = inspect.currentframe().f_back
-        path = os.path.split(os.path.abspath(caller.__file__))[0]
+        path = os.path.split(os.path.abspath(inspect.getabsfile(caller)))[0]
         if (sys.path[0]!=path) and insertpath: sys.path.insert(0,path)
         return path
 

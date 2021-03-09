@@ -16,7 +16,7 @@ packages = find_packages()
 # install_requires=['']
 install_requires=['pytz', 'tzlocal', 'Send2Trash', 'keyring','pyperclip', 'gmail', 'chardet', 'psutil', 
                  'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
-                 'pynput', 'gspread', 'tenacity']
+                 'pynput', 'gspread>=3.7.0', 'tenacity']
 ######################################################################################
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:

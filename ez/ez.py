@@ -611,8 +611,11 @@ def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
 
     files = _FilterList(os.listdir(path), pattern_regex)
     if not dotfile: files = _FilterList(files,'^[^\.]')
-    if full: files = [os.path.join(path,file) for file in files]
-    result = [file for file in files if os.path.isfile(file)]
+    if full: 
+        files = [os.path.join(path,file) for file in files]
+        result = [file for file in files if os.path.isfile(file)]
+    else:
+        result = [file for file in files if os.path.isfile(os.path.join(path,file))]
     if sort: 
         if case:
             return sorted(result)
@@ -3207,7 +3210,9 @@ writep = savep
 def readj(file='data.json',*args,**kwargs):
     import json
     with open(file, 'r') as f:
-        return JDict(json.loads(f.read(),*args,**kwargs))
+        res=json.loads(f.read(),*args,**kwargs)
+    if isinstance(res, dict): res=JDict(res)
+    return res
 
 def savej(x,file='data.json',indent=4,*args,**kwargs):
     """

@@ -2,12 +2,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-__author__ = "jerryzhujian9@gmail.com"
+__author__ = ""
 
 __doc__ = """This module is for easy interaction with linux, Mac OS X, Windows shell 
 (Should Support both Python 2 and 3)...
 =============================================
-jerryzhujian9_at_gmail.com
 To see your python version
 in terminal: python -V
 or in python: import sys; print (sys.version)

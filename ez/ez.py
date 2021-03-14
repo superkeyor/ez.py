@@ -2550,6 +2550,21 @@ def setdiff(seq1,seq2):
     # from .orderedset import OrderedSet
     return list(OrderedSet(seq1) - OrderedSet(seq2))
 
+def compare(lh,rh,value=False):
+
+    print('\t\t\t\tUnion: {:4.0f}\n'.format(len(union(lh,rh))))
+    print('\t\tLH: {:4.0f} /{:4.0f}\t\t\t\tRH: {:4.0f} /{:4.0f}\n'.format(len(lh),len(unique(lh)),len(rh),len(unique(rh))))
+    print('\t\t\t\tInter: {:4.0f}\n'.format(len(intersect(lh,rh))))
+    print('\n')
+    print('\t\tLH>: {:4.0f}\t\t\t\t<RH: {:4.0f}\n'.format(len(setdiff(lh,rh)),len(setdiff(rh,lh))))
+
+    if value:
+        print('LH>:')
+        ppprint(','.join(setdiff(lh,rh)))
+        print('\n')
+        print('RH>:')
+        ppprint(','.join(setdiff(rh,lh)))
+
 def duplicate(seq):
     """
     unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in original order

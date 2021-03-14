@@ -2592,7 +2592,7 @@ def duplicate(seq):
     # seen_twice = OrderedSet( x for x in seq if x in seen or seen_add(x) )
     # # turn the set into a list (as requested)
     # return list( seen_twice )
-
+    import pandas as pd
     df=pd.DataFrame({'col':seq})
     df=(df.loc[df.duplicated(subset=['col'],keep='first').tolist()]).drop_duplicates()
     return df.col.tolist()

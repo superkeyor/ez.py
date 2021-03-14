@@ -2584,13 +2584,18 @@ def duplicate(seq):
     # a = [1,5,2,3,2,1,5,6,5,5,5]
     # duplicate(a) # yields [2, 1, 5]
     """
-    # from .orderedset import OrderedSet
-    seen = OrderedSet()
-    seen_add = seen.add
-    # adds all elements it doesn't know yet to seen and all other to seen_twice
-    seen_twice = OrderedSet( x for x in seq if x in seen or seen_add(x) )
-    # turn the set into a list (as requested)
-    return list( seen_twice )
+    # not working...
+    # # from .orderedset import OrderedSet
+    # seen = OrderedSet()
+    # seen_add = seen.add
+    # # adds all elements it doesn't know yet to seen and all other to seen_twice
+    # seen_twice = OrderedSet( x for x in seq if x in seen or seen_add(x) )
+    # # turn the set into a list (as requested)
+    # return list( seen_twice )
+
+    df=pd.DataFrame({'col':seq})
+    df=(df.loc[df.duplicated(subset=['col'],keep='first').tolist()]).drop_duplicates()
+    return df.col.tolist()
 
 from collections import OrderedDict
 class JDict(OrderedDict):

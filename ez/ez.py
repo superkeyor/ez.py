@@ -3421,6 +3421,12 @@ def opens(filepath):
     elif os.name == 'posix': # For Linux
         subprocess.call(('xdg-open', filepath))
 
+def vx(df):
+    import tempfile
+    _, tmp = tempfile.mkstemp(suffix='.xlsx')
+    df.to_excel(tmp)
+    ez.opens(tmp)
+
 def getkmvar(var):
     # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
     # Keyboard Maestro only allows Get env variable from shell script

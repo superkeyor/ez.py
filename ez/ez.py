@@ -2550,6 +2550,9 @@ def setdiff(seq1,seq2):
     # from .orderedset import OrderedSet
     return list(OrderedSet(seq1) - OrderedSet(seq2))
 
+def setdiff2(seq2,seq1):
+    return list(OrderedSet(seq1) - OrderedSet(seq2))
+
 def compare(lh,rh,value=False):
 
     print('\t\t\t\tUnion: {:4.0f}\n'.format(len(union(lh,rh))))

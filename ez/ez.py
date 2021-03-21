@@ -3425,7 +3425,7 @@ def vx(df):
     import tempfile
     _, tmp = tempfile.mkstemp(suffix='.xlsx')
     df.to_excel(tmp)
-    ez.opens(tmp)
+    opens(tmp)
 
 def getkmvar(var):
     # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script

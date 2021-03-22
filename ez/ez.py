@@ -3232,6 +3232,18 @@ def savep(df,*args,**kwargs):
     return df.to_parquet(*args,**kwargs)
 writep = savep
 
+def savek(obj,file='data.pickle',*args,**kwargs):
+    import pickle
+    with open(file, 'wb') as handle:
+        pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL, *args, **kwargs)
+writek = savek
+
+def readk(file='data.pickle',*args, **kwargs):
+    import pickle
+    with open(file, 'rb') as handle:
+        obj = pickle.load(handle,*args,**kwargs)
+    return obj
+
 def readj(file='data.json',*args,**kwargs):
     import json
     with open(file, 'r') as f:

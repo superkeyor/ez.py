@@ -2376,7 +2376,10 @@ def sprintf(formatString, *args, **kwargs):
         
 def iff(expression, result1, result2):
     """iff(expression, result1, result2)"""
-    return result1 if expression else result2
+    if expression:
+        return result1
+    else:
+        return result2
 ifelse=iff
 
 def clear(module, recursive=False):

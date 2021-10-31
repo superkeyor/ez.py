@@ -1445,7 +1445,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
 
         if os.name == 'nt' or platform.system() == 'Windows':
             if output:
-                subprocess.call(cmd, shell=True)
+                subprocess.call(cmd, shell=True, stderr=subprocess.STDOUT)
             else:
                 subprocess.call(cmd, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         else:
@@ -1456,7 +1456,7 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
                 try:
                     with os.fdopen(tmpfd, 'w') as tmp:
                         tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-                    subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, shell=True, executable="/bin/bash")
+                    subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, shell=True, executable="/bin/bash", stderr=subprocess.STDOUT)
                 finally:
                     os.remove(tmpPath)
             else:

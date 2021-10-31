@@ -1112,7 +1112,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             err = p.stderr.read()
             if p.returncode != 0:
                 # responsible for logging STDERR 
-                if verbose in [2,3]: print("Error: " + str(err))
+                if verbose in [2,3]: print("Error: " + err.decode('utf-8'))
                 yield None
             # delete temp file
             os.remove(tmpPath)

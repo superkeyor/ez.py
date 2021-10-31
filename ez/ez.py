@@ -1090,11 +1090,16 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 tmpfd, tmpPath = tempfile.mkstemp(suffix='.sh')
                 with os.fdopen(tmpfd, 'w') as tmp:
                     tmp.write('#!/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')
-                p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+                # p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+                # some command line tools (e.g., ffmpeg) direct their outputs as stderr; so I simply merge stderr to stdout
+                p = subprocess.Popen('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' "'+tmpPath+'"'+cmdSuffix, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, executable="/bin/bash")
+            
+            # rationale: I capture everything, and then I decide what/if to manually print to screen
+
             # the Popen() instance starts running once instantiated (??)
             # additionally, communicate(), or poll() and wait process to terminate
             # communicate() accepts optional input as stdin to the pipe (requires setting stdin=subprocess.PIPE above), return out, err as tuple
-            # if communicate(), the results are buffered in memory
+            # if communicate(), the results are buffered in memory, not good for realtime display on screen
             
             # Read stdout from subprocess until the buffer is empty !
             # if error occurs, the stdout is '', which means the below loop is essentially skipped
@@ -1105,11 +1110,10 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             for line in iter(p.stdout.readline, b''):
                 # # Windows has \r\n, Unix has \n, Old mac has \r
                 # if line not in ['','\n','\r','\r\n']: # Don't print blank lines
-                yield line
+                yield line.decode('utf-8')
             while p.poll() is None:                                                                                                                                        
                 sleep(.1) #Don't waste CPU-cycles
-            # Empty STDERR buffer
-            err = p.stderr.read()
+            err = line   # stderr is empty now since it directs to stdout; usually we use: err = p.stderr.read() 
             if p.returncode != 0:
                 # responsible for logging STDERR 
                 if verbose in [2,3]: print("Error: " + err.decode('utf-8'))
@@ -1121,9 +1125,9 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
         for line in _execute_cmd(cmd):
             # error did not occur earlier
             if line is not None:
-                # trailing comma to avoid a newline (by print itself) being printed
-                if verbose in [2,3]: print(line.decode('utf-8'), end=',')
-                out.append(line.strip().decode('utf-8'))
+                # print() default end is '\n'; to avoid a newline (by print itself) being printed
+                if verbose in [2,3]: print(line, end='')
+                out.append(line.strip())
             else:
                 # error occured earlier
                 out = None

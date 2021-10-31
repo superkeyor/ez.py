@@ -1113,10 +1113,18 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 yield line.decode('utf-8')
             while p.poll() is None:                                                                                                                                        
                 sleep(.1) #Don't waste CPU-cycles
-            err = line   # stderr is empty now since it directs to stdout; usually we use: err = p.stderr.read() 
+            
+            # err = p.stderr.read() 
+            # if p.returncode != 0:
+            #     # responsible for logging STDERR 
+            #     if verbose in [2,3]: print("Error: " + err.decode('utf-8'))
+            #     yield None
+            
+            # test: cmd="0/0"
+            # err = p.stdout.read()  # stdout.read() was read earlier but now is empty
             if p.returncode != 0:
                 # responsible for logging STDERR 
-                if verbose in [2,3]: print("Error: " + err.decode('utf-8'))
+                if verbose in [2,3]: pprint("Error occured",color='red')
                 yield None
             # delete temp file
             os.remove(tmpPath)

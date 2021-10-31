@@ -1896,7 +1896,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
         def __init__(self, file):
             self.file = file
             sys.stdout = sys.__stdout__
-            sys.stderr = sys.stdout
+            sys.stderr = sys.__stderr__
             print("log on with " + fullpath(self.file))
             self.terminal = sys.stdout
             self.log = open(file, mode)
@@ -1934,9 +1934,11 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
             pass
 
         sys.stdout = Logger(file)
+        sys.stderr = Logger(file)
     else:
         try:
             sys.stdout.off()
+            sys.stderr.off()
         except AttributeError:
             pass
 log = SetLog

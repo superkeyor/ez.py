@@ -1934,7 +1934,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
             pass
 
         sys.stdout = Logger(file)
-        sys.stderr = Logger(file)
+        sys.stderr = sys.stdout
     else:
         try:
             sys.stdout.off()

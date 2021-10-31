@@ -1896,26 +1896,22 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
         def __init__(self, file):
             self.file = file
             sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
             print("log on with " + fullpath(self.file))
-            self.out = sys.stdout
-            self.err = sys.stderr
+            self.terminal = sys.stdout
             self.log = open(file, mode)
             if timestamp:
                 self.log.write("++++++++++log on at " + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "\n")
                 self.log.flush()
 
         def flush(self):
-            self.out.flush()
-            self.err.flush()
+            self.terminal.flush()
             try:
                 self.log.flush()
             except:  # in case self.log closed
                 pass
             
         def write(self, message):
-            self.out.write(message)
-            self.err.write(message)
+            self.terminal.write(message)
             self.log.write(message)
             self.log.flush()
 
@@ -1926,23 +1922,19 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
             self.log.flush()
             self.log.close()
             sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
             print("log off with " + fullpath(self.file))
 
     if status:
         # restore first if it has been changed
         try:
             sys.stdout.off()
-            sys.stderr.off()
         except AttributeError:
             pass
 
         sys.stdout = Logger(file)
-        sys.stderr = Logger(file)
     else:
         try:
             sys.stdout.off()
-            sys.stderr.off()
         except AttributeError:
             pass
 log = SetLog

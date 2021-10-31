@@ -1105,7 +1105,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             for line in iter(p.stdout.readline, b''):
                 # # Windows has \r\n, Unix has \n, Old mac has \r
                 # if line not in ['','\n','\r','\r\n']: # Don't print blank lines
-                    yield line.decode('utf-8')
+                    yield line
             while p.poll() is None:                                                                                                                                        
                 sleep(.1) #Don't waste CPU-cycles
             # Empty STDERR buffer
@@ -1123,7 +1123,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             if line is not None:
                 # trailing comma to avoid a newline (by print itself) being printed
                 if verbose in [2,3]: print(line, end=',')
-                out.append(line.strip())
+                out.append(line.strip().decode('utf-8'))
             else:
                 # error occured earlier
                 out = None

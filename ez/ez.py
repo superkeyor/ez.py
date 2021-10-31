@@ -1896,6 +1896,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
         def __init__(self, file):
             self.file = file
             sys.stdout = sys.__stdout__
+            sys.stderr = sys.stdout
             print("log on with " + fullpath(self.file))
             self.terminal = sys.stdout
             self.log = open(file, mode)
@@ -1922,6 +1923,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
             self.log.flush()
             self.log.close()
             sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
             print("log off with " + fullpath(self.file))
 
     if status:

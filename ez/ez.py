@@ -1105,7 +1105,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             for line in iter(p.stdout.readline, b''):
                 # # Windows has \r\n, Unix has \n, Old mac has \r
                 # if line not in ['','\n','\r','\r\n']: # Don't print blank lines
-                    yield line
+                    yield line.decode('utf-8')
             while p.poll() is None:                                                                                                                                        
                 sleep(.1) #Don't waste CPU-cycles
             # Empty STDERR buffer

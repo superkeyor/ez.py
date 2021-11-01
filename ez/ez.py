@@ -1383,7 +1383,8 @@ def espR1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
             debug_mode_in_effect = False
     espR2(cmdString, verbose=verbose, save=save, saveMode=saveMode, redirect=redirect, redirectMode=redirectMode, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
 
-def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
+execute=execute2
+def execute4(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """
     a wrapper of subprocess.call, cannot capture output, does not return the output to a python variable
     execute, esp (subprocess.call) seem to work better with AFNI commands, while execute1/2, esp1/2 (based on subprocess.Popen) sometimes fail
@@ -1896,7 +1897,6 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
         def __init__(self, file):
             self.file = file
             sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
             print("log on with " + fullpath(self.file))
             self.terminal = sys.stdout
             self.log = open(file, mode)
@@ -1923,24 +1923,19 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
             self.log.flush()
             self.log.close()
             sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
             print("log off with " + fullpath(self.file))
 
     if status:
         # restore first if it has been changed
         try:
             sys.stdout.off()
-            sys.stderr.off()
         except AttributeError:
             pass
 
-        logger = Logger(file)
-        sys.stdout = logger
-        sys.stderr = logger
+        sys.stdout = Logger(file)
     else:
         try:
             sys.stdout.off()
-            sys.stderr.off()
         except AttributeError:
             pass
 log = SetLog

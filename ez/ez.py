@@ -1896,6 +1896,7 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
         def __init__(self, file):
             self.file = file
             sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
             print("log on with " + fullpath(self.file))
             self.terminal = sys.stdout
             self.log = open(file, mode)
@@ -1922,19 +1923,24 @@ def SetLog(file="log.txt", mode='a', status=True, timestamp=True):
             self.log.flush()
             self.log.close()
             sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
             print("log off with " + fullpath(self.file))
 
     if status:
         # restore first if it has been changed
         try:
             sys.stdout.off()
+            sys.stderr.off()
         except AttributeError:
             pass
 
-        sys.stdout = Logger(file)
+        logger = Logger(file)
+        sys.stdout = logger
+        sys.stderr = logger
     else:
         try:
             sys.stdout.off()
+            sys.stderr.off()
         except AttributeError:
             pass
 log = SetLog

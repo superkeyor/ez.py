@@ -1023,8 +1023,7 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                note execute2('printf "\n\n"')-->[]; but execute2('printf "\n\n3"')-->['', '', '3']
     note: if use this function interactively, one can return _ = execute2() to a dummy variable
           alternatively, in ipython, execute2(); (add semicolon) to suppress the returned contents
-          or use execute(), which does not return the output to a python variable
-          seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+          seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     """
     if debugMode:
         debug_mode_in_effect = True
@@ -1164,6 +1163,8 @@ def execute2(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             print(('\nCommand saved at '+save+'\n'))
         return None
 
+execute=execute2
+
 def execute1(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """
     a wrapper of execute2(), but does not return the output to a python variable, discard captures
@@ -1178,7 +1179,7 @@ def execute1(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     """
     if debugMode:
         debug_mode_in_effect = True
@@ -1208,7 +1209,7 @@ def esp2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     Example:
             var_to_be_in_bash = 'blabla'
             cmd = '''
@@ -1252,7 +1253,7 @@ def esp1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     Example:
             var_to_be_in_bash = 'blabla'
             cmd = '''
@@ -1292,7 +1293,7 @@ def espR2(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     Example: 
             ez.espR('iris$Species')
             # print out iris$Species, Levels: setosa versicolor virginica    
@@ -1369,7 +1370,7 @@ def espR1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     Example: 
             ez.espR('iris$Species')
             # print out iris$Species, Levels: setosa versicolor virginica
@@ -1383,8 +1384,7 @@ def espR1(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirect
             debug_mode_in_effect = False
     espR2(cmdString, verbose=verbose, save=save, saveMode=saveMode, redirect=redirect, redirectMode=redirectMode, skipdollar=skipdollar, debugMode=debug_mode_in_effect, insideCalling=True)
 
-execute=execute2
-def execute4(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
+def execute0(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """
     a wrapper of subprocess.call, cannot capture output, does not return the output to a python variable
     execute, esp (subprocess.call) seem to work better with AFNI commands, while execute1/2, esp1/2 (based on subprocess.Popen) sometimes fail
@@ -1398,7 +1398,7 @@ def execute4(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
     saveMode: 'a' (append) or 'w' (overwrite), ignored if save=None.
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     """
     if debugMode:
         debug_mode_in_effect = True
@@ -1500,7 +1500,7 @@ def esp(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectMo
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     Example:
             var_to_be_in_bash = 'blabla'
             cmd = '''
@@ -1541,7 +1541,7 @@ def espR(cmdString, verbose=3, save=None, saveMode='a', redirect=None, redirectM
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for R codes (df$col), or certain bash codes
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     Example: 
             ez.espR('iris$Species')
             # print out iris$Species, Levels: setosa versicolor virginica
@@ -1624,7 +1624,7 @@ def espA(cmdString, verbose=0, save=None, saveMode='a', redirect=None, redirectM
     redirect: None, or a file path to save the redirected cmd execution output. compatible with logon(); works also cmd itself has redirection (eg, tee)
     redirectMode: 'a' (append) or 'w' (overwrite), ignored if redirect=None.
     if skipdollar=1 (1/0), $ (but not others) syntax will be entirely skipped, useful for {} in applescript such as, keystroke "m" using {command down}
-    note: seems to recognize execute('echo $PATH'), but not alias in .bash_profile
+    note: seems to recognize cmd='echo $PATH', but not alias in .bash_profile
     Example: 
             ez.espA('''tell application "System Events" to keystroke "m" using {command down}''')
     """

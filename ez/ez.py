@@ -1943,6 +1943,8 @@ setlog = SetLog
 
 def logon(file="log.txt", mode='a', status=True, timestamp=True):
     """
+    only works for stdout, not stderr
+    
     (file="log.txt", mode='a', status=True, timestamp=True)
     wrapper of log()
     logon(file="log.txt", mode='a', status=True, timestamp=True)

@@ -4352,6 +4352,7 @@ def getpasswordbw(item,what='password'):
         {bw} get {what} {item}
         """
         out = execute0(cmd)
+        print(out)
     return out[-1]
 
 ####************************************************************************************************

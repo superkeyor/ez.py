@@ -4316,7 +4316,7 @@ except:
 mail = Mail
 gmail = Mail
 
-def getpasswordbw(item,what='password',sync=False):
+def getpasswordbw(item,what='password',sync=False,verbose=0):
     # todo: implement bw on other machines
     machine = getos()
     if machine=='Darwin':

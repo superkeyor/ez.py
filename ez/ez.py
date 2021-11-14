@@ -4348,7 +4348,8 @@ def getpasswordbw(item,what='password'):
         cmd = f"""
         export BW_PASSWORD={PASSWORD}
         export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
-        {bw} sync
+        {bw} sync --quiet
+        echo
         {bw} get {what} {item}
         """
         out = execute0(cmd)

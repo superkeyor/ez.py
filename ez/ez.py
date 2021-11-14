@@ -4338,7 +4338,7 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
     except:
         EMAIL = ''; PASSWORD=''
 
-    out = execute0(f'{bw} status',verbose=0)
+    out = execute0(f'{bw} status',verbose=verbose)
     status = re.search('"status":"(\w+)"',out[0]).group(1)
     if status == 'unauthenticated':
         cmd = f"""
@@ -4346,7 +4346,7 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
         export BW_PASSWORD={PASSWORD}
         {bw} login $BW_USER $BW_PASSWORD
         """
-        execute(cmd,verbose=0)
+        execute(cmd,verbose=verbose)
         status = 'locked' # login first
     if status == 'locked' or status == 'unlocked':  # always unlock to get session id
         cmd = f"""
@@ -4355,7 +4355,7 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
         {sync}{bw} sync --quiet
         {bw} get {what} {item}
         """
-        out = execute0(cmd,verbose=0)
+        out = execute0(cmd,verbose=verbose)
         # print(out)
     return out[-1]
 

@@ -4317,6 +4317,11 @@ mail = Mail
 gmail = Mail
 
 def getpasswordbw(item,what='password',sync=False,verbose=0):
+    """
+    https://bitwarden.com/help/article/cli/#get
+    get one at a time: item|username|password|uri|totp|exposed|attachment|folder|collection|organization|org-collection|template|fingerprint
+    """
+
     # todo: implement bw on other machines
     machine = getos()
     if machine=='Darwin':

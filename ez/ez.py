@@ -4351,7 +4351,7 @@ def getpasswordbw(item,what='password'):
         {bw} sync
         {bw} get {what} {item}
         """
-        out = execute(cmd)
+        out = execute0(cmd)
     return out[-1]
 
 ####************************************************************************************************

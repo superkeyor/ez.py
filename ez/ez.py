@@ -4342,7 +4342,7 @@ def getpasswordbw(item,what='password'):
         export BW_PASSWORD={PASSWORD}
         {bw} login $BW_USER $BW_PASSWORD
         """
-        execute(cmd)
+        execute(cmd,verbose=0)
         status = 'locked' # login first
     if status == 'locked' or status == 'unlocked':  # always unlock to get session id
         cmd = f"""
@@ -4351,7 +4351,7 @@ def getpasswordbw(item,what='password'):
         {bw} sync --quiet
         {bw} get {what} {item}
         """
-        out = execute0(cmd)
+        out = execute0(cmd,verbose=0)
         # print(out)
     return out[-1]
 

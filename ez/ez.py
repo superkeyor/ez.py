@@ -4317,6 +4317,7 @@ mail = Mail
 gmail = Mail
 
 def getpasswordbw(item,what='password'):
+    # todo: implement bw on other machines
     machine = getos()
     if machine=='Darwin':
         bw = '/usr/local/bin/bw'
@@ -4342,15 +4343,16 @@ def getpasswordbw(item,what='password'):
         {bw} login $BW_USER $BW_PASSWORD
         """
         execute(cmd)
-    elif status == 'locked':
+        status = 'locked' # login first
+    if status == 'locked' or status == 'unlocked':  # always unlock to get session id
         cmd = f"""
         export BW_PASSWORD={PASSWORD}
         export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
+        {bw} sync
+        {bw} get {what} {item}
         """
-        execute(cmd)
-    execute(f'{bw} sync')
-    out = execute0(f'{bw} get {what} {item}')
-    return out
+        out = execute(cmd)
+    return out[-1]
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

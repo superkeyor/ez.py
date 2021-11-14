@@ -4316,7 +4316,7 @@ except:
 mail = Mail
 gmail = Mail
 
-def getpasswordbw(item,what='password'):
+def getpasswordbw(item,what='password',sync=False):
     # todo: implement bw on other machines
     machine = getos()
     if machine=='Darwin':
@@ -4327,6 +4327,10 @@ def getpasswordbw(item,what='password'):
         bw = ''
     else:
         bw = joinpath(cwd(),'bw')
+    if sync:
+        sync == ''
+    else:
+        sync == '#' # comment out
 
     try:
         from . pygmailconfig import EMAIL, PASSWORD
@@ -4348,7 +4352,7 @@ def getpasswordbw(item,what='password'):
         cmd = f"""
         export BW_PASSWORD={PASSWORD}
         export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
-        {bw} sync --quiet
+        {sync}{bw} sync --quiet
         {bw} get {what} {item}
         """
         out = execute0(cmd,verbose=0)

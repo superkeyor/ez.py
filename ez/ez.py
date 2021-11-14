@@ -4334,7 +4334,7 @@ def getpasswordbw(item,what='password'):
     except:
         EMAIL = ''; PASSWORD=''
 
-    out = execute0(f'{bw} status')
+    out = execute0(f'{bw} status',verbose=0)
     status = re.search('"status":"(\w+)"',out[0]).group(1)
     if status == 'unauthenticated':
         cmd = f"""

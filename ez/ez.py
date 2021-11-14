@@ -4316,6 +4316,42 @@ except:
 mail = Mail
 gmail = Mail
 
+def getpasswordbw(item,what='password'):
+    machine = getos()
+    if machine=='Darwin':
+        bw = '/usr/local/bin/bw'
+    elif machine=='Windows':
+        bw = ''
+    elif machine=='Linux':
+        bw = ''
+    else:
+        bw = joinpath(cwd(),'bw')
+
+    try:
+        from . pygmailconfig import EMAIL, PASSWORD
+        PASSWORD = PASSWORD + '+'
+    except:
+        EMAIL = ''; PASSWORD=''
+
+    out = execute0(f'{bw} status')
+    status = re.search('"status":"(\w+)"',out[0]).group(1)
+    if status == 'unauthenticated':
+        cmd = f"""
+        export BW_USER={EMAIL}
+        export BW_PASSWORD={PASSWORD}
+        {bw} login $BW_USER $BW_PASSWORD
+        """
+        execute(cmd)
+    elif status == 'locked':
+        cmd = f"""
+        export BW_PASSWORD={PASSWORD}
+        export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
+        """
+        execute(cmd)
+    execute(f'{bw} sync')
+    out = execute0(f'{bw} get {what} {item}')
+    return out
+
 ####************************************************************************************************
                                      ####*OrderedSet*####
 ####************************************************************************************************

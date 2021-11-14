@@ -4327,10 +4327,11 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
         bw = ''
     else:
         bw = joinpath(cwd(),'bw')
+    
     if sync:
-        sync == ''
+        sync = ''
     else:
-        sync == '#' # comment out
+        sync = '#' # comment out
 
     try:
         from . pygmailconfig import EMAIL, PASSWORD

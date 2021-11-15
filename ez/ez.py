@@ -4265,6 +4265,24 @@ def applescript_outlook(emails,subjectline,titles,body,attaches=[],sendout=0):
     myesp(applescript)
 # applescript_outlook('jerryzhujian9@gmail.com; jerryzhujian9@gmail.com','hello','Dear Zhu','\n\nBest,\nJerry',['/Applications/Calculator.app/Contents/version.plist','/Applications/Calculator.app/Contents/Info.plist'],0)
 
+def playfirefoxmacro(macro_name,vars=[]):
+    """
+    macro_name: e.g, 'USBankCashPlus'
+    vars is a list of strings; in firefox, refer to ${!var1}, ${!var2} etc
+    """
+    # https://github.com/A9T9/RPA/tree/master/command-line/python
+    def _PlayMacro(macro, vars=[], path_autorun_html = None):
+        assert os.path.exists(path_autorun_html)
+        i=1; varstr=''
+        for v in vars:
+            varstr+=f'&var{i}={v}'
+            i+=1
+        args = r'file://' + path_autorun_html + '?macro=' + macro + varstr + '&closeRPA=1&direct=1&continueInLastUsedTab=0&nodisplay=0'
+        cmd = f'osascript -e \'tell application "Firefox" to open location "{args}"\''
+        print(cmd)
+        proc = execute0(cmd)
+    _PlayMacro(macro_name, vars=vars, path_autorun_html = r'/Users/jerry/Dropbox/Apps/KeyboardMaestro/ui.vision.html')
+
 def SetClip(content):
     """
     content: The text to be copied to the clipboard.

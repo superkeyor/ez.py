@@ -4336,6 +4336,7 @@ gmail = Mail
 
 def getpasswordbw(item,what='password',sync=False,verbose=0):
     """
+    item: search string (not case sensitive, better be unique), or item id
     https://bitwarden.com/help/article/cli/#get
     get one at a time: item|username|password|uri|totp|exposed|attachment|folder|collection|organization|org-collection|template|fingerprint
     """

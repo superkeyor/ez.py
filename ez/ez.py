@@ -4360,9 +4360,12 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
         export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
         {sync}{bw} sync --quiet
         {bw} get {what} {item}
-        {bw} lock
+        {bw} lock --quiet
         """
         out = execute0(cmd,verbose=verbose)
+        if what=='item':
+            import json
+            out = json.loads(out)
         # print(out)
     return out[-1]
 

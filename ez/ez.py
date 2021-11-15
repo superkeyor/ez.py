@@ -4384,9 +4384,10 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
         out = execute0(cmd,verbose=verbose)
         if what=='item':
             import json
-            out = json.loads(out)
-        # print(out)
-    return out[-1]
+            out = json.loads(out[-1])
+        else:
+            out = out[-1]
+    return out
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

@@ -14,8 +14,10 @@ packages = find_packages()
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
 # install_requires=['peppercorn']
 # install_requires=['']
-install_requires=['pytz', 'tzlocal', 'Send2Trash', 'keyring','pyperclip', 'gmail', 'chardet', 'psutil', 
+install_requires=['pytz', 'tzlocal', 'Send2Trash', 'keyring', 'imessage_reader', 'pyperclip', 'gmail', 'chardet', 'psutil', 
                  'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
+                 'selenium', 'selenium-wire', 'selenium-requests',
+                 'noraise', 'fake_useragent', 'tldextract',
                  'pynput', 'gspread>=3.7.0', 'tenacity']
 ######################################################################################
 # Get the long description from the relevant file

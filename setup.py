@@ -18,7 +18,7 @@ install_requires=['pytz', 'tzlocal', 'Send2Trash', 'keyring', 'imessage_reader',
                  'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
                  'selenium-requests', 'selenium-wire', 'selenium<4',
                  'noraise', 'fake_useragent', 'tldextract',
-                 'pynput', 'gspread>=3.7.0', 'tenacity']
+                 'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse']
 ######################################################################################
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:

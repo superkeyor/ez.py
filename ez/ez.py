@@ -3165,7 +3165,7 @@ def mergep(path,filter,filename,infer_date_from_filename=False,ignore_index=Fals
         ps = ps.set_index('date')
     else:
         ps = readplist(fs,ignore_index=ignore_index)
-    ps.to_parquet(jp(path,filename))
+    ps.to_parquet(jp(path,filename)) 
     return fs
 
 def savep(df,*args,**kwargs):

@@ -3144,6 +3144,29 @@ def readplist(plist,ignore_index=False,*args,**kwargs):
     res = pd.concat(res,ignore_index=ignore_index)
     return res
 
+def mergep(path,filter,filename,infer_date_from_filename=False):
+    """
+    path filter: passed to ez.ls(path,filter)
+    filename: passed to ez.jp(path,filename) as final parquet file name
+    infer_date_from_filename: T/F, parse movers_2021-12-21.par (split by _)
+    return fs (for easy removal)
+    """
+    import pandas as pd
+    fs = ez.ls(path,filter,full=True)
+    if infer_date_from_filename:
+        ps = pd.DataFrame()
+        for f in fs:
+            [_,fn,ext] = ez.sp(f)
+            date = fn.split('_')[1]
+            date = pd.to_datetime(date)
+            p = ez.readp(f).assign(date=date)
+            ps = pd.concat([ps,p])
+        ps = ps.set_index('date')
+    else:
+        ps = ez.readplist(fs)
+    ps.to_parquet(ez.jp(path,filename))
+    return fs
+
 def savep(df,*args,**kwargs):
     return df.to_parquet(*args,**kwargs)
 writep = savep

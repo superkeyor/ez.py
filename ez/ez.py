@@ -4372,10 +4372,8 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
     machine = getos()
     if machine=='Darwin':
         bw = '/usr/local/bin/bw'
-        export = 'export'
     elif machine=='Windows':
         bw = '%LOCALAPPDATA%/Microsoft/WindowsApps/bw.exe'
-        export = 'set'
     elif machine=='Linux':
         bw = ''
     else:
@@ -4384,7 +4382,10 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
     if sync:
         sync = ''
     else:
-        sync = '#' # comment out
+        if machine=='Darwin':
+            sync = '# ' # comment out
+        elif machine=='Windows':
+            sync = 'rem '
 
     try:
         from . pygmailconfig import EMAIL, PASSWORD
@@ -4395,21 +4396,38 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
     out = execute0(f'{bw} status',verbose=verbose)
     status = re.search('"status":"(\w+)"',out[0]).group(1)
     if status == 'unauthenticated':
-        cmd = f"""
-        {export} BW_USER={EMAIL}
-        {export} BW_PASSWORD={PASSWORD}
-        {bw} login $BW_USER $BW_PASSWORD
-        """
+        if machine=='Darwin':
+            cmd = f"""
+            export BW_USER={EMAIL}
+            export BW_PASSWORD={PASSWORD}
+            {bw} login $BW_USER $BW_PASSWORD
+            """
+        elif machine=='Windows':
+            cmd = f"""
+            set BW_USER={EMAIL}
+            set BW_PASSWORD={PASSWORD}
+            {bw} login %BW_USER% %BW_PASSWORD%
+            """
         execute(cmd,verbose=verbose)
         status = 'locked' # login first
     if status == 'locked' or status == 'unlocked':  # always unlock to get session id
-        cmd = f"""
-        {export} BW_PASSWORD={PASSWORD}
-        {export} BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
-        {sync}{bw} sync --quiet
-        {bw} get {what} {item}
-        {bw} lock --quiet
-        """
+        if machine=='Darwin':
+            cmd = f"""
+            export BW_PASSWORD={PASSWORD}
+            export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
+            {sync}{bw} sync --quiet
+            {bw} get {what} {item}
+            {bw} lock --quiet
+            """
+        elif machine=='Windows':
+            cmd = f"""
+            set BW_PASSWORD={PASSWORD}
+            FOR /F "tokens=*" %%g IN ('{bw} unlock --passwordenv BW_PASSWORD --raw') do (set BW_SESSION=%%g)
+            {sync}{bw} sync --quiet
+            {bw} get {what} {item}
+            {bw} lock --quiet
+            """
+            # print(cmd)
         out = execute0(cmd,verbose=verbose)
         if what=='item':
             import json

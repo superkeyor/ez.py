@@ -1127,7 +1127,10 @@ def execute0(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 if verbose in [2,3]: pprint("Error occured",color='red')
                 yield None
             # delete temp file
-            os.remove(tmpPath)
+            try:
+                os.remove(tmpPath)
+            except:
+                pass
 
         out = []
         for line in _execute_cmd(cmd):

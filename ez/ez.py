@@ -1072,7 +1072,7 @@ def execute0(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
                 import tempfile
                 tmpfd, tmpPath = tempfile.mkstemp(suffix='.bat')
                 with os.fdopen(tmpfd, 'w') as tmp:
-                    tmp.write('@echo off'+'\n\n'cmd.replace('"','\"').replace("'","\'")+'\n\n')                
+                    tmp.write('@echo off'+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')                
                 p = subprocess.Popen(tmpPath, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             else:
                 # tcsh -xef

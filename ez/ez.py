@@ -4422,12 +4422,12 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
         elif machine=='Windows':
             cmd = f"""
             set BW_PASSWORD={PASSWORD}
-            FOR /F "tokens=*" %%g IN ('{bw} unlock --passwordenv BW_PASSWORD --raw') do (set BW_SESSION=%%g)
+            FOR /F "tokens=*" %g IN ('{bw} unlock --passwordenv BW_PASSWORD --raw') do (set BW_SESSION=%g)
             {sync}{bw} sync --quiet
             {bw} get {what} {item}
             {bw} lock --quiet
             """
-            # print(cmd)
+            print(cmd)
         out = execute0(cmd,verbose=verbose)
         if what=='item':
             import json

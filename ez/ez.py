@@ -4370,7 +4370,7 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
     if machine=='Darwin':
         bw = '/usr/local/bin/bw'
     elif machine=='Windows':
-        bw = ''
+        bw = '%LOCALAPPDATA%/Microsoft/WindowsApps/bw.exe'
     elif machine=='Linux':
         bw = ''
     else:

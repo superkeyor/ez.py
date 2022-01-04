@@ -1069,7 +1069,11 @@ def execute0(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMod
             if os.name == 'nt' or platform.system() == 'Windows':
                 # set stdin, out, err all to PIPE to get results (other than None) after run the Popen() instance
                 # shell=True can do shell pipes, filename wildcards, environment variable expansion, and expansion of ~
-                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                import tempfile
+                tmpfd, tmpPath = tempfile.mkstemp(suffix='.bat')
+                with os.fdopen(tmpfd, 'w') as tmp:
+                    tmp.write('@echo off'+'\n\n'cmd.replace('"','\"').replace("'","\'")+'\n\n')                
+                p = subprocess.Popen(tmpPath, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             else:
                 # tcsh -xef
                 # -x : echo commands to terminal before executing them
@@ -4422,12 +4426,11 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
         elif machine=='Windows':
             cmd = f"""
             set BW_PASSWORD={PASSWORD}
-            FOR /F "tokens=*" %g IN ('{bw} unlock --passwordenv BW_PASSWORD --raw') do (set BW_SESSION=%g)
+            FOR /F "tokens=*" %%g IN ('{bw} unlock --passwordenv BW_PASSWORD --raw') do (set BW_SESSION=%%g)
             {sync}{bw} sync --quiet
             {bw} get {what} {item}
             {bw} lock --quiet
             """
-            print(cmd)
         out = execute0(cmd,verbose=verbose)
         if what=='item':
             import json

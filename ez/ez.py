@@ -157,6 +157,27 @@ def ShellDebug(debugMode=1):
     _DEBUG_MODE = debugMode
 debug = ShellDebug    
 
+def clorox(path='.',delete=False):
+    """
+    Clean up certain files. Why clorox? -My favorite(?) cleaning product brand.
+    Mac: ^\._; Windows: ^\._|\.DS_Store|^Icon.$
+    delete: actually delete; if False, return file lists
+    """
+    if platform.system()=='Darwin':
+        remover='^\._'  
+    else:
+        remover='^\._|\.DS_Store|^Icon.$'
+    
+    stains = fls(path,remover,dotf=True)
+
+    if delete:
+        if platform.system()=='Darwin': 
+            execute(f'dot_clean "{path}"')
+        else:
+            rm(stains)
+    return stains
+clx=clorox
+
 def retry(*args,timeout=20,n=None,min=4/60,max=10):
     """
     args: positional arguments, supports both @retry and @retry() as valid syntax
@@ -4312,7 +4333,7 @@ def playfirefoxmacro(macro_name,vars=[]):
         cmd = f'osascript -e \'tell application "Firefox" to open location "{args}"\''
         print(cmd)
         proc = execute0(cmd)
-    _PlayMacro(macro_name, vars=vars, path_autorun_html = r'/Users/jerry/Dropbox/Apps/KeyboardMaestro/ui.vision.html')
+    _PlayMacro(macro_name, vars=vars, path_autorun_html = fullpath(r'~/Dropbox/Apps/KeyboardMaestro/ui.vision.html'))
 
 def SetClip(content):
     """

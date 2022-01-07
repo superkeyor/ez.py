@@ -157,7 +157,7 @@ def ShellDebug(debugMode=1):
     _DEBUG_MODE = debugMode
 debug = ShellDebug    
 
-def clorox(path='.',delete=False):
+def clorox(path='~/Dropbox',delete=False):
     """
     Clean up certain files. Why clorox? -My favorite(?) cleaning product brand.
     Mac: ^\._; Windows: ^\._|\.DS_Store|^Icon.$

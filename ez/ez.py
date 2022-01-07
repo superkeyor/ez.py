@@ -4372,50 +4372,28 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
     get one at a time: item|username|password|uri|totp|exposed|attachment|folder|collection|organization|org-collection|template|fingerprint
     """
 
-    # todo: implement bw on other machines
-    machine = getos()
-    if machine=='Darwin':
-        bw = '/usr/local/bin/bw'
-    elif machine=='Windows':
-        bw = '%LOCALAPPDATA%/Microsoft/WindowsApps/bw.exe'
-    elif machine=='Linux':
-        bw = ''
-    else:
-        bw = joinpath(cwd(),'bw')
-    
-    if sync:
-        sync = ''
-    else:
-        if machine=='Darwin':
-            sync = '# ' # comment out
-        elif machine=='Windows':
-            sync = 'rem '
-
+    # todo: implement bw on linux
     try:
         from . pygmailconfig import EMAIL, PASSWORD
         PASSWORD = PASSWORD + '+'
     except:
         EMAIL = ''; PASSWORD=''
 
-    out = execute0(f'{bw} status',verbose=verbose)
-    status = re.search('"status":"(\w+)"',out[0]).group(1)
-    if status == 'unauthenticated':
-        if machine=='Darwin':
+    machine = getos()
+    if machine=='Darwin':
+        bw = '/usr/local/bin/bw'
+        sync = '' if sync else '# ' # comment out
+        out = execute0(f'{bw} status',verbose=verbose)
+        status = re.search('"status":"(\w+)"',out[0]).group(1)
+        if status == 'unauthenticated':
             cmd = f"""
             export BW_USER={EMAIL}
             export BW_PASSWORD={PASSWORD}
             {bw} login $BW_USER $BW_PASSWORD
             """
-        elif machine=='Windows':
-            cmd = f"""
-            set BW_USER={EMAIL}
-            set BW_PASSWORD={PASSWORD}
-            {bw} login %BW_USER% %BW_PASSWORD%
-            """
-        execute(cmd,verbose=verbose)
-        status = 'locked' # login first
-    if status == 'locked' or status == 'unlocked':  # always unlock to get session id
-        if machine=='Darwin':
+            execute(cmd,verbose=verbose)
+            status = 'locked' # login first
+        if status == 'locked' or status == 'unlocked':  # always unlock to get session id
             cmd = f"""
             export BW_PASSWORD={PASSWORD}
             export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
@@ -4423,7 +4401,26 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
             {bw} get {what} {item}
             {bw} lock --quiet
             """
-        elif machine=='Windows':
+            out = execute0(cmd,verbose=verbose)
+            if what=='item':
+                import json
+                out = json.loads(out[-1])
+            else:
+                out = out[-1]
+    elif machine=='Windows':
+        bw = '%WINAPPS%/bw.exe'
+        sync = '' if sync else 'rem ' # comment out
+        out = execute0(f'{bw} status',verbose=verbose)
+        status = re.search('"status":"(\w+)"',out[0]).group(1)
+        if status == 'unauthenticated':
+            cmd = f"""
+            set BW_USER={EMAIL}
+            set BW_PASSWORD={PASSWORD}
+            {bw} login %BW_USER% %BW_PASSWORD%
+            """
+            execute(cmd,verbose=verbose)
+            status = 'locked' # login first
+        if status == 'locked' or status == 'unlocked':  # always unlock to get session id
             cmd = f"""
             set BW_PASSWORD={PASSWORD}
             FOR /F "tokens=*" %%g IN ('{bw} unlock --passwordenv BW_PASSWORD --raw') do (set BW_SESSION=%%g)
@@ -4431,12 +4428,12 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
             {bw} get {what} {item}
             {bw} lock --quiet
             """
-        out = execute0(cmd,verbose=verbose)
-        if what=='item':
-            import json
-            out = json.loads(out[-1])
-        else:
-            out = out[-1]
+            out = execute0(cmd,verbose=verbose)
+            if what=='item':
+                import json
+                out = json.loads(out[-1])
+            else:
+                out = out[-1]
     return out
 
 ####************************************************************************************************

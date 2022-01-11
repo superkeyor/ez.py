@@ -133,10 +133,10 @@ pinyinauthor()
 encoding_detect(), encoding_convert()
 hanzifreq()
 gmail(), mail(), Mail()
-    To avoid typing email password each time, place a file named pygmailconfig.py with
+    To avoid typing email password each time, place a file named pysecrets.py with
     EMAIL = 'someone@gmail.com'
     PASSWORD = 'abcdefghik'
-    or better pygmailconfig.pyc
+    or better pysecrets.pyc
     in the site-packages/ez folder, check with ez.which('ez')
     The functions will no longer need email/password and become like this
     Mail(to, subject, body, attach=None)
@@ -4354,15 +4354,15 @@ try:
     # sys.path.insert(0, HERE)
     
     # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-    from . pygmailconfig import EMAIL, PASSWORD
+    from . pysecrets import EMAIL, PASSWORD
     def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None):
-        """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None)
+        """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
         body: html code or text
         text: specified for weird text that is incompatible with html; when set, body is ignored
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
-        email,password: not used, kept so to have the same api interface as the one requires password
+        email, password: not used, kept so to have the same api interface as the one requires password
         """
         from gmail import GMail, Message
         gclient = GMail(EMAIL,PASSWORD)
@@ -4371,7 +4371,7 @@ try:
         return gclient.send(msg)
 except:
     def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None, password=None):
-        """Mail(EMAIL, PASSWORD, to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None)
+        """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, EMAIL, PASSWORD)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
         body: html code or text
@@ -4386,6 +4386,89 @@ except:
 mail = Mail
 gmail = Mail
 
+try:
+    from . pysecrets import O365ID, O365SECRET
+    def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_to=None, id=None,secret=None):
+        """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
+        to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
+        reply_to: 'a@a.com'
+        body: html code or text
+        attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
+        id, secret: not used, kept so to have the same api interface as the one requires secret
+
+        initial setup (only first time):
+        create an app https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
+        Accounts in any organizational directory and personal Microsoft accounts (e.g. Skype, Xbox, Outlook.com)
+        Web: https://login.microsoftonline.com/common/oauth2/nativeclient
+        write down Application (client) ID; create secrets--write down secret value
+        API permission: User.Read, Mail.ReadWrite, Mail.Send, offline_access
+            import readline        
+            from O365 import Account
+            credentials = ('my_client_id', 'my_client_secret')
+            account = Account(credentials)
+            account.authenticate(scopes=['basic', 'message_all'])
+            paste the returned url to complete authorization of the app
+            will save token to disk
+        Done!
+        """
+        # https://stackoverflow.com/questions/8469122 
+        # readline lifts Maximum characters that can be stuffed into raw_input() in Python
+        import readline 
+        from O365 import Account
+        credentials = (O365ID, O365SECRET)
+        account = Account(credentials)
+        # if not authorized, trigger the process to save token
+        if account.authenticate(scopes=['basic', 'message_all']):
+            m = account.new_message()
+            m.to.add(to)
+            m.subject = subject
+            m.body = body
+            if cc is not None: m.cc.add(cc)
+            if bcc is not None: m.bcc.add(bcc)
+            if reply_to is not None: m.reply_to.add(reply_to)
+            if attachments is not None: m.attachments.add(attachments)
+            m.send()
+except:
+    def outlook(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None):
+        """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
+        to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
+        reply_to: 'a@a.com'
+        body: html code or text
+        attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
+
+        initial setup (only first time):
+        create an app https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
+        Accounts in any organizational directory and personal Microsoft accounts (e.g. Skype, Xbox, Outlook.com)
+        Web: https://login.microsoftonline.com/common/oauth2/nativeclient
+        write down Application (client) ID; create secrets--write down secret value
+        API permission: User.Read, Mail.ReadWrite, Mail.Send, offline_access
+            import readline        
+            from O365 import Account
+            credentials = ('my_client_id', 'my_client_secret')
+            account = Account(credentials)
+            account.authenticate(scopes=['basic', 'message_all'])
+            paste the returned url to complete authorization of the app
+            will save token to disk
+        Done!
+        """
+        # https://stackoverflow.com/questions/8469122 
+        # readline lifts Maximum characters that can be stuffed into raw_input() in Python
+        import readline 
+        from O365 import Account
+        credentials = (id, secret)
+        account = Account(credentials)
+        # if not authorized, trigger the process to save token
+        if account.authenticate(scopes=['basic', 'message_all']):
+            m = account.new_message()
+            m.to.add(to)
+            m.subject = subject
+            m.body = body
+            if cc is not None: m.cc.add(cc)
+            if bcc is not None: m.bcc.add(bcc)
+            if reply_to is not None: m.reply_to.add(reply_to)
+            if attachments is not None: m.attachments.add(attachments)
+            m.send()
+
 def getpasswordbw(item,what='password',sync=False,verbose=0):
     """
     item: search string (not case sensitive, better be unique), or item id
@@ -4395,7 +4478,7 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
 
     # todo: implement bw on linux
     try:
-        from . pygmailconfig import EMAIL, PASSWORD
+        from . pysecrets import EMAIL, PASSWORD
         PASSWORD = PASSWORD + '+'
     except:
         EMAIL = ''; PASSWORD=''

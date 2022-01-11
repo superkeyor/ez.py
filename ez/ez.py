@@ -4395,6 +4395,9 @@ try:
         body: html code or text
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
         id, secret: not used, kept so to have the same api interface as the one requires secret
+        
+        token auto renews within 90 days
+        secret expires 2 years
 
         initial setup (only first time):
         create an app https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
@@ -4417,17 +4420,20 @@ try:
         from O365 import Account
         credentials = (O365ID, O365SECRET)
         account = Account(credentials)
-        # if not authorized, trigger the process to save token
-        if account.authenticate(scopes=['basic', 'message_all']):
-            m = account.new_message()
-            m.to.add(to)
-            m.subject = subject
-            m.body = body
-            if cc is not None: m.cc.add(cc)
-            if bcc is not None: m.bcc.add(bcc)
-            if reply_to is not None: m.reply_to.add(reply_to)
-            if attachments is not None: m.attachments.add(attachments)
-            m.send()
+        scopes=['basic', 'message_all']
+        if not account.is_authenticated:  # will check if there is a token and has not expired
+            # ask for a login
+            # console based authentication See Authentication for other flows
+            account.authenticate(scopes=scopes)
+        m = account.new_message()
+        m.to.add(to)
+        m.subject = subject
+        m.body = body
+        if cc is not None: m.cc.add(cc)
+        if bcc is not None: m.bcc.add(bcc)
+        if reply_to is not None: m.reply_to.add(reply_to)
+        if attachments is not None: m.attachments.add(attachments)
+        m.send()
 except:
     def outlook(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None):
         """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
@@ -4435,6 +4441,9 @@ except:
         reply_to: 'a@a.com'
         body: html code or text
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
+
+        token auto renews within 90 days
+        secret expires 2 years
 
         initial setup (only first time):
         create an app https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
@@ -4457,17 +4466,20 @@ except:
         from O365 import Account
         credentials = (id, secret)
         account = Account(credentials)
-        # if not authorized, trigger the process to save token
-        if account.authenticate(scopes=['basic', 'message_all']):
-            m = account.new_message()
-            m.to.add(to)
-            m.subject = subject
-            m.body = body
-            if cc is not None: m.cc.add(cc)
-            if bcc is not None: m.bcc.add(bcc)
-            if reply_to is not None: m.reply_to.add(reply_to)
-            if attachments is not None: m.attachments.add(attachments)
-            m.send()
+        scopes=['basic', 'message_all']
+        if not account.is_authenticated:  # will check if there is a token and has not expired
+            # ask for a login
+            # console based authentication See Authentication for other flows
+            account.authenticate(scopes=scopes)
+        m = account.new_message()
+        m.to.add(to)
+        m.subject = subject
+        m.body = body
+        if cc is not None: m.cc.add(cc)
+        if bcc is not None: m.bcc.add(bcc)
+        if reply_to is not None: m.reply_to.add(reply_to)
+        if attachments is not None: m.attachments.add(attachments)
+        m.send()
 
 def getpasswordbw(item,what='password',sync=False,verbose=0):
     """

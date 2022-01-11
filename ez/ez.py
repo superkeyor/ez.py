@@ -4414,12 +4414,14 @@ try:
             will save token to disk
         Done!
         """
+        credentials = (O365ID, O365SECRET)
         # https://stackoverflow.com/questions/8469122 
         # readline lifts Maximum characters that can be stuffed into raw_input() in Python
         import readline 
-        from O365 import Account
-        credentials = (O365ID, O365SECRET)
-        account = Account(credentials)
+        from O365 import Account, FileSystemTokenBackend
+        # save token to installation directory
+        token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
+        account = Account(credentials, token_backend=token_backend)
         scopes=['basic', 'message_all']
         if not account.is_authenticated:  # will check if there is a token and has not expired
             # ask for a login
@@ -4460,12 +4462,14 @@ except:
             will save token to disk
         Done!
         """
+        credentials = (id, secret)
         # https://stackoverflow.com/questions/8469122 
         # readline lifts Maximum characters that can be stuffed into raw_input() in Python
         import readline 
-        from O365 import Account
-        credentials = (id, secret)
-        account = Account(credentials)
+        from O365 import Account, FileSystemTokenBackend
+        # save token to installation directory
+        token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
+        account = Account(credentials, token_backend=token_backend)
         scopes=['basic', 'message_all']
         if not account.is_authenticated:  # will check if there is a token and has not expired
             # ask for a login

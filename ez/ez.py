@@ -4392,7 +4392,7 @@ try:
         """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
-        body: html code or text
+        body: html code or text. Best practice: Write/Format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
         id, secret: not used, kept so to have the same api interface as the one requires secret
         
@@ -4441,7 +4441,7 @@ except:
         """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
         to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
         reply_to: 'a@a.com'
-        body: html code or text
+        body: html code or text. Best practice: Write/Format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
         attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
 
         token auto renews within 90 days

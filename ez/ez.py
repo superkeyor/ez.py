@@ -401,7 +401,7 @@ def cleanpath(path,allow_unicode=False):
     
     # (?u) switch on unicode
     fname = re.sub(r'(?u)[^-\w.]', '', fname)
-    expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('-\s_','-\s_','-\s_','-\s_')
+    expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\-|\s|_','\-|\s|_','\-|\s|_','\-|\s|_')
     fname = re.sub(expression, "", fname, count=0)
     if fname in {'', '.', '..'}:
         raise (f"Could not clean path '{path}'")

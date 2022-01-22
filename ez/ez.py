@@ -381,9 +381,9 @@ def cleanpath(path,allow_unicode=False):
 
     Removal or replacement of CGI escaped ASCII characters, i.e. %20 becomes " ".
     Convert to ASCII if 'allow_unicode' is False. 
-    Remove anything that is not an alphanumeric, - _ .
+    Remove anything that is not an alphanumeric, ".", " ", "_" and "-"
     Convert consecutive " ", "_" and "-" to single one.
-    Strip leading and trailing whitespace, dashes, and underscores.
+    Strip leading and trailing " ", "_" and "-".
     """
     # inspired by
     # https://github.com/django/django/blob/main/django/utils/text.py  
@@ -400,7 +400,7 @@ def cleanpath(path,allow_unicode=False):
         fname = unicodedata.normalize('NFKD', fname).encode('ascii', 'ignore').decode('ascii')
     
     # (?u) switch on unicode
-    fname = re.sub(r'(?u)[^-\w.]', '', fname)
+    fname = re.sub(r'(?u)[^-\w.\s]', '', fname)
     expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\-|\s|_','\-|\s|_','\-|\s|_','\-|\s|_')
     fname = re.sub(expression, "", fname, count=0)
     if fname in {'', '.', '..'}:

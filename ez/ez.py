@@ -400,11 +400,11 @@ def cleanpath(path,allow_unicode=False):
         fname = unicodedata.normalize('NFKD', fname).encode('ascii', 'ignore').decode('ascii')
     
     # (?u) switch on unicode
-    fname = re.sub(r'(?u)[^-\w.\s]', '', fname)
-    expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\-|\s|_','\-|\s|_','\-|\s|_','\-|\s|_')
+    fname = re.sub(r'(?u)[^\w.\s-]', '', fname)
+    expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\s|_|\-','\s|_|\-','\s|_|\-','\s|_|\-')
     fname = re.sub(expression, "", fname, count=0)
     if fname in {'', '.', '..'}:
-        raise (f"Could not clean path '{path}'")
+        raise Exception(f"Could not clean path '{path}'")
     path = joinpath(pth,fname+ext)
     return path
 xp=cleanpath
@@ -418,7 +418,7 @@ def trim(s, how=4, chars=None):
                    3=left and right; 
                    4 (default)=left and right and merge middle
         chars: if not given (default), space, horizontal tab, line feed, carriage return
-               if given and not None, remove characters in chars instead
+               if given and not None, remove characters in chars instead. e.g. \s|_|\-
     eg, "Hi        buddy        what's up    Bro"  --> "Hi buddy what's up bro"
         trim(s,4,'\nx')
         " Hi        buddy        what's up    Bro\nx" --> " Hi        buddy        what's up    Bro"

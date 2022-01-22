@@ -14,10 +14,10 @@ packages = find_packages()
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
 # install_requires=['peppercorn']
 # install_requires=['']
+# 'noraise' (seems not actually used, might be useful for myself), 'fake_useragent', 'tldextract' --> firefox
 install_requires=['pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'gmail', 'O365', 'chardet', 'psutil',
                  'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
-                 'requests>=2.26.0', 'selenium-requests', 'selenium-wire', 'selenium<4',
-                 'noraise', 'fake_useragent', 'tldextract',
+                 'requests>=2.26.0', 'selenium-requests', 'selenium-wire', 'selenium<4', 'noraise', 'fake_useragent', 'tldextract',
                  'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse']
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform

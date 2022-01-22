@@ -375,7 +375,41 @@ def splitpath(path):
     return [dir, file, ext]
 sp = splitpath
 
-def trim(s, how=4, *args):
+def cleanpath(path,allow_unicode=False):
+    """
+    clean file name only (not whole path!, but takes whole path as parameter)
+
+    Removal or replacement of CGI escaped ASCII characters, i.e. %20 becomes " ".
+    Convert to ASCII if 'allow_unicode' is False. 
+    Remove anything that is not an alphanumeric, - _ .
+    Convert consecutive " ", "_" and "-" to single one.
+    Strip leading and trailing whitespace, dashes, and underscores.
+    """
+    # inspired by
+    # https://github.com/django/django/blob/main/django/utils/text.py  
+    # slugify get_valid_filename
+    # http://detox.sourceforge.net/
+    import unicodedata, urllib.parse
+
+    [pth, fname, ext] = splitpath(path)
+    fname = urllib.parse.unquote_plus(fname)
+
+    if allow_unicode:
+        fname = unicodedata.normalize('NFKC', fname)
+    else:
+        fname = unicodedata.normalize('NFKD', fname).encode('ascii', 'ignore').decode('ascii')
+    
+    # (?u) switch on unicode
+    fname = re.sub(r'(?u)[^-\w.]', '', fname)
+    expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('-\s_','-\s_','-\s_','-\s_')
+    fname = re.sub(expression, "", fname, count=0)
+    if fname in {'', '.', '..'}:
+        raise (f"Could not clean path '{path}'")
+    path = joinpath(pth,fname+ext)
+    return path
+xp=cleanpath
+
+def trim(s, how=4, chars=None):
     """Merge multiple spaces to single space in the middle, and remove trailing/leading spaces
     trim(s, how=4 [,chars])
         s: a string 
@@ -390,14 +424,13 @@ def trim(s, how=4, *args):
         " Hi        buddy        what's up    Bro\nx" --> " Hi        buddy        what's up    Bro"
     """
     if (how==1):
-        s = str.lstrip(s,*args)
+        s = str.lstrip(s,chars)
     elif (how==2):
-        s = str.rstrip(s,*args)
+        s = str.rstrip(s,chars)
     elif (how==3):
-        s = str.strip(s,*args)
+        s = str.strip(s,chars)
     elif (how==4):
-        chars = args[0]
-        if chars==' ': chars='\s'
+        if chars is None: chars='\s|\t|\r|\n|\r\n'
         expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % (chars,chars,chars,chars)
         # http://stackoverflow.com/a/25734388/2292993
         s = re.sub(expression, "", s, count=0)

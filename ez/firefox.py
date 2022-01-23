@@ -38,7 +38,7 @@
 
 # System
 from typing import Optional, Union, List, Dict, Callable, Tuple
-import pickle, os, time, json, inspect, platform, ez, tempfile
+import pickle, os, time, json, inspect, platform, tempfile
 
 # Pip
 from selenium.webdriver.support.ui import Select
@@ -417,11 +417,9 @@ class Firefox:
     def title(self):
         return self.driver.title
 
+    # title2 quote to escape / to avoid the confusion when title is used for file name
     @property
     def title2(self):
-    """
-    quote to escape / to avoid the confusion when title is used for file name
-    """
         import urllib.parse
         return urllib.parse.quote_plus(self.driver.title)
         
@@ -845,7 +843,27 @@ class Firefox:
 
     def print(self,filepath=None):
         if filepath is None: filepath = self.driver.title2
-        filepath = ez.cleanpath(filepath)
+
+        def _cleanpath(path,allow_unicode=False):
+            import unicodedata, urllib.parse
+
+            [pth, fname, ext] = splitpath(path)
+            fname = urllib.parse.unquote_plus(fname)
+
+            if allow_unicode:
+                fname = unicodedata.normalize('NFKC', fname)
+            else:
+                fname = unicodedata.normalize('NFKD', fname).encode('ascii', 'ignore').decode('ascii')
+            
+            # (?u) switch on unicode
+            fname = re.sub(r'(?u)[^\w.\s-]', '', fname)
+            expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\s|_|\-','\s|_|\-','\s|_|\-','\s|_|\-')
+            fname = re.sub(expression, "", fname, count=0)
+            if fname in {'', '.', '..'}:
+                raise Exception(f"Could not clean path '{path}'")
+            path = joinpath(pth,fname+ext)
+            return path
+        filepath = _cleanpath(filepath)
 
         # https://gist.github.com/lrhache/7686903
         main_window= self.driver.current_window_handle

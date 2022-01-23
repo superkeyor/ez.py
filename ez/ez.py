@@ -143,7 +143,7 @@ gmail(), mail(), Mail()
 
 """
 # for __all__
-import fire,requests,os,sys,platform,string,random,re,datetime,tzlocal,pandas as pd,numpy as np,urllib.parse as urlparse;from bs4 import BeautifulSoup
+import fire,requests,io,os,sys,platform,string,random,re,datetime,tzlocal,pandas as pd,numpy as np,urllib.parse as urlparse;from bs4 import BeautifulSoup
 
 # reference: abspath for ../ ./, expanduser for ~, glob to resolve wildcards, fnmatch.translate wildcards to re
 import os, sys, platform, string, random, shutil, re, subprocess, glob, fnmatch

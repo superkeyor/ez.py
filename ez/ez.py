@@ -3185,10 +3185,8 @@ def savexlist(xlist,file='Data.xlsx',engine='openpyxl',date_format=None,datetime
     """
     import pandas as pd
     with pd.ExcelWriter(file,engine=engine,date_format=date_format,datetime_format=datetime_format,mode=mode) as writer:
-            for df in xlist:
-                i=1
-                df.to_excel(writer, sheet_name='Sheet{}'.format(i), *args,**kwargs)
-                i+=1
+        for i in range(0,len(xlist)):
+            xlist[i].to_excel(writer, sheet_name=f'Sheet{i+1}',*args,**kwargs)
 writexlist=savexlist
 
 def readp(*args,**kwargs):

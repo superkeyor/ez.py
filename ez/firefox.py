@@ -475,6 +475,8 @@ class Firefox:
     def getreq(self,url:str,regexpat,timeout=300):
         """
         regexpat: The pat attribute will be matched within the request URL. pat a regular expression
+        if timeout and/or no match, returns ''
+        else returns request.url
         """
         
         # https://pypi.org/project/selenium-wire/
@@ -499,8 +501,11 @@ class Firefox:
         # Also note that since pat can be a regular expression, 
         # you must escape special characters such as question marks with a slash. 
         # A TimeoutException is raised if no match is found within the timeout period.
-        request = self.driver.wait_for_request(regexpat,timeout)
-        return request.url
+        try:
+            request = self.driver.wait_for_request(regexpat,timeout)
+            return request.url
+        except TimeoutException: 
+            return ''
 
     def refresh(self,seconds=5) -> None:
         self.driver.refresh()

@@ -4442,7 +4442,7 @@ try:
             from O365 import Account
             credentials = ('my_client_id', 'my_client_secret')
             account = Account(credentials)
-            account.authenticate(scopes=['basic', 'message_all'])
+            account.authenticate(scopes=['basic', 'message_all','onedrive_all','sharepoint_dl'])
             paste the returned url to complete authorization of the app
             will save token to disk
         Done!
@@ -4455,7 +4455,7 @@ try:
         # save token to installation directory
         token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
         account = Account(credentials, token_backend=token_backend)
-        scopes=['basic', 'message_all']
+        scopes=['basic', 'message_all','onedrive_all','sharepoint_dl']
         if not account.is_authenticated:  # will check if there is a token and has not expired
             # ask for a login
             # console based authentication See Authentication for other flows
@@ -4490,7 +4490,7 @@ except:
             from O365 import Account
             credentials = ('my_client_id', 'my_client_secret')
             account = Account(credentials)
-            account.authenticate(scopes=['basic', 'message_all'])
+            account.authenticate(scopes=['basic', 'message_all','onedrive_all','sharepoint_dl'])
             paste the returned url to complete authorization of the app
             will save token to disk
         Done!
@@ -4503,7 +4503,7 @@ except:
         # save token to installation directory
         token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
         account = Account(credentials, token_backend=token_backend)
-        scopes=['basic', 'message_all']
+        scopes=['basic', 'message_all','onedrive_all','sharepoint_dl']
         if not account.is_authenticated:  # will check if there is a token and has not expired
             # ask for a login
             # console based authentication See Authentication for other flows

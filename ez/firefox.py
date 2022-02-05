@@ -1,8 +1,8 @@
 # eg.
 # e=f.find('linktext','Download')
 # e.click()
-# e.send_keys(KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT)
-# e.send_keys(KEYS.COMMAND,'a')
+# e.send(KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT)
+# e.send(KEYS.COMMAND,'a')
 # e.submit()
 # if space in class name, convert to .
 # f.find_all(By.CLASS_NAME,'d2l-datetime-selector-date-input.d2l-edit')  
@@ -12,11 +12,11 @@
 # f.find_all('xpath','//*[contains(@id,"time")][contains(@title,"Date")]')
 # f.findsel('id','activity--history-range-dropdown',timeout=10).select_by_visible_text('history')
 #                                                              .select_by_index(2)  # 0-based
-# f.snap()
+# f.save_screenshot()                                        | f.snap()
 # f.js_click(e)                                              | f.click(e)
 # f.js_rightclick(e)                                         | f.rclick(e)
 # f.js_setvalue(e,value)                                     |
-# f.js_setvalue_via_typing(e,value)  # essentially send keys | f.send_keys(e,value)
+# f.js_setvalue_via_typing(e,value)  # essentially send keys | f.send(e,value)
 # f.execute_script("arguments[0].click();", e)
 # f.execute_script(f"arguments[0].value='{smscode}';", f.find('id','code'))
 # f.driver is the native webdriver object

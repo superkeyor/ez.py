@@ -4612,43 +4612,79 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     else:
         return out
 
-def send_keys(keys,delay=0,times=1):
+def send(*keys,delay=0,times=1):
     """
-    e.g., cmd+a, cmd+shift+tab, a
-    cmd,shift,ctrl,tab,space,backspace,delete,esc,enter,
-    up/down/left/right,home,end,page_up,page_down,
-    insert,menu,pause,print_screen,scroll_lock,scroll_lock,
-    f1,f2,...,f20
-    media_next,media_play_pause,media_previous,media_volume_down,media_volume_mute,media_volume_up
-    https://pynput.readthedocs.io/en/latest/keyboard.html#pynput.keyboard.Key
+    KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT
+    KEYS.COMMAND,'a'
+    'abc\ndef\tg'
 
     delay in seconds after each time
     """
     from pynput.keyboard import Key, Controller
     keyboard = Controller()
-    keys=keys.split('+')
-    keys=[k.strip() for k in keys]
-    for t in range(0,times):
-        for k in keys:
-            if len(k)>1: 
-                keyboard.press(eval(f'Key.{k}'))
-            else:
-                keyboard.press(k)
-        for k in list(reversed(keys)):
-            if len(k)>1: 
-                keyboard.release(eval(f'Key.{k}'))
-            else:
-                keyboard.release(k)
-        sleep(delay)
 
-def typing(string,delay=0):
-    """
-    use a new line character (\n) and a tab character (\t) for tabs
-    """
-    from pynput.keyboard import Key, Controller
-    keyboard = Controller()
-    keyboard.type(string)
-    sleep(delay)
+    # https://www.selenium.dev/selenium/docs/api/py/_modules/selenium/webdriver/common/keys.html#Keys
+
+    # cmd,shift,ctrl,tab,space,backspace,delete,esc,enter,
+    # up/down/left/right,home,end,page_up,page_down,
+    # insert,menu,pause,print_screen,scroll_lock,
+    # f1,f2,...,f20
+    # media_next,media_play_pause,media_previous,media_volume_down,media_volume_mute,media_volume_up
+    # https://pynput.readthedocs.io/en/latest/keyboard.html#pynput.keyboard.Key
+
+    # remap certain keys between selenium and pynput
+    remaps={
+        u'\ue003':Key.backspace,   # BACKSPACE
+        u'\ue004':Key.tab,   # TAB
+        u'\ue006':Key.enter,   # RETURN
+        u'\ue007':Key.enter,   # ENTER
+        u'\ue008':Key.shift,   # SHIFT, LEFT_SHIFT
+        u'\ue009':Key.ctrl,   # CONTROL, LEFT_CONTROL
+        u'\ue00a':Key.alt,   # ALT, LEFT_ALT
+        u'\ue00c':Key.esc,   # ESCAPE
+        u'\ue00d':Key.space,   # SPACE
+        u'\ue00e':Key.page_up,   # PAGE_UP
+        u'\ue00f':Key.page_down,   # PAGE_DOWN
+        u'\ue010':Key.end,   # END
+        u'\ue011':Key.home,   # HOME
+        u'\ue012':Key.left,   # LEFT, ARROW_LEFT
+        u'\ue013':Key.up,   # UP, ARROW_UP
+        u'\ue014':Key.right,   # RIGHT, ARROW_RIGHT
+        u'\ue015':Key.down,   # DOWN, ARROW_DOWN
+        u'\ue017':Key.delete,   # DELETE
+
+        u'\ue031':Key.f1,   # F1
+        u'\ue032':Key.f2,   # F2
+        u'\ue033':Key.f3,   # F3
+        u'\ue034':Key.f4,   # F4
+        u'\ue035':Key.f5,   # F5
+        u'\ue036':Key.f6,   # F6
+        u'\ue037':Key.f7,   # F7
+        u'\ue038':Key.f8,   # F8
+        u'\ue039':Key.f9,   # F9
+        u'\ue03a':Key.f10,   # F10
+        u'\ue03b':Key.f11,   # F11
+        u'\ue03c':Key.f12,   # F12
+
+        u'\ue03d':Key.cmd,   # META
+        u'\ue03d':Key.cmd,   # COMMAND
+    }
+
+    for t in range(0,times):
+        if len(keys)==1:
+            keyboard.type(*keys)
+        else:
+            for k in keys:
+                if k in remaps:
+                    keyboard.press(remaps[k])
+                else:
+                    keyboard.press(k)
+            for k in list(reversed(keys)):
+                if k in remaps:
+                    keyboard.release(remaps[k])
+                else:
+                    keyboard.release(k)
+        sleep(delay)
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

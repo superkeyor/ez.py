@@ -1,7 +1,8 @@
 # eg.
 # e=f.find('linktext','Download')
 # e.click()
-# e.send_keys(Keys.COMMAND,'a')
+# e.send_keys(KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT)
+# e.send_keys(KEYS.COMMAND,'a')
 # e.submit()
 # if space in class name, convert to .
 # f.find_all(By.CLASS_NAME,'d2l-datetime-selector-date-input.d2l-edit')  
@@ -831,11 +832,15 @@ class Firefox:
 
     # essentially send keys
     def js_setvalue_via_typing(self, element: WebElement, value) -> bool:
-        element.send_keys(Keys.COMMAND,"a")
+        is_mac=platform.system()=='Darwin'
+        if is_mac: 
+            element.send_keys(KEYS.COMMAND,"a")
+        else:
+            element.send_keys(KEYS.CONTROL,"a")
         time.sleep(0.5)
         element.send_keys(value)
     send_keys=js_setvalue_via_typing
-
+    send=js_setvalue_via_typing
 
     # for D2L, this methods would not save value!
     def js_setvalue(self, element: WebElement, value) -> bool:
@@ -1007,7 +1012,8 @@ class Firefox:
             es = WebDriverWait(element, timeout).until(
                 find_func((by, key))
             )
-
+            # jerry: alias
+            es.send=es.send_keys
             return es
         except:
             return None

@@ -43,7 +43,7 @@ import pickle, os, time, json, inspect, platform, tempfile
 
 # Pip
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver.remote.webelement import WebElement as WEBELEMENT
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
@@ -72,12 +72,6 @@ RANDOM_USERAGENT = 'random'
 
 
 # ------------------------------------------------------------ class: Firefox ------------------------------------------------------------ #
-class WebElement(WEBELEMENT):
-    def __init__(self): 
-        super().__init__()
-    def send(self,*value):
-        self.send_keys(*value)
-        return self
 
 class Firefox:
 
@@ -1020,11 +1014,11 @@ class Firefox:
             )
             # jerry: alias enhanced
             # es.send=es.send_keys
-            # from functools import partial
-            # def _send_plus(self,*value):
-            #     self.send_keys(*value)
-            #     return self
-            # es.send=partial(_send_plus, es)
+            from functools import partial
+            def _send_plus(self,*value):
+                self.send_keys(*value)
+                return self
+            es.send=partial(_send_plus, es)
             return es
         except:
             return None

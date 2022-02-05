@@ -513,6 +513,13 @@ class Firefox:
         except TimeoutException: 
             return ''
 
+    def getresp(self,url:str,regexpat,timeout=300,raw=False):
+        resp=self.getreq(url,regexpat,timeout=timeout,raw=True)
+        if not raw:
+            return rget(resp.url,headers=resp.headers)
+        else:
+            return rgetraw(resp.url,headers=resp.headers)
+
     def refresh(self,seconds=5) -> None:
         self.driver.refresh()
         time.sleep(seconds)

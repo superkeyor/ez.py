@@ -473,12 +473,12 @@ class Firefox:
             self.driver.set_page_load_timeout(300)
             return False
 
-    def getreq(self,url:str,regexpat,timeout=300,simplify=True):
+    def getreq(self,url:str,regexpat,timeout=300,raw=False):
         """
         regexpat: The pat attribute will be matched within the request URL. pat a regular expression
         if timeout and/or no match, returns ''
         else returns 
-            if simply request.url
+            if not raw: request.url
             else request (so that can check request.headers, request.response.headers, request.response.status_code etc)
         """
         
@@ -506,7 +506,7 @@ class Firefox:
         # A TimeoutException is raised if no match is found within the timeout period.
         try:
             request = self.driver.wait_for_request(regexpat,timeout)
-            if simplify:
+            if not raw:
                 return request.url
             else:
                 return request

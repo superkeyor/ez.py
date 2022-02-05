@@ -218,6 +218,16 @@ def retry(*args,timeout=20,n=None,min=4/60,max=10):
         )()
         return myretry
 
+def rget(url,headers={},timeout=20,n=None,*args,**kwargs):
+    return retry(lambda : requests.get(url,headers=headers,*args,**kwargs).json(), timeout=timeout, n=n)()
+
+def rgetraw(url,headers={},timeout=20,n=None,*args,**kwargs):
+    return retry(lambda : requests.get(url,headers=headers,*args,**kwargs), timeout=timeout, n=n)()
+
+def rgetfile(url,file,headers={},timeout=20,n=None,*args,**kwargs):
+    r = retry(lambda : requests.get(url,headers=headers,*args,**kwargs), timeout=timeout, n=n)()
+    with open(file, 'wb') as f: f.write(r.content) 
+
 # json is recommended for config
 # def ReadConfig(item):
 #    """Read a variable from the config.ini file"""

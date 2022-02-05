@@ -4528,14 +4528,19 @@ except:
         if attachments is not None: m.attachments.add(attachments)
         m.send()
 
-def getpasswordbw(item,what='password',sync=False,verbose=0):
+def getpasswordbw(item,what='userpass',sync=False,verbose=0):
     """
     item: search string (not case sensitive, better be unique), or item id
     https://bitwarden.com/help/article/cli/#get
     get one at a time: item|username|password|uri|totp|exposed|attachment|folder|collection|organization|org-collection|template|fingerprint
+    special customized what='userpass'
     """
 
     # todo: implement bw on linux
+
+    oldwhat=what
+    if what=='userpass': what='item'
+
     try:
         from . pysecrets import EMAIL, PASSWORD
         PASSWORD = PASSWORD + '+'
@@ -4597,7 +4602,11 @@ def getpasswordbw(item,what='password',sync=False,verbose=0):
                 out = json.loads(out[-1])
             else:
                 out = out[-1]
-    return out
+    
+    if oldwhat=='userpass':
+        return (username,password)=(out['login']['username'],out['login']['password'])
+    else:
+        return out
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

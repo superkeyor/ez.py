@@ -15,7 +15,7 @@
 # f.save_screenshot()                                        | f.snap()
 # f.js_click(e)                                              | f.click(e)
 # f.js_rightclick(e)                                         | f.rclick(e)
-# f.js_setvalue(e,value)                                     |
+# f.js_setvalue(e,value)                                     | 
 # f.js_setvalue_via_typing(e,value)  # essentially send keys | f.send(e,value)
 # f.execute_script("arguments[0].click();", e)
 # f.execute_script(f"arguments[0].value='{smscode}';", f.find('id','code'))
@@ -43,7 +43,7 @@ import pickle, os, time, json, inspect, platform, tempfile
 
 # Pip
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.remote.webelement import WebElement as WEBELEMENT
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
@@ -72,6 +72,12 @@ RANDOM_USERAGENT = 'random'
 
 
 # ------------------------------------------------------------ class: Firefox ------------------------------------------------------------ #
+class WebElement(WEBELEMENT):
+    def __init__(self): 
+        super().__init__()
+    def send(self,*value):
+        self.send_keys(*value)
+        return self
 
 class Firefox:
 
@@ -1012,8 +1018,13 @@ class Firefox:
             es = WebDriverWait(element, timeout).until(
                 find_func((by, key))
             )
-            # jerry: alias
-            es.send=es.send_keys
+            # jerry: alias enhanced
+            # es.send=es.send_keys
+            # from functools import partial
+            # def _send_plus(self,*value):
+            #     self.send_keys(*value)
+            #     return self
+            # es.send=partial(_send_plus, es)
             return es
         except:
             return None

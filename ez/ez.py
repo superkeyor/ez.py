@@ -4616,6 +4616,7 @@ def send(*keys,delay=0,times=1):
     """
     KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT
     KEYS.COMMAND,'a'
+    'abc', KEYS.ARROW_DOWN
     'abc\ndef\tg'
 
     delay in seconds after each time
@@ -4671,7 +4672,7 @@ def send(*keys,delay=0,times=1):
     }
 
     for t in range(0,times):
-        if len(keys)==1:
+        if (len(keys)==1) and (keys[0] not in remaps):
             keyboard.type(*keys)
         else:
             for k in keys:

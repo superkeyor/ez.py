@@ -4625,7 +4625,7 @@ def send(keys,times=1,delay=0):
     keyboard = Controller()
     keys=keys.split('+')
     keys=[k.strip() for k in keys]
-    for t in range(0,times)
+    for t in range(0,times):
         for k in keys:
             if len(k)>1: 
                 keyboard.press(eval(f'Key.{k}'))

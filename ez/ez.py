@@ -4604,7 +4604,8 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
                 out = out[-1]
     
     if oldwhat=='usrpwd':
-        return (usr,pwd)=(out['login']['username'],out['login']['password'])
+        (usr,pwd)=(out['login']['username'],out['login']['password'])
+        return (usr,pwd)
     else:
         return out
 

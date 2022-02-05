@@ -4609,7 +4609,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     else:
         return out
 
-def send(keys,delay=0,times=1):
+def send_keys(keys,delay=0,times=1):
     """
     e.g., cmd+a, cmd+shift+tab, a
     cmd,shift,ctrl,tab,space,backspace,delete,esc,enter,
@@ -4638,7 +4638,7 @@ def send(keys,delay=0,times=1):
                 keyboard.release(k)
         sleep(delay)
 
-def type(string,delay=0):
+def typing(string,delay=0):
     """
     use a new line character (\n) and a tab character (\t) for tabs
     """

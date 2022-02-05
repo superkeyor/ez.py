@@ -4608,7 +4608,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     else:
         return out
 
-def send(keys):
+def send(keys,times=1,delay=0):
     """
     e.g., cmd+a, cmd+shift+tab, a
     cmd,shift,ctrl,tab,space,backspace,delete,esc,enter,
@@ -4617,21 +4617,25 @@ def send(keys):
     f1,f2,...,f20
     media_next,media_play_pause,media_previous,media_volume_down,media_volume_mute,media_volume_up
     https://pynput.readthedocs.io/en/latest/keyboard.html#pynput.keyboard.Key
+
+    delay in seconds after each time
     """
     from pynput.keyboard import Key, Controller
     keyboard = Controller()
     keys=keys.split('+')
     keys=[k.strip() for k in keys]
-    for k in keys:
-        if len(k)>1: 
-            keyboard.press(eval(f'Key.{k}'))
-        else:
-            keyboard.press(k)
-    for k in list(reversed(keys)):
-        if len(k)>1: 
-            keyboard.release(eval(f'Key.{k}'))
-        else:
-            keyboard.release(k)
+    for t in range(0,times)
+        for k in keys:
+            if len(k)>1: 
+                keyboard.press(eval(f'Key.{k}'))
+            else:
+                keyboard.press(k)
+        for k in list(reversed(keys)):
+            if len(k)>1: 
+                keyboard.release(eval(f'Key.{k}'))
+            else:
+                keyboard.release(k)
+        sleep(delay)
 
 def type(string):
     """

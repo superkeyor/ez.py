@@ -219,6 +219,9 @@ def retry(*args,timeout=20,n=None,min=4/60,max=10):
         return myretry
 
 def rget(url,headers={},timeout=20,n=None,*args,**kwargs):
+    """
+    see retry for parameters
+    """
     return retry(lambda : requests.get(url,headers=headers,*args,**kwargs).json(), timeout=timeout, n=n)()
 
 def rgetraw(url,headers={},timeout=20,n=None,*args,**kwargs):

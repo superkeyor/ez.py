@@ -513,12 +513,17 @@ class Firefox:
         except TimeoutException: 
             return ''
 
-    def getresp(self,url:str,regexpat,timeout=300,raw=False):
+    def getresp(self,url:str,regexpat,timeout=300,raw=False,*args,**kwargs):
+        """
+        catch matched url, then request the url with headers, returns json (raw=False) or raw resp (raw=True)
+        """
+        import requests
         resp=self.getreq(url,regexpat,timeout=timeout,raw=True)
+        resp=requests.get(resp.url,headers=resp.headers,*args,**kwargs)
         if not raw:
-            return rget(resp.url,headers=resp.headers)
+            return resp.json()
         else:
-            return rgetraw(resp.url,headers=resp.headers)
+            return resp
 
     def refresh(self,seconds=5) -> None:
         self.driver.refresh()

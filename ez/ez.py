@@ -4528,18 +4528,18 @@ except:
         if attachments is not None: m.attachments.add(attachments)
         m.send()
 
-def getpasswordbw(item,what='userpass',sync=False,verbose=0):
+def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     """
     item: search string (not case sensitive, better be unique), or item id
     https://bitwarden.com/help/article/cli/#get
     get one at a time: item|username|password|uri|totp|exposed|attachment|folder|collection|organization|org-collection|template|fingerprint
-    special customized what='userpass'
+    special customized what='usrpwd'
     """
 
     # todo: implement bw on linux
 
     oldwhat=what
-    if what=='userpass': what='item'
+    if what=='usrpwd': what='item'
 
     try:
         from . pysecrets import EMAIL, PASSWORD
@@ -4603,10 +4603,43 @@ def getpasswordbw(item,what='userpass',sync=False,verbose=0):
             else:
                 out = out[-1]
     
-    if oldwhat=='userpass':
-        return (username,password)=(out['login']['username'],out['login']['password'])
+    if oldwhat=='usrpwd':
+        return (usr,pwd)=(out['login']['username'],out['login']['password'])
     else:
         return out
+
+def send(keys):
+    """
+    e.g., cmd+a, cmd+shift+tab, a
+    cmd,shift,ctrl,tab,space,backspace,delete,esc,enter,
+    up/down/left/right,home,end,page_up,page_down,
+    insert,menu,pause,print_screen,scroll_lock,scroll_lock,
+    f1,f2,...,f20
+    media_next,media_play_pause,media_previous,media_volume_down,media_volume_mute,media_volume_up
+    https://pynput.readthedocs.io/en/latest/keyboard.html#pynput.keyboard.Key
+    """
+    from pynput.keyboard import Key, Controller
+    keyboard = Controller()
+    keys=keys.split('+')
+    keys=[k.strip() for k in keys]
+    for k in keys:
+        if len(k)>1: 
+            keyboard.press(eval(f'Key.{k}'))
+        else:
+            keyboard.press(k)
+    for k in list(reversed(keys)):
+        if len(k)>1: 
+            keyboard.release(eval(f'Key.{k}'))
+        else:
+            keyboard.release(k)
+
+def type(string):
+    """
+    use a new line character (\n) and a tab character (\t) for tabs
+    """
+    from pynput.keyboard import Key, Controller
+    keyboard = Controller()
+    keyboard.type(string)
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

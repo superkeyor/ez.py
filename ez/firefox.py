@@ -4,7 +4,6 @@
 # e.send(KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT)
 # e.send(KEYS.COMMAND,'a')
 # e.submit()
-# if space in class name, convert to .
 # f.find_all(By.CLASS_NAME,'d2l-datetime-selector-date-input.d2l-edit')  
 # https://stackoverflow.com/questions/17000703/is-string-matches-supported-in-selenium-webdriver-2
 # https://stackoverflow.com/questions/22436789/xpath-ends-with-does-not-work
@@ -541,6 +540,8 @@ class Firefox:
         timeout: Optional[int] = None,
         element: Optional = None
     ) -> Union[Optional[WebElement], List[WebElement]]:
+        # if space in class name, convert to .
+        key=key.strip().replace(' ','.')
         return self.__find(
             by,
             EC.presence_of_element_located,
@@ -588,6 +589,7 @@ class Firefox:
         timeout: Optional[int] = None,
         element: Optional = None
     ) -> List[WebElement]:
+        key=key.strip().replace(' ','.')
         return self.__find(
             by,
             EC.presence_of_all_elements_located,
@@ -1016,11 +1018,10 @@ class Firefox:
             es.send=es.send_keys
             # https://stackoverflow.com/a/54662690/2292993
             from functools import partial
-            def _sendsubmit(self,value=None):
-                # send keys optionally and then submit
-                if value is not None: 
-                    self.send_keys(value)
-                    time.sleep(0.5)
+            def _sendsubmit(self,*value):
+                # send keys and then submit
+                self.send_keys(*value)
+                time.sleep(0.5)
                 self.submit()
             es.sendsubmit=partial(_sendsubmit, es)
             return es

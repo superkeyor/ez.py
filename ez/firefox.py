@@ -1018,11 +1018,22 @@ class Firefox:
             es.send=es.send_keys
             # https://stackoverflow.com/a/54662690/2292993
             from functools import partial
+            def _senddelay(
+                self,
+                keys: str,
+                min_delay: float = 0.025,
+                max_delay: float = 0.25
+            ) -> None:
+                import random
+                for key in keys:
+                    self.send_keys(key)
+                    time.sleep(random.uniform(min_delay,max_delay))
             def _sendsubmit(self,*value):
                 # send keys and then submit
                 self.send_keys(*value)
                 time.sleep(0.5)
                 self.submit()
+            es.senddelay=partial(_senddelay, es)
             es.sendsubmit=partial(_sendsubmit, es)
             return es
         except:

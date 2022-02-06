@@ -1016,13 +1016,13 @@ class Firefox:
             es.send=es.send_keys
             # https://stackoverflow.com/a/54662690/2292993
             from functools import partial
-            def _submit(self,value=None):
+            def _sendsubmit(self,value=None):
                 # send keys optionally and then submit
                 if value is not None: 
                     self.send_keys(value)
                     time.sleep(0.5)
                 self.submit()
-            es.submit=partial(_submit, es)
+            es.sendsubmit=partial(_sendsubmit, es)
             return es
         except:
             return None

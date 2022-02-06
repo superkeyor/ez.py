@@ -1030,7 +1030,7 @@ class Firefox:
                     time.sleep(random.uniform(min_delay,max_delay))
             def _sendsubmit(self,*value):
                 # send keys and then submit
-                self.send_keys(*value)
+                self.senddelay(*value)
                 time.sleep(0.5)
                 self.submit()
             es.senddelay=partial(_senddelay, es)

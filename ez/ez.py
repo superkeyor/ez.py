@@ -4394,142 +4394,107 @@ def GetClip():
     return pyperclip.paste()
 getclip=GetClip
 
-try:
-    # import os, sys
-    # HERE = os.path.dirname(os.path.abspath(__file__))
-    # sys.path.insert(0, HERE)
-    
-    # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-    from . pysecrets import EMAIL, PASSWORD
-    def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None):
-        """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None)
-        to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
-        reply_to: 'a@a.com'
-        body: html code or text
-        text: specified for weird text that is incompatible with html; when set, body is ignored
-        attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
-        email, password: not used, kept so to have the same api interface as the one requires password
-        """
-        from gmail import GMail, Message
+def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None, password=None):
+    """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None)
+    to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
+    reply_to: 'a@a.com'
+    body: html code or text
+    text: specified for weird text that is incompatible with html; when set, body is ignored
+    attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
+    email, password: ignored if pysecrets exists
+    """
+    from gmail import GMail, Message
+    try:
+        # import os, sys
+        # HERE = os.path.dirname(os.path.abspath(__file__))
+        # sys.path.insert(0, HERE)
+        
+        # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
+        from . pysecrets import EMAIL, PASSWORD
         gclient = GMail(EMAIL,PASSWORD)
-        if text is not None: body=None
-        msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
-        return gclient.send(msg)
-except:
-    def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None, password=None):
-        """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, EMAIL, PASSWORD)
-        to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
-        reply_to: 'a@a.com'
-        body: html code or text
-        text: specified for weird text that is incompatible with html; when set, body is ignored
-        attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
-        """
-        from gmail import GMail, Message
+    except:
         gclient = GMail(email,password)
-        if text is not None: body=None
-        msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
-        return gclient.send(msg)
+    if text is not None: body=None
+    msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
+    return gclient.send(msg)
 mail = Mail
 gmail = Mail
 
-try:
-    from . pysecrets import O365ID, O365SECRET
-    def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_to=None, id=None,secret=None):
-        """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
-        to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
-        reply_to: 'a@a.com'
-        body: html code or text. Best practice: Write/Format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
-        attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
-        id, secret: not used, kept so to have the same api interface as the one requires secret
-        
-        token auto renews within 90 days
-        secret expires 2 years
+def o365auth(id=None, secret=None):
+    """
+    token auto renews within 90 days
+    secret expires 2 years
 
-        initial setup (only first time):
-        create an app https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
-        Accounts in any organizational directory and personal Microsoft accounts (e.g. Skype, Xbox, Outlook.com)
-        Web: https://login.microsoftonline.com/common/oauth2/nativeclient
-        write down Application (client) ID; create secrets--write down secret value
-        API permission: User.Read, Mail.ReadWrite, Mail.Send, offline_access
-            import readline        
-            from O365 import Account
-            credentials = ('my_client_id', 'my_client_secret')
-            account = Account(credentials)
-            account.authenticate(scopes=['basic', 'message_all','onedrive_all','sharepoint_dl'])
-            paste the returned url to complete authorization of the app
-            will save token to disk
-        Done!
-        """
+    initial setup (only first time):
+    create an app https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
+    Accounts in any organizational directory and personal Microsoft accounts (e.g. Skype, Xbox, Outlook.com)
+    Web: https://login.microsoftonline.com/common/oauth2/nativeclient
+    write down Application (client) ID; create secrets--write down secret value
+    API permission: User.Read, Mail.ReadWrite, Mail.Send, offline_access
+        import readline        
+        from O365 import Account
+        credentials = ('my_client_id', 'my_client_secret')
+        account = Account(credentials)
+        account.authenticate(scopes=['basic', 'message_all','onedrive_all','sharepoint_dl'])
+        paste the returned url to complete authorization of the app
+        will save token to disk
+    Done!
+    """
+    try:
+        from . pysecrets import O365ID, O365SECRET
         credentials = (O365ID, O365SECRET)
-        # https://stackoverflow.com/questions/8469122 
-        # readline lifts Maximum characters that can be stuffed into raw_input() in Python
-        import readline 
-        from O365 import Account, FileSystemTokenBackend
-        # save token to installation directory
-        token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
-        account = Account(credentials, token_backend=token_backend)
-        scopes=['basic', 'message_all','onedrive_all','sharepoint_dl']
-        if not account.is_authenticated:  # will check if there is a token and has not expired
-            # ask for a login
-            # console based authentication See Authentication for other flows
-            account.authenticate(scopes=scopes)
-        m = account.new_message()
-        m.to.add(to)
-        m.subject = subject
-        m.body = body
-        if cc is not None: m.cc.add(cc)
-        if bcc is not None: m.bcc.add(bcc)
-        if reply_to is not None: m.reply_to.add(reply_to)
-        if attachments is not None: m.attachments.add(attachments)
-        m.send()
-except:
-    def outlook(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None):
-        """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
-        to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
-        reply_to: 'a@a.com'
-        body: html code or text. Best practice: Write/Format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
-        attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
-
-        token auto renews within 90 days
-        secret expires 2 years
-
-        initial setup (only first time):
-        create an app https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
-        Accounts in any organizational directory and personal Microsoft accounts (e.g. Skype, Xbox, Outlook.com)
-        Web: https://login.microsoftonline.com/common/oauth2/nativeclient
-        write down Application (client) ID; create secrets--write down secret value
-        API permission: User.Read, Mail.ReadWrite, Mail.Send, offline_access
-            import readline        
-            from O365 import Account
-            credentials = ('my_client_id', 'my_client_secret')
-            account = Account(credentials)
-            account.authenticate(scopes=['basic', 'message_all','onedrive_all','sharepoint_dl'])
-            paste the returned url to complete authorization of the app
-            will save token to disk
-        Done!
-        """
+    except:
         credentials = (id, secret)
-        # https://stackoverflow.com/questions/8469122 
-        # readline lifts Maximum characters that can be stuffed into raw_input() in Python
-        import readline 
-        from O365 import Account, FileSystemTokenBackend
-        # save token to installation directory
-        token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
-        account = Account(credentials, token_backend=token_backend)
-        scopes=['basic', 'message_all','onedrive_all','sharepoint_dl']
-        if not account.is_authenticated:  # will check if there is a token and has not expired
-            # ask for a login
-            # console based authentication See Authentication for other flows
-            account.authenticate(scopes=scopes)
-        m = account.new_message()
-        m.to.add(to)
-        m.subject = subject
-        m.body = body
-        if cc is not None: m.cc.add(cc)
-        if bcc is not None: m.bcc.add(bcc)
-        if reply_to is not None: m.reply_to.add(reply_to)
-        if attachments is not None: m.attachments.add(attachments)
-        m.send()
+    # https://stackoverflow.com/questions/8469122 
+    # readline lifts Maximum characters that can be stuffed into raw_input() in Python
+    import readline 
+    from O365 import Account, FileSystemTokenBackend
+    # save token to installation directory
+    token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
+    account = Account(credentials, token_backend=token_backend)
+    scopes=['basic', 'message_all','onedrive_all','sharepoint_dl']
+    if not account.is_authenticated:  # will check if there is a token and has not expired
+        # ask for a login
+        # console based authentication See Authentication for other flows
+        account.authenticate(scopes=scopes)
+    return account
+
+def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None):
+    """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
+    to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
+    reply_to: 'a@a.com'
+    body: html code or text. Best practice: Write/Format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
+    attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
+    id, secret: ignored if pysecrets exists
+    """
+    account = o365auth(id,secret)
+    m = account.new_message()
+    m.to.add(to)
+    m.subject = subject
+    m.body = body
+    if cc is not None: m.cc.add(cc)
+    if bcc is not None: m.bcc.add(bcc)
+    if reply_to is not None: m.reply_to.add(reply_to)
+    if attachments is not None: m.attachments.add(attachments)
+    m.send()
+
+def onedrive_share(path,share_type='view',share_scope='anonymous',share_password=None,share_expiration_date=None,id=None,secret=None):
+    """
+    path: '/EIU/Teaching/4810Drug'
+    share_type: 'view','edit','embed'
+    share_scope: 'anonymous','organization'
+    share_password: str
+    share_expiration_date: '2022-02-14', 
+        if not specified, auto max determined by adminstrator
+        if not specified, call the function a second time will auto renew expiration date (as long as share does not change)
+    """
+    account = o365auth(id,secret)
+    storage = account.storage()  # here we get the storage instance that handles all the storage options.
+    # get the default drive
+    drive = storage.get_default_drive()
+    item = drive.get_item_by_path(path)
+    permission = item.share_with_link(share_type=share_type,share_scope=share_scope,share_password=share_password,share_expiration_date=share_expiration_date)
+    return permission.share_link
 
 def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     """
@@ -4538,9 +4503,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     get one at a time: item|username|password|uri|totp|exposed|attachment|folder|collection|organization|org-collection|template|fingerprint
     special customized what='usrpwd'
     """
-
     # todo: implement bw on linux
-
     oldwhat=what
     if what=='usrpwd': what='item'
 

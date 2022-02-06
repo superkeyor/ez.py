@@ -3,7 +3,7 @@
 # e.click()
 # e.send(KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT)
 # e.send(KEYS.COMMAND,'a')
-# e.submit()
+# e.submit(), senddelay(), sendsubmit()
 # f.find_all(By.CLASS_NAME,'d2l-datetime-selector-date-input.d2l-edit')  
 # https://stackoverflow.com/questions/17000703/is-string-matches-supported-in-selenium-webdriver-2
 # https://stackoverflow.com/questions/22436789/xpath-ends-with-does-not-work

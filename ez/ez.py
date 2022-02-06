@@ -4620,6 +4620,8 @@ def send(*keys,delay=0,times=1):
     'abc\ndef\tg'
 
     delay in seconds after each time
+    times
+    delay and times have to be named paramater, cannot be omitted as position parameter because of *keys
     """
     from pynput.keyboard import Key, Controller
     keyboard = Controller()

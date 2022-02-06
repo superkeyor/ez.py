@@ -1013,12 +1013,16 @@ class Firefox:
                 find_func((by, key))
             )
             # jerry: alias enhanced
-            # es.send=es.send_keys
+            es.send=es.send_keys
+            # https://stackoverflow.com/a/54662690/2292993
             from functools import partial
-            def _send_plus(self,*value):
-                self.send_keys(*value)
-                return self
-            es.send=partial(_send_plus, es)
+            def _submit(self,value=None):
+                # send keys optionally and then submit
+                if value is not None: 
+                    self.send_keys(value)
+                    time.sleep(0.5)
+                self.submit()
+            es.submit=partial(_submit, es)
             return es
         except:
             return None

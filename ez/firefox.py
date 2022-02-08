@@ -1033,8 +1033,13 @@ class Firefox:
                 self.senddelay(*value)
                 time.sleep(0.5)
                 self.submit()
+            def _moveclick(self):
+                # self is the element, self.parent is driver
+                actions = ActionChains(self.parent)
+                actions.move_to_element(self).click().perform()
             es.senddelay=partial(_senddelay, es)
             es.sendsubmit=partial(_sendsubmit, es)
+            es.moveclick=partial(_moveclick, es)
             return es
         except:
             return None

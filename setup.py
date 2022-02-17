@@ -25,6 +25,8 @@ install_requires=['pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'gmai
                  'pyarrow', 'cachelib']
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform
+# see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
+# 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
 ######################################################################################
 # Get the long description from the relevant file

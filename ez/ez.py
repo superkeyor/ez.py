@@ -4652,6 +4652,29 @@ def send(*keys,delay=0,times=1):
                     keyboard.release(k)
         sleep(delay)
 
+def move(x=None,y=None):
+    from pynput.mouse import Button, Controller
+    mouse = Controller()
+    if x is None and y is None: 
+        return mouse.position
+    else:
+        mouse.position = (x, y)
+
+def click(n=1):
+    from pynput.mouse import Button, Controller
+    mouse = Controller()
+    mouse.click(Button.left, n)
+
+def rclick(n=1):
+    from pynput.mouse import Button, Controller
+    mouse = Controller()
+    mouse.click(Button.right, n)
+
+def scroll(dx,dy):
+    from pynput.mouse import Button, Controller
+    mouse = Controller()
+    mouse.scroll(dx, dy)
+
 ####************************************************************************************************
                                      ####*OrderedSet*####
 ####************************************************************************************************

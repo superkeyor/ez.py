@@ -16,10 +16,12 @@ packages = find_packages()
 # install_requires=['']
 # 'noraise' (seems not actually used, might be useful for myself), 'fake_useragent', 'tldextract' --> firefox
 # 'cachelib': for flask
+# pynput instead of pyautogui <- problematic dependencies on MacOS
 install_requires=['pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'gmail', 'O365', 'chardet', 'psutil',
-                 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
+                 'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
                  'requests>=2.26.0', 'selenium-requests', 'selenium-wire', 'selenium<4', 'noraise', 'fake_useragent', 'tldextract',
                  'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse',
+                 'pandas', 'numpy', 'beautifulsoup4', 'lxml',
                  'pyarrow', 'cachelib']
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform

@@ -1037,9 +1037,23 @@ class Firefox:
                 # self is the element, self.parent is driver
                 actions = ActionChains(self.parent)
                 actions.move_to_element(self).click().perform()
+            def _moveclick2(self,n=2):
+                # https://stackoverflow.com/a/59347207/2292993
+                # Assume there is equal amount of browser chrome on the left and right sides of the screen.
+                canvas_x_offset = self.parent.execute_script("return window.screenX + (window.outerWidth - window.innerWidth) / 2 - window.scrollX;")
+                # Assume all the browser chrome is on the top of the screen and none on the bottom.
+                canvas_y_offset = self.parent.execute_script("return window.screenY + (window.outerHeight - window.innerHeight) - window.scrollY;")
+                # Get the element center.
+                element_location = (self.rect["x"] + canvas_x_offset + self.rect["width"] / 2,
+                                    self.rect["y"] + canvas_y_offset + self.rect["height"] / 2)
+                from pynput.mouse import Button, Controller
+                mouse = Controller()
+                mouse.position = element_location
+                mouse.click(Button.left, n)
             es.senddelay=partial(_senddelay, es)
             es.sendsubmit=partial(_sendsubmit, es)
             es.moveclick=partial(_moveclick, es)
+            es.moveclick2=partial(_moveclick2, es)
             return es
         except:
             return None

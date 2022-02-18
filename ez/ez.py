@@ -4652,13 +4652,16 @@ def send(*keys,delay=0,times=1):
                     keyboard.release(k)
         sleep(delay)
 
-def move(x=None,y=None):
+def move(xy=None):
+    """
+    xy=(0,0) tuple
+    """
     from pynput.mouse import Button, Controller
     mouse = Controller()
-    if x is None and y is None: 
+    if xy: 
         return mouse.position
     else:
-        mouse.position = (x, y)
+        mouse.position = xy
 
 def click(n=1):
     from pynput.mouse import Button, Controller

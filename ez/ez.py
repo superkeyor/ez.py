@@ -4666,9 +4666,18 @@ def move(x=None,y=None):
         else:
             mouse.position = (x,y)
 
-def click(n=1):
+def click(n=2):
     from pynput.mouse import Button, Controller
     mouse = Controller()
+    mouse.click(Button.left, n)
+
+def moveclick(xy=None,n=2):
+    """
+    xy: (x,y) or [x,y]
+    """ 
+    from pynput.mouse import Button, Controller
+    mouse = Controller()
+    if xy is not None: mouse.position = xy
     mouse.click(Button.left, n)
 
 def rclick(n=1):

@@ -4653,32 +4653,150 @@ def send(*keys,delay=[0.025,0.25],times=1):
                     keyboard.release(k)
                 sleep(random.uniform(delay[0],delay[1]))
 
-def move(x=None,y=None):
-    """
-    move(100,100) or move((100,100)), move([100,100]), move()
-    """
+def move(b, a=None, deviation=25, delay=2, rate=1000, draw=False):
+    '''
+    GENERATE BEZIER CURVE POINTS
+    Takes a (init_pos, default current position) --> b (fin_pos) as a 2-tuple representing xy coordinates
+    deviation (int)
+        deviation controls how straight the lines drawn my the cursor
+        are. Zero deviation gives straight lines
+        Accuracy is a percentage of the displacement of the mouse from point A to
+        B, which is given as maximum control point deviation.
+        Naturally, deviation of 10 (10%) gives maximum control point deviation
+        of 10% of magnitude of displacement of mouse from point A to B, 
+        and a minimum of 5% (int(deviation / 2))    
+    delay: an int multiplier for speed. The lower, the faster. 1 is fastest.
+    rate: another param related to speed, total travel time in seconds = distance/rate. The higher, the faster.
+    draw: boolean deciding whether or not to show the curve the mouse makes
+    '''
+    # https://github.com/vincentbavitz/bezmouse
+    # see also https://pyautogui.readthedocs.io/en/latest/mouse.html#tween-easing-functions
+
+    from time import sleep
+    from PIL import Image
+    from random import randint, choice
+    from math import ceil, sqrt
+
     from pynput.mouse import Button, Controller
     mouse = Controller()
-    if x is None: 
-        return mouse.position
-    else:
-        if type(x) in [tuple,list]:
-            mouse.position = x
-        else:
-            mouse.position = (x,y)
+    if a is None: a = mouse.position
+    init_pos=a; fin_pos=b
+    def mouse_bez(init_pos, fin_pos, deviation, delay):
+        #time parameter
+        speed=delay
+        ts = [t/(speed * 100.0) for t in range(speed * 101)]
+        #bezier centre control points between (int(deviation / 2)) and (deviaion) of travel distance, plus or minus at random
+        control_1 = (init_pos[0] + choice((-1, 1)) * abs(ceil(fin_pos[0]) - ceil(init_pos[0])) * 0.01 * randint(int(deviation / 2), deviation),
+                    init_pos[1] + choice((-1, 1)) * abs(ceil(fin_pos[1]) - ceil(init_pos[1])) * 0.01 * randint(int(deviation / 2), deviation)
+                        )
+        control_2 = (init_pos[0] + choice((-1, 1)) * abs(ceil(fin_pos[0]) - ceil(init_pos[0])) * 0.01 * randint(int(deviation / 2), deviation),
+                    init_pos[1] + choice((-1, 1)) * abs(ceil(fin_pos[1]) - ceil(init_pos[1])) * 0.01 * randint(int(deviation / 2), deviation)
+                        )
+        xys = [init_pos, control_1, control_2, fin_pos]
+        def make_bezier(xys):
+            # xys should be a sequence of 2-tuples (Bezier control points)
+            def pascal_row(n):
+                # This returns the nth row of Pascal's Triangle
+                result = [1]
+                x, numerator = 1, n
+                for denominator in range(1, n//2+1):
+                    # print(numerator,denominator,x)
+                    x *= numerator
+                    x /= denominator
+                    result.append(x)
+                    numerator -= 1
+                if n&1 == 0:
+                    # n is even
+                    result.extend(reversed(result[:-1]))
+                else:
+                    result.extend(reversed(result)) 
+                return result
+            n = len(xys)
+            combinations = pascal_row(n - 1)
+            def bezier(ts):
+                # This uses the generalized formula for bezier curves
+                # http://en.wikipedia.org/wiki/B%C3%A9zier_curve#Generalization
+                result = []
+                for t in ts:
+                    tpowers = (t**i for i in range(n))
+                    upowers = reversed([(1-t)**i for i in range(n)])
+                    coefs = [c*a*b for c, a, b in zip(combinations, tpowers, upowers)]
+                    result.append(
+                        list(sum([coef*p for coef, p in zip(coefs, ps)]) for ps in zip(*xys)))
+                return result
+            return bezier
+        bezier = make_bezier(xys)
+        points = bezier(ts)
+        return points
+    mouse_points=mouse_bez(init_pos, fin_pos, deviation, delay)
+    '''
+    Moves mouse in accordance with a list of points (continuous curve)
+    mouse_points
+        list of 2-tuples or lists of ints or floats representing xy coords
+    draw
+        a boolean deciding whether or not to show the curve the mouse makes
+    '''
+    if draw == True:
+        REL_ORIGIN=[0,0]
+        drawpoints = [(v[0] - REL_ORIGIN[0], v[1] - REL_ORIGIN[1]) for v in mouse_points if type(v) is not str]
+        from PIL import ImageGrab
+        img = ImageGrab.grab()
+        width_px, height_px = img.size  # primary screen size
+        def draw_points(points, width=width_px, height=height_px):
+            '''
+            Draws yellow crosses to a image for all coordinates in "points"
+            show the image
+            '''
+            img = Image.new("RGB", (width, height))
+            pix = img.load()
+            try:
+                for coords in points:
+                    pix[coords[0], coords[1]] = (255, 255, 0)
+                    pix[coords[0] + 1, coords[1] + 1] = (255, 255, 0)
+                    pix[coords[0] + 1, coords[1] - 1] = (255, 255, 0)
+                    pix[coords[0] - 1, coords[1] + 1] = (255, 255, 0)
+                    pix[coords[0] - 1, coords[1] - 1] = (255, 255, 0)
+                img.show()
+            except:
+                pass
+        draw_points(drawpoints)    
+    
+    #round floats to ints
+    mouse_points = [[round(v) for v in x] if type(x) is not str else x for x in mouse_points]
+    distance=sqrt((b[0]-a[0])**2+(b[1]-a[1])**2)
+    duration=distance/rate
+    for coord in mouse_points:
+        sleep(duration/len(mouse_points))
+        mouse.position=coord
 
-def click(n=2):
-    from pynput.mouse import Button, Controller
-    mouse = Controller()
-    mouse.click(Button.left, n)
+def move2area(x, y, w, h, radius=5, *args, **kwargs):
+    '''
+    move to the center of an area
+    x and y are top left corner
+    radius: if an area is 100*100 with an radius of 5 it may be at 46,50 the first time and then 55,53 etc
+    '''
+    from random import randint
+    x_coord = x + randint(w/2-radius, w/2+radius)
+    y_coord = y + randint(h/2-radius, h/2+radius)
+    move((x_coord, y_coord), a=None, *args, **kwargs)
 
-def moveclick(xy=None,n=2):
+def moveclick2area(x, y, w, h, radius=5, n=1, *args, **kwargs):
+    move2area(x, y, w, h, radius, *args, **kwargs)
+    click(n)
+
+def moveclick(xy=None,n=2,*args,**kwargs):
     """
+    a combination of move and click; nothing fancy
     xy: (x,y) or [x,y]
     """ 
     from pynput.mouse import Button, Controller
     mouse = Controller()
-    if xy is not None: mouse.position = xy
+    if xy is not None: move(xy,*args,**kwargs)
+    mouse.click(Button.left, n)
+
+def click(n=2):
+    from pynput.mouse import Button, Controller
+    mouse = Controller()
     mouse.click(Button.left, n)
 
 def rclick(n=1):
@@ -4690,6 +4808,75 @@ def scroll(dx,dy):
     from pynput.mouse import Button, Controller
     mouse = Controller()
     mouse.scroll(dx, dy)
+
+def position():
+    from pynput.mouse import Button, Controller
+    mouse = Controller()
+    return mouse.position
+
+def size():
+    # https://stackoverflow.com/questions/3129322/
+    mm_per_inch = 25.4
+    px_per_inch =  72.0 #most common
+    import mss
+    sct=mss.mss()
+    return sct.monitors
+
+def find(image, precision=0.8, show=False):
+    '''
+    Searchs for an image on the screen
+
+    input :
+    image : path to the image file (see opencv imread for supported types)
+    precision : the higher, the lesser tolerant and fewer false positives are found default is 0.8
+    show: show all matches (highlighted)
+
+    returns :
+    [{'x','y','w','h'}] or [] if not found
+    '''
+    # modified from https://github.com/drov0/python-imagesearch/blob/master/python_imagesearch/imagesearch.py
+    import cv2
+    import numpy as np
+    import random
+    import time
+    import platform
+    import subprocess
+    import os
+    import mss
+
+    # https://python-mss.readthedocs.io/examples.html
+    sct = mss.mss()
+    im = sct.grab(sct.monitors[0])
+    # raw is bgra
+    # from PIL import Image
+    # img = Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX")
+    # img.show()
+    img = np.array(im)
+    img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+    # cv2.imshow("OpenCV", img)
+    template = cv2.imread(image, cv2.IMREAD_COLOR) 
+    # cv2.imshow("OpenCV", template)
+    if template is None:
+        raise FileNotFoundError('Image file not found: {}'.format(image))
+    res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+    
+    matches = []
+    # https://docs.opencv.org/3.4/d4/dc6/tutorial_py_template_matching.html
+    h, w, channels = template.shape
+    loc = np.where( res >= precision )
+    for pt in zip(*loc[::-1]):
+        cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
+        matches.append({'x':pt[0],'y':pt[1],'w':w,'h':h})
+    if show:
+        # cv2.imshow("OpenCV", img)
+        # cv2.imwrite('res.png',img)
+        # https://stackoverflow.com/a/43234001/2292993
+        Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).show()
+    # min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    # if max_val < precision:
+    #     return None
+    # return max_loc
+    return matches
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

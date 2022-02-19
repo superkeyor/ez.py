@@ -26,5 +26,6 @@
 
 # do exclude last, i.e., after include
 include README.rst
+include ez/firefox.xpi
 # recursive-include ez/timezone/pytz *
 # recursive-exclude ez/timezone/pytz *.pyc

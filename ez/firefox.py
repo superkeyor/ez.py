@@ -78,7 +78,7 @@ class Firefox:
 
     def __init__(
         self,
-        url = None,
+        url = 'https://bot.sannysoft.com/',
         headless: bool = False,
         wire: bool = False, # Use seleniumwire only when necessary, because it would slow things down a bit (not working if session is True)
         session: bool = False, # Use seleniumrequests for cross-session cookies (overrides wire)
@@ -343,6 +343,10 @@ class Firefox:
                     self.driver.switch_to.window(self.driver.window_handles[-1])
                     self.driver.close()
 
+        # https://akarin.dev/2022/02/15/disable-geckodriver-detection-with-addon/
+        # customized addon, xpi is zip
+        HERE=os.path.dirname(os.path.abspath(__file__))
+        self.driver.install_addon(os.path.join(HERE,'firefox.xpi'), temporary=True)
         if url is not None: self.driver.get(url)
 
     # -------------------------------------------------------- Public methods -------------------------------------------------------- #

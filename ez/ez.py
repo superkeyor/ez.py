@@ -4844,13 +4844,14 @@ def find(image, precision=0.8, show=False):
     sct = mss.mss()
     im = sct.grab(sct.monitors[0])
     # raw is bgra
-    # img = Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX")
-    # img.show()
+    # Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX").show()
     img = np.array(im)
     img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
     # cv2.imshow("OpenCV", img)
+    # Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).show()
     template = cv2.imread(image, cv2.IMREAD_COLOR) 
     # cv2.imshow("OpenCV", template)
+    # Image.fromarray(cv2.cvtColor(template, cv2.COLOR_BGR2RGB)).show()
     if template is None:
         raise FileNotFoundError('Image file not found: {}'.format(image))
     res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)

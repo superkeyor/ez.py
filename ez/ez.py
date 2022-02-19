@@ -4837,18 +4837,13 @@ def find(image, precision=0.8, show=False):
     # modified from https://github.com/drov0/python-imagesearch/blob/master/python_imagesearch/imagesearch.py
     import cv2
     import numpy as np
-    import random
-    import time
-    import platform
-    import subprocess
-    import os
     import mss
+    from PIL import Image
 
     # https://python-mss.readthedocs.io/examples.html
     sct = mss.mss()
     im = sct.grab(sct.monitors[0])
     # raw is bgra
-    # from PIL import Image
     # img = Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX")
     # img.show()
     img = np.array(im)

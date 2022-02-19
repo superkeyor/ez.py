@@ -99,7 +99,7 @@ num(string)
 isempty(s)
 Randomize(x), randomize(x) # Sets a randomization seed.
 RandomizeArray(list=[])   randomizearray(list=[])  # Shuffles a list in place.
-Random(a,b) random(a,b) # Returns a random integer N such that a <= N <= b.
+Random(a,b) # Returns a random integer N such that a <= N <= b.
 RandomChoice(seq), randomchoice(seq) # Returns a random element from sequence
 Permute(iterable=[]) permute(iterable=[]) # Returns permutations in a list
 
@@ -2400,7 +2400,6 @@ from random import seed as randomize
 from random import shuffle as RandomizeArray
 from random import shuffle as randomizearray
 from random import randint as Random
-from random import randint as random
 from random import choice as RandomChoice
 from random import choice as randomchoice
 def Permute(iterable=[]):
@@ -4575,14 +4574,14 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     else:
         return out
 
-def send(*keys,delay=0,times=1):
+def send(*keys,delay=[0.025,0.25],times=1):
     """
     KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT
     KEYS.COMMAND,'a'
     'abc', KEYS.ARROW_DOWN
     'abc\ndef\tg'
 
-    delay in seconds after each time
+    delay in seconds after each key press, 0, [0.025,0.25] <-random between
     times
     delay and times have to be named paramater, cannot be omitted as position parameter because of *keys
     """
@@ -4636,6 +4635,8 @@ def send(*keys,delay=0,times=1):
         u'\ue03d':Key.cmd,   # COMMAND
     }
 
+    if type(delay) not in [tuple,list]: delay=[delay,delay]
+
     for t in range(0,times):
         if (len(keys)==1) and (keys[0] not in remaps):
             keyboard.type(*keys)
@@ -4650,7 +4651,7 @@ def send(*keys,delay=0,times=1):
                     keyboard.release(remaps[k])
                 else:
                     keyboard.release(k)
-        sleep(delay)
+                sleep(random.uniform(delay[0],delay[1]))
 
 def move(x=None,y=None):
     """

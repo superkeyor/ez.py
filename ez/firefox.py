@@ -345,6 +345,7 @@ class Firefox:
 
         # https://akarin.dev/2022/02/15/disable-geckodriver-detection-with-addon/
         # customized addon, xpi is zip
+        # can be found at about:addons
         HERE=os.path.dirname(os.path.abspath(__file__))
         self.driver.install_addon(os.path.join(HERE,'firefox.xpi'), temporary=True)
         if url is not None: self.driver.get(url)
@@ -1037,6 +1038,17 @@ class Firefox:
                 self.senddelay(*value)
                 time.sleep(0.5)
                 self.submit()
+            @property
+            def _location(self):
+                # https://stackoverflow.com/a/59347207/2292993
+                # Assume there is equal amount of browser chrome on the left and right sides of the screen.
+                canvas_x_offset = self.parent.execute_script("return window.screenX + (window.outerWidth - window.innerWidth) / 2 - window.scrollX;")
+                # Assume all the browser chrome is on the top of the screen and none on the bottom.
+                canvas_y_offset = self.parent.execute_script("return window.screenY + (window.outerHeight - window.innerHeight) - window.scrollY;")
+                # Get the element center.
+                element_location = (self.rect["x"] + canvas_x_offset + self.rect["width"] / 2,
+                                    self.rect["y"] + canvas_y_offset + self.rect["height"] / 2)
+                return element_location
             def _moveclick(self,n=2):
                 """
                 n = -1
@@ -1062,6 +1074,8 @@ class Firefox:
                     ez.click(n)
             es.senddelay=partial(_senddelay, es)
             es.sendsubmit=partial(_sendsubmit, es)
+            es.location=partial(_location, es)
+            es.loc=es.location
             es.moveclick=partial(_moveclick, es)
             return es
         except:

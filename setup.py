@@ -67,6 +67,8 @@ setup(
     #     'test': ['coverage'],
     # },
 
+    # updated: https://stackoverflow.com/a/56689053/2292993
+    include_package_data=True,
     # package_data is a low-down, dirty lie. It is only used when building binary packages (python setup.py bdist ...) 
     # but not when building source packages (python setup.py sdist ...)
     # using MANIFEST.in will work both for binary and for source distributions

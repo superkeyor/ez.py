@@ -742,6 +742,7 @@ class Firefox:
             return False
 
     def switch_to_default(self):
+        # default is the first frame (frame 0)?
         self.driver.switch_to.default_content()
         return True
 
@@ -761,6 +762,33 @@ class Firefox:
             print('switch_to_frame', e)
 
             return False
+
+    def frames(self):
+        self.driver.switch_to.default_content()
+        time.sleep(1)
+        n = self.driver.execute_script('return window.length')
+        res = []
+        for i in range(0,n+1):
+            self.driver.switch_to.default_content()
+            time.sleep(1)
+            self.driver.switch_to.frame(i)
+            name = self.driver.execute_script('return window.name')
+            res.append({'i':i,'name':name})
+        return res
+
+    def find_frame(self,by,key,*args,**kwargs):
+        # first frame is 0
+        self.driver.switch_to.default_content()
+        time.sleep(1)
+        n = self.driver.execute_script('return window.length')
+        for i in range(0,n+1):
+            self.driver.switch_to.default_content()
+            time.sleep(1)
+            self.driver.switch_to.frame(i)
+            if self.find(by,key) is not None:
+                name = self.driver.execute_script('return window.name')
+                return({'i':i,'name':name})
+        return False
 
     # returns x, y, w, h, max_x, max_y
     def get_element_coordinates(self, element) -> Tuple[int, int, int, int, int, int]:
@@ -872,9 +900,9 @@ class Firefox:
 
     def execute_script(self, script: str, element: Optional[WebElement] = None) -> bool:
         try:
-            self.driver.execute_script(script, element) if element else self.driver.execute_script(script)
+            return self.driver.execute_script(script, element) if element else self.driver.execute_script(script)
 
-            return True
+            # return True
         except Exception as e:
             print('{}: {} - {}'.format(inspect.stack()[2][3], script, e))
 

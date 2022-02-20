@@ -20,7 +20,7 @@ packages = find_packages()
 # setup.py upload depreciated -> twine
 install_requires=['twine','pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'gmail', 'O365', 'chardet', 'psutil',
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
-                 'requests>=2.26.0', 'selenium-requests', 'selenium-wire', 'selenium<4', 'noraise', 'fake_useragent', 'tldextract',
+                 'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 'noraise', 'fake_useragent', 'tldextract',
                  'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse',
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
                  'pyarrow', 'cachelib', 'Pillow', 'mss', 'opencv-python']

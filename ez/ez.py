@@ -4822,13 +4822,13 @@ def size():
     sct=mss.mss()
     return sct.monitors
 
-def find(image, precision=0.8, show=False):
+def find(image, area=None, p=0.8, show=False):
     '''
     Searchs for an image on the screen
-
-    input :
-    image : path to the image file (see opencv imread for supported types)
-    precision : the higher, the lesser tolerant and fewer false positives are found default is 0.8
+    
+    image: path to the image file (see opencv imread for supported types)
+    area: {'left': -1440, 'top': 0, 'width': 4000, 'height': 1080}
+    p: precision the higher, the lesser tolerant and fewer false positives are found default is 0.8
     show: show all matches (highlighted)
 
     returns :
@@ -4842,7 +4842,8 @@ def find(image, precision=0.8, show=False):
 
     # https://python-mss.readthedocs.io/examples.html
     sct = mss.mss()
-    im = sct.grab(sct.monitors[0])
+    if area is None: area=sct.monitors[0]
+    im = sct.grab(area)
     # raw is bgra
     # Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX").show()
     img = np.array(im)
@@ -4859,17 +4860,17 @@ def find(image, precision=0.8, show=False):
     matches = []
     # https://docs.opencv.org/3.4/d4/dc6/tutorial_py_template_matching.html
     h, w, channels = template.shape
-    loc = np.where( res >= precision )
+    loc = np.where( res >= p )
     for pt in zip(*loc[::-1]):
         cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
-        matches.append({'x':pt[0],'y':pt[1],'w':w,'h':h})
+        matches.append({'x':pt[0],'y':pt[1],'w':w,'h':h,'p':res[pt[1],pt[0]]})
     if show:
         # cv2.imshow("OpenCV", img)
         # cv2.imwrite('res.png',img)
         # https://stackoverflow.com/a/43234001/2292993
         Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).show()
     # min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    # if max_val < precision:
+    # if max_val < p:
     #     return None
     # return max_loc
     return matches

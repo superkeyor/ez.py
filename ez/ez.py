@@ -1300,10 +1300,14 @@ def execute(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode
             print(('\nCommand saved at '+save+'\n'))
 
         if os.name == 'nt' or platform.system() == 'Windows':
+            import tempfile
+            tmpfd, tmpPath = tempfile.mkstemp(suffix='.bat')
+            with os.fdopen(tmpfd, 'w') as tmp:
+                tmp.write('@echo off'+'\n\n'+cmd.replace('"','\"').replace("'","\'")+'\n\n')                
             if output:
-                subprocess.call(cmd, shell=True, stderr=subprocess.STDOUT)
+                subprocess.call(tmpPath, shell=True, stderr=subprocess.STDOUT)
             else:
-                subprocess.call(cmd, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
+                subprocess.call(tmpPath, shell=True, stdout=open(os.devnull, "w"), stderr=subprocess.STDOUT)
         else:
             if output:
                 # subprocess.call('/bin/'+('tcsh -xef' if shell in ['tcsh'] else shell)+' -c "'+cmd+'"'+cmdSuffix, shell=True, executable="/bin/bash") 

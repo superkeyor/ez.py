@@ -87,7 +87,7 @@ class Firefox:
         service_log_path: Optional[str] = os.devnull,
         log_path: Optional[str] = os.devnull,
         cookies_folder_path: Optional[str] = None, # not working? Use session instead
-        extensions_folder_path: Optional[str] = None, # ~/Library/Application Support/Firefox/Profiles/h7d5u192.default-esr/extensions
+        extensions_folder_path: Optional[str] = None, # about:support  ~/Library/Application Support/Firefox/Profiles/h7d5u192.default-esr/extensions
         host: Optional[str] = None,
         port: Optional[int] = None,
         cookies_id: Optional[str] = None,
@@ -355,6 +355,12 @@ class Firefox:
         if url is not None: self.driver.get(url)
 
     # -------------------------------------------------------- Public methods -------------------------------------------------------- #
+    def install(self,xpi,signed=True):
+        """
+        signed: the package has been signed or not
+        """
+        self.driver.install_addon(xpi, temporary=(not signed))
+
     def wait(self,seconds=None):
         if seconds is None: seconds=self.wait_ajax
         time.sleep(seconds)

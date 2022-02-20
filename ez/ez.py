@@ -159,6 +159,15 @@ def ShellDebug(debugMode=1):
     _DEBUG_MODE = debugMode
 debug = ShellDebug    
 
+# secretes
+try: # local
+    from . pysecrets import *
+except:
+    try: # heroku
+        from fz.pysecrets import *
+    except:
+        pass
+
 def clorox(path='~/Dropbox',delete=False):
     """
     Clean up certain files. Why clorox? -My favorite(?) cleaning product brand.
@@ -4413,7 +4422,6 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
         # sys.path.insert(0, HERE)
         
         # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-        from pysecrets import EMAIL, PASSWORD
         gclient = GMail(EMAIL,PASSWORD)
     except:
         gclient = GMail(email,password)
@@ -4444,7 +4452,6 @@ def o365auth(id=None, secret=None):
     Done!
     """
     try:
-        from pysecrets import O365ID, O365SECRET
         credentials = (O365ID, O365SECRET)
     except:
         credentials = (id, secret)
@@ -4511,7 +4518,6 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     if what=='usrpwd': what='item'
 
     try:
-        from pysecrets import EMAIL, PASSWORD
         PASSWORD = PASSWORD + '+'
     except:
         EMAIL = ''; PASSWORD=''
@@ -4903,8 +4909,7 @@ class GSheet():
         try:
             import gspread
             # not sure where I got these json file (maybe downloaded from google?)
-            from pysecrets import GSHEET_KEY as service_account_json
-            client = gspread.service_account_from_dict(service_account_json)
+            client = gspread.service_account_from_dict(GSHEET_KEY)
         except:
             pass
 
@@ -5036,13 +5041,8 @@ class GSheet():
 ####************************************************************************************************
                                      ####*Dropbox*####
 ####************************************************************************************************
-try:
-    import dropbox, os
-    # generated on the webpage https://www.dropbox.com/developers/apps/info/7qo8ukl3pshubvo
-    # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#
-    from pysecrets import DROPBOX_ACCESS_TOKEN
-except:
-    pass
+import dropbox
+# https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#
 
 def upload(localfile,cloudfile=None):
     # shortcut if only one cloudpath passed in, assuming current local working directory

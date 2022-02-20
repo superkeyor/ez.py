@@ -3,7 +3,7 @@
 # e.click()
 # e.send(KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT)
 # e.send(KEYS.COMMAND,'a')
-# e.submit(), senddelay(), sendsubmit()
+# e.submit(), e.sendsubmit()
 # f.find_all(By.CLASS_NAME,'d2l-datetime-selector-date-input.d2l-edit')  
 # https://stackoverflow.com/questions/17000703/is-string-matches-supported-in-selenium-webdriver-2
 # https://stackoverflow.com/questions/22436789/xpath-ends-with-does-not-work
@@ -1020,62 +1020,50 @@ class Firefox:
                 find_func((by, key))
             )
             # jerry: alias enhanced
-            es.send=es.send_keys
+            # es.send=es.send_keys
             # https://stackoverflow.com/a/54662690/2292993
             from functools import partial
-            def _senddelay(
+            def _send(
                 self,
                 keys: str,
-                min_delay: float = 0.025,
-                max_delay: float = 0.25
+                delay=[0.025,0.25],
             ) -> None:
+                # delay in seconds after each key press, 0, [0.025,0.25] <-random between
                 import random
+                if type(delay) not in [tuple,list]: delay=[delay,delay]
                 for key in keys:
                     self.send_keys(key)
-                    time.sleep(random.uniform(min_delay,max_delay))
+                    time.sleep(random.uniform(delay[0],delay[1]))
             def _sendsubmit(self,*value):
                 # send keys and then submit
-                self.senddelay(*value)
+                self.send(*value)
                 time.sleep(0.5)
                 self.submit()
             @property
-            def _location(self):
+            def _area(self):
                 # https://stackoverflow.com/a/59347207/2292993
                 # Assume there is equal amount of browser chrome on the left and right sides of the screen.
                 canvas_x_offset = self.parent.execute_script("return window.screenX + (window.outerWidth - window.innerWidth) / 2 - window.scrollX;")
                 # Assume all the browser chrome is on the top of the screen and none on the bottom.
                 canvas_y_offset = self.parent.execute_script("return window.screenY + (window.outerHeight - window.innerHeight) - window.scrollY;")
                 # Get the element center.
-                element_location = (self.rect["x"] + canvas_x_offset + self.rect["width"] / 2,
-                                    self.rect["y"] + canvas_y_offset + self.rect["height"] / 2)
-                return element_location
-            def _moveclick(self,n=2):
+                element_area = (self.rect["x"] + canvas_x_offset,
+                                self.rect["y"] + canvas_y_offset,
+                                self.rect["width"],
+                                self.rect["height"])
+                return element_area
+            def _moveclick(self,radius=5,n=2,wait=0.25,*args,**kwargs):
                 """
-                n = -1
-                    use selenium method
                 n could be 0; 2 in case the first click only gets the focus
-                    use python automation
                 """
-                if n==-1:
-                    # self is the element, self.parent is driver
-                    actions = ActionChains(self.parent)
-                    actions.move_to_element(self).click().perform()
-                else:
-                    # https://stackoverflow.com/a/59347207/2292993
-                    # Assume there is equal amount of browser chrome on the left and right sides of the screen.
-                    canvas_x_offset = self.parent.execute_script("return window.screenX + (window.outerWidth - window.innerWidth) / 2 - window.scrollX;")
-                    # Assume all the browser chrome is on the top of the screen and none on the bottom.
-                    canvas_y_offset = self.parent.execute_script("return window.screenY + (window.outerHeight - window.innerHeight) - window.scrollY;")
-                    # Get the element center.
-                    element_location = (self.rect["x"] + canvas_x_offset + self.rect["width"] / 2,
-                                        self.rect["y"] + canvas_y_offset + self.rect["height"] / 2)
-                    import ez
-                    ez.move(element_location)
-                    ez.click(n)
-            es.senddelay=partial(_senddelay, es)
+                # # self is the element, self.parent is driver
+                # actions = ActionChains(self.parent)
+                # actions.move_to_element(self).click().perform()
+                import ez
+                ez.moveclick(self.area, radius, n, wait, *args, **kwargs)
+            es.send=partial(_send, es)
             es.sendsubmit=partial(_sendsubmit, es)
-            es.location=partial(_location, es)
-            es.loc=es.location
+            es.area=partial(_area, es)
             es.moveclick=partial(_moveclick, es)
             return es
         except:

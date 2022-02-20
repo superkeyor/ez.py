@@ -4413,7 +4413,7 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
         # sys.path.insert(0, HERE)
         
         # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-        from . pysecrets import EMAIL, PASSWORD
+        from pysecrets import EMAIL, PASSWORD
         gclient = GMail(EMAIL,PASSWORD)
     except:
         gclient = GMail(email,password)
@@ -4444,7 +4444,7 @@ def o365auth(id=None, secret=None):
     Done!
     """
     try:
-        from . pysecrets import O365ID, O365SECRET
+        from pysecrets import O365ID, O365SECRET
         credentials = (O365ID, O365SECRET)
     except:
         credentials = (id, secret)
@@ -4511,7 +4511,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     if what=='usrpwd': what='item'
 
     try:
-        from . pysecrets import EMAIL, PASSWORD
+        from pysecrets import EMAIL, PASSWORD
         PASSWORD = PASSWORD + '+'
     except:
         EMAIL = ''; PASSWORD=''
@@ -4900,10 +4900,13 @@ class GSheet():
     .ws (worksheet), .wb (workbook) return the orginal google sheet/sheets objects
     """
     def __init__(self,url,sheet_name=None):
-        import gspread
-        # not sure where I got these json file (maybe downloaded from google?)
-        from . pysecrets import GSHEET_KEY as service_account_json
-        client = gspread.service_account_from_dict(service_account_json)
+        try:
+            import gspread
+            # not sure where I got these json file (maybe downloaded from google?)
+            from pysecrets import GSHEET_KEY as service_account_json
+            client = gspread.service_account_from_dict(service_account_json)
+        except:
+            pass
 
         sheets = client.open_by_url(url)
         if sheet_name is None:
@@ -5037,7 +5040,7 @@ try:
     import dropbox, os
     # generated on the webpage https://www.dropbox.com/developers/apps/info/7qo8ukl3pshubvo
     # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#
-    from . pysecrets import DROPBOX_ACCESS_TOKEN
+    from pysecrets import DROPBOX_ACCESS_TOKEN
 except:
     pass
 

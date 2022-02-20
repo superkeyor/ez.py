@@ -1040,8 +1040,7 @@ class Firefox:
                 self.send(*value)
                 time.sleep(0.5)
                 self.submit()
-            @property
-            def _area(self):
+            def _getarea(self):
                 # https://stackoverflow.com/a/59347207/2292993
                 # Assume there is equal amount of browser chrome on the left and right sides of the screen.
                 canvas_x_offset = self.parent.execute_script("return window.screenX + (window.outerWidth - window.innerWidth) / 2 - window.scrollX;")
@@ -1061,13 +1060,13 @@ class Firefox:
                 # actions = ActionChains(self.parent)
                 # actions.move_to_element(self).click().perform()
                 import ez
-                ez.moveclick(self.area, radius, n, wait, *args, **kwargs)
+                ez.moveclick(self.getarea(), radius, n, wait, *args, **kwargs)
             def _movesend(self,keys,delay=[0.025,0.25]):
                 self.moveclick()
                 self.send(keys,delay)
             es.send=partial(_send, es)
             es.sendsubmit=partial(_sendsubmit, es)
-            es.area=partial(_area, es)
+            es.getarea=partial(_getarea, es)
             es.moveclick=partial(_moveclick, es)
             es.movesend=partial(_movesend, es)
             return es

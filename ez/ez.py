@@ -4889,6 +4889,214 @@ def size():
     return sct.monitors
 
 ####************************************************************************************************
+                                     ####*GSheet*####
+####************************************************************************************************
+# the first place to check authorization is go to the following gspread link:
+# https://gspread.readthedocs.io/en/latest/oauth2.html#enable-api-access
+# must grant permission to service account (pysheet@python-243720.iam.gserviceaccount.com) 
+# as editor of each individual google sheet mannually
+class GSheet():
+    """
+    .ws (worksheet), .wb (workbook) return the orginal google sheet/sheets objects
+    """
+    def __init__(self,url,sheet_name=None):
+        import gspread
+        # not sure where I got these json file (maybe downloaded from google?)
+        from . pysecret import GSHEET_KEY as service_account_json
+        client = gspread.service_account_from_dict(service_account_json)
+
+        sheets = client.open_by_url(url)
+        if sheet_name is None:
+            sheet = sheets.sheet1
+        else:
+            sheet = sheets.worksheet(sheet_name)
+        self.wb = sheets
+        self.ws = sheet
+
+    @property
+    def title(self):
+        return self.ws.title
+    
+    @property
+    def url(self):
+        return self.ws.url
+
+    @property
+    def Ncol(self):
+        """
+        physical n col, may be blank
+        """
+        return self.ws.col_count
+
+    @property
+    def Nrow(self):
+        return self.ws.row_count
+
+    @property
+    def columns(self):
+        try:
+            return self.ws.row_values(1)
+        except:
+            return []
+
+    @property
+    def values(self):
+        """as list of list"""
+        return self.ws.get_all_values()
+    
+    @property
+    def records(self):
+        """as dict"""
+        return self.ws.get_all_records()    
+
+    @property
+    def nrow(self):
+        values = self.values
+        return len(values)
+
+    @property
+    def ncol(self):
+        values = self.values
+        tmp = [len(r) for r in values]
+        if len(tmp)==0:
+            return 0
+        else:
+            import numpy as np
+            return np.max(tmp)
+    
+    def clear(self,range):
+        # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Spreadsheet.values_clear
+        # sheets method
+        range = f"'{self.title}'!{range}"
+        return self.wb.values_clear(range)
+
+    def getval(self,*args,**kwargs):
+        """
+        range could be A:A, 2:2
+        returns a list of list
+        """
+        # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.get
+        return self.ws.get(*args, **kwargs)
+    
+    def getc(self,col,*args,**kwargs):
+        """
+        col int, 1 based
+        returns a list
+        """
+        # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.get
+        return self.ws.col_values(col, *args, **kwargs)
+
+    def getr(self,row,*args,**kwargs):
+        """
+        row int, 1 based
+        returns a list
+        """
+        # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.get
+        return self.ws.row_values(row, *args, **kwargs)
+
+    def insert(self,values,row=1,value_input_option="USER_ENTERED"):
+        """
+        values (list) – List of list. eg, [[11,12],[21,22]]
+        index (int) – Start row to update (one-based). Defaults to 1 (one).
+        value_input_option: "RAW", "USER_ENTERED"
+        """
+        # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.insert_rows
+        return self.ws.insert_rows(values=values, row=row, value_input_option=value_input_option)
+
+    def update(self,range,values,value_input_option="USER_ENTERED"):
+        # Note that update range can be bigger than values array: update('A2:B4', [[42], [43]]) -> Updates A2 and A3 with values 42 and 43
+        # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.update
+        return self.ws.update(range,values,value_input_option=value_input_option)
+
+    def append(self,values,value_input_option="USER_ENTERED"):
+        """append to the end of data"""
+        # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.append_rows
+        return self.ws.update(f'A{self.nrow+1}',values,value_input_option=value_input_option)
+
+# sheet = client.open("Master-Letter for Jerry's Teaching Application").sheet1
+# sheets = client.open_by_url('https://docs.google.com/spreadsheets/d/1VexrXFPEdh5oAFP9CuhpsRCVqiHJhbAd_p-FL3kiu0Q/edit')
+# sheets = client.open_by_url(gsheeturl)
+# sheet = sheets.worksheet("Transactions")
+
+# API:
+# https://gspread.readthedocs.io/en/latest/api.html#models
+# a row does not have to include all columns. Just like when you type in GSheet. 
+# The rest of columns that are not included will not be changed by append/insert.
+# USER_ENTERED
+# https://stackoverflow.com/questions/27125967/google-spreadsheets-gspread-append-row-issue
+# https://gspread.readthedocs.io/en/latest/api.html?highlight=append#gspread.models.Worksheet.insert_row
+# https://github.com/burnash/gspread/issues/524
+# sheet.append_row(line,'USER_ENTERED')
+# sheet.update_acell('G2', ''); sheet.update_acell('H2', ''); sheet.update_acell('I2', '')
+# sheet.insert_row(line,index=2,value_input_option='USER_ENTERED')
+
+####************************************************************************************************
+                                     ####*Dropbox*####
+####************************************************************************************************
+try:
+    import dropbox, os
+    # generated on the webpage https://www.dropbox.com/developers/apps/info/7qo8ukl3pshubvo
+    # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#
+    from . pysecret import DROPBOX_ACCESS_TOKEN
+except:
+    pass
+
+def upload(localfile,cloudfile=None):
+    # shortcut if only one cloudpath passed in, assuming current local working directory
+    # e.g., '/Investment/fz/fz/fz/data_td.json'
+    if cloudfile is None:
+        path,file= os.path.split(localfile)
+        cloudfile=localfile
+        localfile=file
+    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    with open(localfile, "rb") as f:
+        dbx.files_upload(f.read(),cloudfile,dropbox.files.WriteMode.overwrite,mute=True)
+        # print(cloudfile+' upload done.')
+
+def download(cloudfile,localfile=None):
+    # shortcut if only one cloudpath passed in, assuming current local working directory
+    # e.g., '/Investment/fz/fz/fz/data_td.json'
+    if localfile is None:
+        path,file= os.path.split(cloudfile)
+        localfile=file
+    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    dbx.files_download_to_file(localfile,cloudfile)
+    return localfile
+
+def _files_list_folder_all(dbx,folder,recursive=False,limit=2000):
+    cur = dbx.files_list_folder(folder,recursive=recursive,limit=limit)
+    items = cur.entries
+    while cur.has_more==True:
+        cur = dbx.files_list_folder_continue(cur.cursor)
+        items.extend(cur.entries)
+    return items
+
+def lsfile(folder,recursive=False):
+    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    items = _files_list_folder_all(dbx,folder,recursive=recursive,limit=2000)
+    files = []
+    for item in items:
+        if type(item)==dropbox.files.FolderMetadata: continue
+        # e.g., '/Investment/fz/fz/fz/data_td.json', 'data_td.json'
+        files.append([item.path_display,item.name])
+    return files
+
+def lsfolder(folder,recursive=False):
+    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    items = _files_list_folder_all(dbx,folder,recursive=recursive,limit=2000)
+    files = []
+    for item in items:
+        if type(item)==dropbox.files.FileMetadata: continue
+        # e.g., '/Investment/fz/fz/fz/firefox', 'firefox'
+        files.append([item.path_display,item.name])
+    return files
+
+def delfilefolder(file):
+    # Delete the file or folder at a given path. If the path is a folder, all its contents will be deleted too. A successful response indicates that the file or folder was deleted
+    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    return dbx.files_delete(file)
+
+####************************************************************************************************
                                      ####*OrderedSet*####
 ####************************************************************************************************
 """

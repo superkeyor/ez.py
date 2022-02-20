@@ -760,12 +760,13 @@ class Firefox:
         time.sleep(1)
         n = self.driver.execute_script('return window.length')
         res = []
-        for i in range(0,n+1):
+        for i in range(0,n):
             self.driver.switch_to.default_content()
             time.sleep(1)
             self.driver.switch_to.frame(i)
             name = self.driver.execute_script('return window.name')
             res.append({'i':i,'name':name})
+        self.driver.switch_to.default_content()
         return res
 
     def find_frame(self,by,key,*args,**kwargs):
@@ -773,13 +774,15 @@ class Firefox:
         self.driver.switch_to.default_content()
         time.sleep(1)
         n = self.driver.execute_script('return window.length')
-        for i in range(0,n+1):
+        for i in range(0,n):
             self.driver.switch_to.default_content()
             time.sleep(1)
             self.driver.switch_to.frame(i)
             if self.find(by,key,*args,**kwargs) is not None:
                 name = self.driver.execute_script('return window.name')
+                self.driver.switch_to.default_content()
                 return({'i':i,'name':name})
+        self.driver.switch_to.default_content()
         return False
 
     # returns x, y, w, h, max_x, max_y

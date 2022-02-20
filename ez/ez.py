@@ -4836,8 +4836,8 @@ def moveclick(location, radius=5, n=2, wait=0.25, *args, **kwargs):
         xx,yy=location[0],location[1]
     else:
         x,y,w,h=location[0],location[1],location[2],location[3]
-        xx = x + randint(w/2-radius, w/2+radius)
-        yy = y + randint(h/2-radius, h/2+radius)
+        xx = x + randint(int(w/2-radius), int(w/2+radius))
+        yy = y + randint(int(h/2-radius), int(h/2+radius))
     _move((xx, yy), a=None, *args, **kwargs)
     time.sleep(wait)
     from pynput.mouse import Button, Controller

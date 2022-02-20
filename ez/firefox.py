@@ -1028,6 +1028,7 @@ class Firefox:
                 keys: str,
                 delay=[0.025,0.25],
             ) -> None:
+                # keys could only be single str with many chars
                 # delay in seconds after each key press, 0, [0.025,0.25] <-random between
                 import random
                 if type(delay) not in [tuple,list]: delay=[delay,delay]
@@ -1061,10 +1062,14 @@ class Firefox:
                 # actions.move_to_element(self).click().perform()
                 import ez
                 ez.moveclick(self.area, radius, n, wait, *args, **kwargs)
+            def _movesend(self,keys,delay=[0.025,0.25]):
+                self.moveclick()
+                self.send(keys,delay)
             es.send=partial(_send, es)
             es.sendsubmit=partial(_sendsubmit, es)
             es.area=partial(_area, es)
             es.moveclick=partial(_moveclick, es)
+            es.movesend=partial(_movesend, es)
             return es
         except:
             return None

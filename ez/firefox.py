@@ -254,7 +254,7 @@ class Firefox:
             from seleniumrequests import Firefox
             self.driver = Firefox(
                 firefox_profile=profile,
-                firefox_options=options,
+                options=options,
                 service_log_path=service_log_path,
                 log_path=log_path,
                 firefox_binary=ff_binary,
@@ -264,7 +264,7 @@ class Firefox:
             if not wire:
                 self.driver = webdriver.Firefox(
                     firefox_profile=profile,
-                    firefox_options=options,
+                    options=options,
                     service_log_path=service_log_path,
                     log_path=log_path,
                     firefox_binary=ff_binary,
@@ -276,7 +276,7 @@ class Firefox:
                 }
                 self.driver = webdriver.Firefox(
                     firefox_profile=profile,
-                    firefox_options=options,
+                    options=options,
                     seleniumwire_options=seleniumwire_options,
                     service_log_path=service_log_path,
                     log_path=log_path,
@@ -728,17 +728,13 @@ class Firefox:
     def move_to_element(self, element: Optional[WebElement]) -> bool:
         if not element:
             print('move_to_element: None element passed')
-
             return False
-
         try:
             actions = ActionChains(self.driver)
             actions.move_to_element(element).perform()
-
             return True
         except Exception as e:
             print('move_to_element', e)
-
             return False
 
     def switch_to_default(self):
@@ -749,18 +745,14 @@ class Firefox:
     def switch_to_frame(self, iframe: Optional[WebElement]) -> bool:
         if not iframe:
             print('switch_to_frame: None frame passed')
-
             return False
-
         try:
             self.driver.switch_to.default_content()
             time.sleep(1)
             self.driver.switch_to.frame(iframe)
-
             return True
         except Exception as e:
             print('switch_to_frame', e)
-
             return False
 
     def frames(self):
@@ -785,7 +777,7 @@ class Firefox:
             self.driver.switch_to.default_content()
             time.sleep(1)
             self.driver.switch_to.frame(i)
-            if self.find(by,key) is not None:
+            if self.find(by,key,*args,**kwargs) is not None:
                 name = self.driver.execute_script('return window.name')
                 return({'i':i,'name':name})
         return False

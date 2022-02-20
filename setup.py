@@ -23,7 +23,7 @@ install_requires=['twine','pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 'noraise', 'fake_useragent', 'tldextract',
                  'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse',
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
-                 'pyarrow', 'cachelib', 'Pillow', 'mss', 'opencv-python']
+                 'pyarrow', 'cachelib', 'Pillow', 'mss', 'opencv-python', 'SpeechRecognition']
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30

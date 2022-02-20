@@ -1061,8 +1061,8 @@ class Firefox:
                 # actions.move_to_element(self).click().perform()
                 import ez
                 ez.moveclick(self.getarea(), radius, n, wait, *args, **kwargs)
-            def _movesend(self,keys,delay=[0.025,0.25],wait=0.25):
-                self.moveclick()
+            def _movesend(self,keys,delay=[0.025,0.25],radius=5,n=2,wait=0.25):
+                self.moveclick(radius,n,wait)
                 import time
                 time.sleep(wait)
                 self.send(keys,delay)

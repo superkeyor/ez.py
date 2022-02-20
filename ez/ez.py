@@ -4902,7 +4902,7 @@ class GSheet():
     def __init__(self,url,sheet_name=None):
         import gspread
         # not sure where I got these json file (maybe downloaded from google?)
-        from . pysecret import GSHEET_KEY as service_account_json
+        from . pysecrets import GSHEET_KEY as service_account_json
         client = gspread.service_account_from_dict(service_account_json)
 
         sheets = client.open_by_url(url)
@@ -5037,7 +5037,7 @@ try:
     import dropbox, os
     # generated on the webpage https://www.dropbox.com/developers/apps/info/7qo8ukl3pshubvo
     # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#
-    from . pysecret import DROPBOX_ACCESS_TOKEN
+    from . pysecrets import DROPBOX_ACCESS_TOKEN
 except:
     pass
 

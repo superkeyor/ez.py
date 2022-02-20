@@ -4825,11 +4825,22 @@ def _move(b, a=None, deviation=25, delay=2, rate=1000, draw=False):
         sleep(duration/len(mouse_points))
         mouse.position=coord
 
-def moveclick(location, radius=5, n=2, wait=0.25, *args, **kwargs):
+def moveclick(location, radius=5, n=2, wait=0.25, deviation=25, delay=2, rate=1000, draw=False, *args, **kwargs):
     '''
     location: (x,y) or [x,y], [x,y,w,h,p] or [x,y,w,h]
     radius: works only if location is an area. if an area is 100*100 with an radius of 5 it may be at 46,50 the first time and then 55,53 etc
     wait: seconds before click after move to the location
+    deviation (int)
+        deviation controls how straight the lines drawn my the cursor
+        are. Zero deviation gives straight lines
+        Accuracy is a percentage of the displacement of the mouse from point A to
+        B, which is given as maximum control point deviation.
+        Naturally, deviation of 10 (10%) gives maximum control point deviation
+        of 10% of magnitude of displacement of mouse from point A to B, 
+        and a minimum of 5% (int(deviation / 2))    
+    delay: an int multiplier for speed. The lower, the faster. 1 is fastest.
+    rate: another param related to speed, total travel time in seconds = distance/rate. The higher, the faster.
+    draw: boolean deciding whether or not to show the curve the mouse makes
     '''
     from random import randint
     if len(location)==2:
@@ -4838,7 +4849,7 @@ def moveclick(location, radius=5, n=2, wait=0.25, *args, **kwargs):
         x,y,w,h=location[0],location[1],location[2],location[3]
         xx = x + randint(int(w/2-radius), int(w/2+radius))
         yy = y + randint(int(h/2-radius), int(h/2+radius))
-    _move((xx, yy), a=None, *args, **kwargs)
+    _move((xx, yy), a=None, deviation=deviation, delay=delay, rate=rate, draw=draw, *args, **kwargs)
     import time
     time.sleep(wait)
     from pynput.mouse import Button, Controller

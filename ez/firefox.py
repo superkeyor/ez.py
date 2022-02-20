@@ -1031,6 +1031,7 @@ class Firefox:
                 self,
                 keys: str,
                 delay=[0.025,0.25],
+                n=None
             ) -> None:
                 # keys could only be single str with many chars
                 # delay in seconds after each key press, 0, [0.025,0.25] <-random between
@@ -1039,7 +1040,7 @@ class Firefox:
                 for key in keys:
                     self.send_keys(key)
                     time.sleep(random.uniform(delay[0],delay[1]))
-            def _sendsubmit(self,*value):
+            def _sendsubmit(self,*value,n=None):
                 # send keys and then submit
                 self.send(*value)
                 time.sleep(0.5)

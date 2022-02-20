@@ -4782,8 +4782,7 @@ def move2area(area, radius=5, *args, **kwargs):
     move((x_coord, y_coord), a=None, *args, **kwargs)
 
 def moveclick2area(area, radius=5, n=1, *args, **kwargs):
-    x,y,w,h=area[0],area[1],area[2],area[3]
-    move2area(x, y, w, h, radius, *args, **kwargs)
+    move2area(area, radius, *args, **kwargs)
     click(n)
 
 def moveclick(xy=None,n=2,*args,**kwargs):

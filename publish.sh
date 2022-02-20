@@ -33,7 +33,7 @@ git commit -m 'update'
 git push origin master 
 
 echo 'Waiting pypi to update...'
-sleep 30
+sleep 3
 # /Library/Frameworks/Python.framework/Versions/2.7/bin/pip install $package --upgrade
 source ~/.bash_profile
 pip install $package --upgrade --no-cache-dir --disable-pip-version-check

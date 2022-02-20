@@ -4769,18 +4769,20 @@ def move(b, a=None, deviation=25, delay=2, rate=1000, draw=False):
         sleep(duration/len(mouse_points))
         mouse.position=coord
 
-def move2area(x, y, w, h, radius=5, *args, **kwargs):
+def move2area(area, radius=5, *args, **kwargs):
     '''
     move to the center of an area
-    x and y are top left corner
+    area: [x,y,w,h,p] or [x,y,w,h]
     radius: if an area is 100*100 with an radius of 5 it may be at 46,50 the first time and then 55,53 etc
     '''
     from random import randint
+    x,y,w,h=area[0],area[1],area[2],area[3]
     x_coord = x + randint(w/2-radius, w/2+radius)
     y_coord = y + randint(h/2-radius, h/2+radius)
     move((x_coord, y_coord), a=None, *args, **kwargs)
 
-def moveclick2area(x, y, w, h, radius=5, n=1, *args, **kwargs):
+def moveclick2area(area, radius=5, n=1, *args, **kwargs):
+    x,y,w,h=area[0],area[1],area[2],area[3]
     move2area(x, y, w, h, radius, *args, **kwargs)
     click(n)
 
@@ -4827,12 +4829,12 @@ def find(image, area=None, p=0.8, show=False):
     Searchs for an image on the screen
     
     image: path to the image file (see opencv imread for supported types)
-    area: {'left': -1440, 'top': 0, 'width': 4000, 'height': 1080}
+    area: [x,y,w,h]
     p: precision the higher, the lesser tolerant and fewer false positives are found default is 0.8
     show: show all matches (highlighted)
 
     returns :
-    [{'x','y','w','h'}] or [] if not found
+    [[x,y,w,h]] or [] if not found
     '''
     # modified from https://github.com/drov0/python-imagesearch/blob/master/python_imagesearch/imagesearch.py
     import cv2
@@ -4842,7 +4844,10 @@ def find(image, area=None, p=0.8, show=False):
 
     # https://python-mss.readthedocs.io/examples.html
     sct = mss.mss()
-    if area is None: area=sct.monitors[0]
+    if area is None: 
+        area=sct.monitors[0]
+    else:
+        area={'left': area[0], 'top': area[1], 'width': area[2], 'height': area[3]}
     im = sct.grab(area)
     # raw is bgra
     # Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX").show()
@@ -4863,7 +4868,7 @@ def find(image, area=None, p=0.8, show=False):
     loc = np.where( res >= p )
     for pt in zip(*loc[::-1]):
         cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
-        matches.append({'x':pt[0],'y':pt[1],'w':w,'h':h,'p':res[pt[1],pt[0]]})
+        matches.append([ pt[0],pt[1],w,h,res[pt[1],pt[0]] ])
     if show:
         # cv2.imshow("OpenCV", img)
         # cv2.imwrite('res.png',img)

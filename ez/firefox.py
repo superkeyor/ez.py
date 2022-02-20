@@ -104,7 +104,7 @@ class Firefox:
         user_agent: Optional[str] = None,  # random
         load_proxy_checker_website: bool = False,
         disable_images: bool = False,
-        auto_close: bool = True, # no autoclose for keyboard maestro
+        auto_close: bool = True, # no auto_close for keyboard maestro
         *args, **kwargs
     ):
         '''EITHER PROVIDE 'cookies_id' OR  'cookies_folder_path'.
@@ -119,7 +119,7 @@ class Firefox:
            appropriate amount of time for the page or a part of page to load; so there is a module named
            expected_conditions.
         '''
-        self.autoclose=autoclose  # for destructor
+        self.auto_close=auto_close  # for destructor
         # force headless on linux
         if platform.system()=='Linux':
             headless=True
@@ -967,8 +967,8 @@ class Firefox:
     # --------------------------------------------------------- Destructor ----------------------------------------------------------- #
 
     def __del__(self):
-        # no autoclose for keyboard maestro
-        if self.autoclose: 
+        # no auto_close for keyboard maestro
+        if self.auto_close: 
             try:
                 # prevent double quit if already manually called quit
                 if os.path.exists(self.driver.profile.path):

@@ -98,12 +98,13 @@ class Firefox:
         private: bool = False,
         screen_size: Optional[Tuple[int, int]] = None, # (width, height)
         full_screen: bool = False,
+        max_window: bool = True,  # overrides full_screen
         language: str = 'en-us',
         manual_set_timezone: bool = False,
         user_agent: Optional[str] = None,  # random
         load_proxy_checker_website: bool = False,
         disable_images: bool = False,
-        autoclose: bool = True, # no autoclose for keyboard maestro
+        auto_close: bool = True, # no autoclose for keyboard maestro
         *args, **kwargs
     ):
         '''EITHER PROVIDE 'cookies_id' OR  'cookies_folder_path'.
@@ -285,6 +286,9 @@ class Firefox:
         
         if full_screen:
             self.driver.fullscreen_window()
+
+        if max_window:
+            self.driver.maximize_window()
 
         if extensions_folder_path is not None:
             try:

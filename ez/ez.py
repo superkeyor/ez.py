@@ -160,6 +160,7 @@ def ShellDebug(debugMode=1):
 debug = ShellDebug    
 
 # secretes
+from fz.pysecrets import *
 try: # local
     from . pysecrets import *
 except:

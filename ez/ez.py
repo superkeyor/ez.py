@@ -4434,25 +4434,6 @@ mail = Mail
 gmail = Mail
 
 def o365auth(id=None, secret=None):
-    """
-    token auto renews within 90 days
-    secret expires 2 years
-
-    initial setup (only first time):
-    create an app https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
-    Accounts in any organizational directory and personal Microsoft accounts (e.g. Skype, Xbox, Outlook.com)
-    Web: https://login.microsoftonline.com/common/oauth2/nativeclient
-    write down Application (client) ID; create secrets--write down secret value
-    API permission: User.Read, Mail.ReadWrite, Mail.Send, offline_access
-        import readline        
-        from O365 import Account
-        credentials = ('my_client_id', 'my_client_secret')
-        account = Account(credentials)
-        account.authenticate(scopes=['basic', 'message_all','onedrive_all','sharepoint_dl'])
-        paste the returned url to complete authorization of the app
-        will save token to disk
-    Done!
-    """
     try:
         credentials = (O365ID, O365SECRET)
     except:

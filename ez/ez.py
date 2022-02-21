@@ -164,7 +164,7 @@ try: # local
     from . pysecrets import *
 except:
     try: # heroku
-        from app.fz.pysecrets import *
+        from fz.pysecrets import *
     except:
         pass
 
@@ -5045,6 +5045,7 @@ import dropbox
 # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#
 
 def upload(localfile,cloudfile=None):
+    from fz.pysecrets import *
     # shortcut if only one cloudpath passed in, assuming current local working directory
     # e.g., '/Investment/fz/fz/fz/data_td.json'
     if cloudfile is None:

@@ -160,15 +160,11 @@ def ShellDebug(debugMode=1):
 debug = ShellDebug    
 
 # secretes
-from fz.pysecrets import *
 try: # local
     from . pysecrets import *
 except:
     try: # heroku
-        if '/app' in sys.path: sys.path.remove('/app')
-        sys.path.insert(0,'/app')
-        print(sys.path)
-        from fz.pysecrets import *
+        from app.fz.pysecrets import *
     except:
         pass
 

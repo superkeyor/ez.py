@@ -164,6 +164,8 @@ try: # local
     from . pysecrets import *
 except:
     try: # heroku
+        if '/app' in sys.path: sys.path.remove('/app')
+        sys.path.insert(0,'/app')
         from fz.pysecrets import *
     except:
         pass

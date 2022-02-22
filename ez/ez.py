@@ -4500,10 +4500,14 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
     oldwhat=what
     if what=='usrpwd': what='item'
 
+    # local var could be the same name as global var
+    # but if change var, better use local var
+    # if change global var, define: global var
     try:
-        PASSWORD = PASSWORD + '+'
+        _EMAIL = EMAIL
+        _PASSWORD = PASSWORD + '+'
     except:
-        EMAIL = ''; PASSWORD=''
+        _EMAIL = ''; _PASSWORD=''
 
     machine = getos()
     if machine=='Darwin':
@@ -4513,15 +4517,15 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
         status = re.search('"status":"(\w+)"',out[0]).group(1)
         if status == 'unauthenticated':
             cmd = f"""
-            export BW_USER={EMAIL}
-            export BW_PASSWORD={PASSWORD}
+            export BW_USER={_EMAIL}
+            export BW_PASSWORD={_PASSWORD}
             {bw} login $BW_USER $BW_PASSWORD
             """
             execute(cmd,verbose=verbose)
             status = 'locked' # login first
         if status == 'locked' or status == 'unlocked':  # always unlock to get session id
             cmd = f"""
-            export BW_PASSWORD={PASSWORD}
+            export BW_PASSWORD={_PASSWORD}
             export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
             {sync}{bw} sync --quiet
             {bw} get {what} {item}
@@ -4540,15 +4544,15 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
         status = re.search('"status":"(\w+)"',out[0]).group(1)
         if status == 'unauthenticated':
             cmd = f"""
-            set BW_USER={EMAIL}
-            set BW_PASSWORD={PASSWORD}
+            set BW_USER={_EMAIL}
+            set BW_PASSWORD={_PASSWORD}
             {bw} login %BW_USER% %BW_PASSWORD%
             """
             execute(cmd,verbose=verbose)
             status = 'locked' # login first
         if status == 'locked' or status == 'unlocked':  # always unlock to get session id
             cmd = f"""
-            set BW_PASSWORD={PASSWORD}
+            set BW_PASSWORD={_PASSWORD}
             FOR /F "tokens=*" %%g IN ('{bw} unlock --passwordenv BW_PASSWORD --raw') do (set BW_SESSION=%%g)
             {sync}{bw} sync --quiet
             {bw} get {what} {item}

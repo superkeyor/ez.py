@@ -32,10 +32,11 @@ git add -A
 git commit -m 'update' 
 git push origin master 
 
-echo 'Waiting pypi to update...'
-sleep 3
 # /Library/Frameworks/Python.framework/Versions/2.7/bin/pip install $package --upgrade
 source ~/.bash_profile
+# repeat several time to force upgrade
+pip install $package --upgrade --no-cache-dir --disable-pip-version-check
+pip install $package --upgrade --no-cache-dir --disable-pip-version-check
 pip install $package --upgrade --no-cache-dir --disable-pip-version-check
 # do not use this, seems not working??
 # Although not required, it’s common to locally install your project in "develop" or "editable" mode 

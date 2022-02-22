@@ -71,7 +71,7 @@ with nooutput():
     print 'this is will not be printed in stdout'
 pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
 beep()  # Beeps to notify user.
-which(name) # Prints where a module is and in which module a function is. which('python') returns which python is being used.
+where(name) # Prints where a module is and in which module a function is. where('python') returns which python is being used.
 help(name)/doc(name) # name is a string, Prints the doc string of a module/class/function
     when write a module, add:
     __doc__ = three double quotes blabla three double quotes         <-----this is module's docstring, use explicit
@@ -137,7 +137,7 @@ gmail(), mail(), Mail()
     EMAIL = 'someone@gmail.com'
     PASSWORD = 'abcdefghik'
     or better pysecrets.pyc
-    in the site-packages/ez folder, check with ez.which('ez')
+    in the site-packages/ez folder, check with ez.where('ez') or os.path.dirname(ez.__file__)
     The functions will no longer need email/password and become like this
     Mail(to, subject, body, attach=None)
 
@@ -1759,11 +1759,11 @@ def beep():
     sys.stdout.write("\a")
     sys.stdout.flush()
 
-def which(name):
+def where(name):
     """
     name without or with package name, i.e., ez.help, help
-    which(name), Prints where a module is and in which module a function is.
-    which('python') returns which python is being used and version info."""
+    where(name), Prints where a module is and in which module a function is.
+    where('python') returns which python is being used and version info."""
     name_no_prefix = name.split('.')[-1]
     if name_no_prefix == 'python':
         from distutils.sysconfig import get_python_lib
@@ -1783,6 +1783,8 @@ def which(name):
                         # print ''
                 except:
                     pass
+
+from shutil import which
 
 def doc(package_prefixed_name):
     """

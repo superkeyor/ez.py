@@ -555,8 +555,6 @@ class Firefox:
         timeout: Optional[int] = None,
         element: Optional = None
     ) -> Union[Optional[WebElement], List[WebElement]]:
-        # if space in class name, convert to .
-        key=key.strip().replace(' ','.')
         return self.__find(
             by,
             EC.presence_of_element_located,
@@ -1038,10 +1036,10 @@ class Firefox:
             By.TAG_NAME: By.TAG_NAME,
         }
         by=bydict[by]
+        key = key.strip()
         if by == By.CLASS_NAME:
-            # replace space with ., which is required by xpath?? Jerry
+            # if space in class name, convert to . Jerry
             key = key.replace(" ",".")
-
         if element is None:
             element = self.driver
         elif by == By.XPATH and not key.startswith('.'):

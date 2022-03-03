@@ -9,8 +9,10 @@
 # https://stackoverflow.com/questions/22436789/xpath-ends-with-does-not-work
 # f.find_all('xpath','//*[starts-with(@id,"z_")]')  #contains(), but matches() ends-with() not supported by webdriver/xpath1.0
 # f.find_all('xpath','//*[contains(@id,"time")][contains(@title,"Date")]')
-# f.findsel('id','activity--history-range-dropdown',timeout=10).select_by_visible_text('history')
-#                                                              .select_by_index(2)  # 0-based
+# f.findsel('id','activity--history',timeout=10).select_by_visible_text('history')
+#                                               .select_by_value()
+#                                               .select_by_index(2)  # 0-based
+#                                               .options[1].text  # first option's text
 # f.save_screenshot()                                        | f.snap()
 # f.js_click(e)                                              | f.click(e)
 # f.js_rightclick(e)                                         | f.rclick(e)

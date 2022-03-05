@@ -505,7 +505,7 @@ class Firefox:
             # Access requests via the `requests` attribute
             # for request in driver.requests:
             # request.url, request.response.status_code, request.response.headers['Content-Type']
-            for request in driver.iter_requests():
+            for request in self.driver.iter_requests():
                 if request.response:
                     if re.search(regexpat,request.url):
                         if not raw:

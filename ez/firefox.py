@@ -40,7 +40,7 @@
 
 # System
 from typing import Optional, Union, List, Dict, Callable, Tuple
-import pickle, os, time, json, inspect, platform, tempfile
+import pickle, os, time, json, inspect, platform, tempfile, re
 
 # Pip
 from selenium.webdriver.support.ui import Select
@@ -490,25 +490,29 @@ class Firefox:
             self.driver.set_page_load_timeout(300)
             return False
 
-    def getreq(self,url:str,regexpat,timeout=300,raw=False):
+    def getreq(self,url=None,regexpat,timeout=300,raw=False):
         """
+        url: if None, will search visited urls 
         regexpat: The pat attribute will be matched within the request URL. pat a regular expression
         if timeout and/or no match, returns ''
         else returns 
             if not raw: request.url
             else request (so that can check request.headers, request.response.headers, request.response.status_code etc)
         """
-        
         # https://pypi.org/project/selenium-wire/
-        # Access requests via the `requests` attribute
-        # for request in driver.requests:
-        # for request in driver.iter_requests():
-        #     if request.response:
-        #         print(
-        #             request.url,
-        #             request.response.status_code,
-        #             request.response.headers['Content-Type']
-        #         )
+
+        if url is None:
+            # Access requests via the `requests` attribute
+            # for request in driver.requests:
+            # request.url, request.response.status_code, request.response.headers['Content-Type']
+            for request in driver.iter_requests():
+                if request.response:
+                    if re.search(regexpat,request.url):
+                        if not raw:
+                            return request.url
+                        else:
+                            return request
+            return ''
 
         # delete previous requests to get fresh results
         del self.driver.requests

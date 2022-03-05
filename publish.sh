@@ -43,3 +43,5 @@ pip install $package --upgrade --no-cache-dir --disable-pip-version-check
 # while you’re working on it. This allows the project to be both installed and editable in project form.
 # run the following:
 # python setup.py develop
+ls dist
+pip show ez | grep Version

@@ -5585,13 +5585,13 @@ def ocr(img=None,lang=['en'],gpu=False,*args,**kwargs):
     """
     img: filepath, OpenCV image object (numpy array), image file as bytes, URL to raw image (default None=clipboard img)
     lang: ['en','ch_sim','ch_tra']
+    https://www.jaided.ai/easyocr/documentation/
     """
     from PIL import ImageGrab
     import easyocr
     if img is None: img = ImageGrab.grabclipboard()
-    # https://www.jaided.ai/easyocr/documentation/
-    reader = easyocr.Reader(lang,gpu=gpu,*args,**kwargs)
-    result = reader.readtext(img,detail=True,paragraph=False)
+    reader = easyocr.Reader(lang,gpu=gpu)
+    result = reader.readtext(img,detail=True,paragraph=False,*args,**kwargs)
     # result=[([[189, 75], [469, 75], [469, 165], [189, 165]], '愚园路', 0.3754989504814148),
     #  ([[86, 80], [134, 80], [134, 128], [86, 128]], '西', 0.40452659130096436),
     #  ([[517, 81], [565, 81], [565, 123], [517, 123]], '东', 0.9989598989486694),

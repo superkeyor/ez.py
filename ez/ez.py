@@ -5581,15 +5581,16 @@ class OrderedSet(MutableSet, Sequence):
             [item for item in self.items if item not in items_to_remove] + items_to_add
         )
 
-def ocr(img=None,lang_list=['en']):
+def ocr(img=None,lang=['en'],gpu=False,*args,**kwargs):
     """
     img: filepath, OpenCV image object (numpy array), image file as bytes, URL to raw image (default None=clipboard img)
-    lang_list: ['en','ch_sim','ch_tra']
+    lang: ['en','ch_sim','ch_tra']
     """
     from PIL import ImageGrab
     import easyocr
     if img is None: img = ImageGrab.grabclipboard()
-    reader = easyocr.Reader(lang_list)
+    # https://www.jaided.ai/easyocr/documentation/
+    reader = easyocr.Reader(lang,gpu=gpu,*args,**kwargs)
     result = reader.readtext(img,detail=True,paragraph=False)
     # result=[([[189, 75], [469, 75], [469, 165], [189, 165]], '愚园路', 0.3754989504814148),
     #  ([[86, 80], [134, 80], [134, 128], [86, 128]], '西', 0.40452659130096436),

@@ -490,9 +490,9 @@ class Firefox:
             self.driver.set_page_load_timeout(300)
             return False
 
-    def getreq(self,url=None,regexpat,timeout=300,raw=False):
+    def getreq(self,url,regexpat,timeout=300,raw=False):
         """
-        url: if None, will search visited urls 
+        url: if '', will search visited urls 
         regexpat: The pat attribute will be matched within the request URL. pat a regular expression
         if timeout and/or no match, returns ''
         else returns 
@@ -501,7 +501,7 @@ class Firefox:
         """
         # https://pypi.org/project/selenium-wire/
 
-        if url is None:
+        if url=='':
             # Access requests via the `requests` attribute
             # for request in driver.requests:
             # request.url, request.response.status_code, request.response.headers['Content-Type']

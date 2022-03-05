@@ -5581,6 +5581,46 @@ class OrderedSet(MutableSet, Sequence):
             [item for item in self.items if item not in items_to_remove] + items_to_add
         )
 
+def ocr(img=None,lang_list=['en']):
+    """
+    img: filepath, OpenCV image object (numpy array), image file as bytes, URL to raw image (default None=clipboard img)
+    lang_list: ['en','ch_sim','ch_tra']
+    """
+    from PIL import ImageGrab
+    import easyocr
+    if img is None: img = ImageGrab.grabclipboard()
+    reader = easyocr.Reader(lang_list)
+    result = reader.readtext(img,detail=True,paragraph=False)
+    # result=[([[189, 75], [469, 75], [469, 165], [189, 165]], '愚园路', 0.3754989504814148),
+    #  ([[86, 80], [134, 80], [134, 128], [86, 128]], '西', 0.40452659130096436),
+    #  ([[517, 81], [565, 81], [565, 123], [517, 123]], '东', 0.9989598989486694),
+    #  ([[78, 126], [136, 126], [136, 156], [78, 156]], '315', 0.8125889301300049),
+    #  ([[514, 126], [574, 126], [574, 156], [514, 156]], '309', 0.4971577227115631),
+    #  ([[226, 170], [414, 170], [414, 220], [226, 220]], 'Yuyuan Rd.', 0.8261902332305908),
+    #  ([[79, 173], [125, 173], [125, 213], [79, 213]], 'W', 0.9848111271858215),
+    #  ([[529, 173], [569, 173], [569, 213], [529, 213]], 'E', 0.8405593633651733)]
+    top=[]; left=[]; out={}
+    for r in result:
+        top=r[0][0][1]; left=r[0][0][0]; text=r[1]
+        if top not in out.keys():
+            # /10 to scale
+            out[top]=' '*int(left/10)+text
+        else:
+            text_old = out[top].lstrip()
+            text_new = text
+            left_old = len(out[top]) - len(out[top].lstrip())
+            left_new = int(left/10)
+            if left_new > left_old:
+                part1 = ' '*int(left_old/10)+text_old; part2 = ' '*int(left_new - len(part1))+text_new
+            else:
+                # unlike to trigger, since result ordered by top already
+                part1 = ' '*int(left_new/10)+text_new; part2 = ' '*int(left_old - len(part1))+text_old
+            out[top] = part1+part2
+    result=[text for (top, text) in sorted(out.items())]
+    return result
+    # for r in result:
+    #     print(r)
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -2972,6 +2972,23 @@ class Moment(object):
             moment = datetime.datetime.strptime(datetimeString, datetimeFormat)
         return Moment(timezone=timezone, moment=moment)
 
+def daylight(dt=None, timezone="US/Eastern"):
+    """
+    dt: default current utc datetime
+    https://stackoverflow.com/a/55735278/2292993
+    daylight(datetime(2022, 3, 13, 1), timezone="US/Eastern") # False
+    daylight(datetime(2022, 3, 13, 2), timezone="US/Eastern") # False
+    daylight(datetime(2022, 3, 13, 3), timezone="US/Eastern") # True
+    daylight(datetime(2022, 3, 14), timezone="US/Eastern")    # True
+    """
+    import pytz
+    from datetime import datetime
+    if dt is None:
+        dt = datetime.utcnow()
+    timezone = pytz.timezone(timezone)
+    timezone_aware_date = timezone.localize(dt, is_dst=False)
+    return timezone_aware_date.tzinfo._dst.seconds != 0
+
 def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
     """Counts lines of codes, counting empty lines as well.
     lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True)

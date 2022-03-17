@@ -4,15 +4,21 @@
 # e.send(KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT)
 # e.send(KEYS.COMMAND,'a')
 # e.submit(), e.sendsubmit()
-# f.find_all(By.CLASS_NAME,'d2l-datetime-selector-date-input.d2l-edit')  
+# f.findall(By.CLASS_NAME,'d2l-datetime-selector-date-input.d2l-edit')  
 # https://stackoverflow.com/questions/17000703/is-string-matches-supported-in-selenium-webdriver-2
 # https://stackoverflow.com/questions/22436789/xpath-ends-with-does-not-work
-# f.find_all('xpath','//*[starts-with(@id,"z_")]')  #contains(), but matches() ends-with() not supported by webdriver/xpath1.0
-# f.find_all('xpath','//*[contains(@id,"time")][contains(@title,"Date")]')
+# f.findall('xpath','//*[starts-with(@id,"z_")]')  #contains(), but matches() ends-with() not supported by webdriver/xpath1.0
+# f.findall('xpath','//*[contains(@id,"time")][contains(@title,"Date")]')
 # f.findsel('id','activity--history',timeout=10).select_by_visible_text('history')
 #                                               .select_by_value()
 #                                               .select_by_index(2)  # 0-based
 #                                               .options[1].text  # first option's text
+# select = f.findsel('id','period_1_id',timeout=10)
+# options = select.options
+# for i in range(0,len(options)):
+#     option = options[i]
+#     if 'In Progress' in option.text:
+#         f.findsel('id','period_1_id',timeout=10).select_by_index(i)
 # f.save_screenshot()                                        | f.snap()
 # f.js_click(e)                                              | f.click(e)
 # f.js_rightclick(e)                                         | f.rclick(e)
@@ -608,7 +614,6 @@ class Firefox:
         timeout: Optional[int] = None,
         element: Optional = None
     ) -> List[WebElement]:
-        key=key.strip().replace(' ','.')
         return self.__find(
             by,
             EC.presence_of_all_elements_located,
@@ -918,6 +923,7 @@ class Firefox:
 
         def _cleanpath(path,allow_unicode=False):
             import unicodedata, urllib.parse
+            from ez import splitpath, joinpath
 
             [pth, fname, ext] = splitpath(path)
             fname = urllib.parse.unquote_plus(fname)
@@ -1057,7 +1063,6 @@ class Firefox:
                 find_func((by, key))
             )
             # jerry: alias enhanced
-            # es.send=es.send_keys
             # https://stackoverflow.com/a/54662690/2292993
             from functools import partial
             def _send(
@@ -1104,11 +1109,21 @@ class Firefox:
                 import time
                 time.sleep(wait)
                 self.send(keys,delay)
-            es.send=partial(_send, es)
-            es.sendsubmit=partial(_sendsubmit, es)
-            es.getarea=partial(_getarea, es)
-            es.moveclick=partial(_moveclick, es)
-            es.movesend=partial(_movesend, es)
+            # es.send=es.send_keys
+            # finall
+            if find_func is EC.presence_of_all_elements_located: 
+                for e in es:
+                    e.send=partial(_send, e)
+                    e.sendsubmit=partial(_sendsubmit, e)
+                    e.getarea=partial(_getarea, e)
+                    e.moveclick=partial(_moveclick, e)
+                    e.movesend=partial(_movesend, e)
+            else:
+                es.send=partial(_send, es)
+                es.sendsubmit=partial(_sendsubmit, es)
+                es.getarea=partial(_getarea, es)
+                es.moveclick=partial(_moveclick, es)
+                es.movesend=partial(_movesend, es)
             return es
         except:
             return None

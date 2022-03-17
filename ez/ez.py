@@ -5639,6 +5639,30 @@ def ocr(img=None,lang=['en'],gpu=False,*args,**kwargs):
     # for r in result:
     #     print(r)
 
+def gif(imgs,out='animation.gif',crop=None,duration=300,loop=0):
+    """
+    imgs: a list of image path
+    out: path of gif to save
+    crop: [left, up, right, bottom] of the image to crop
+    duration: a single value or a list of values for each frame (in ms)
+    loop: >=0, 0 forever
+    """
+    from PIL import Image
+    # Create the frames
+    frames = []
+    for i in imgs:
+        im = Image.open(i)
+        print(f"Input image {i}: w {im.size[0]} x h {im.size[1]}")
+        if crop is not None: im = im.crop(crop)
+        frames.append(im)
+
+    # Save into a GIF file
+    frames[0].save(out, format='GIF',
+                   append_images=frames[1:],
+                   save_all=True,
+                   duration=duration, loop=loop)
+    print(f"Output gif: {out}")
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

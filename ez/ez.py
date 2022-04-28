@@ -4546,7 +4546,7 @@ def onedrive_share(path,share_type='view',share_scope='anonymous',share_password
     path: '/EIU/Teaching/4810Drug'
     share_type: 'view','edit','embed'
     share_scope: 'anonymous','organization'
-    share_password: str
+    share_password: str or None
     share_expiration_date: '2022-02-14', 
         if not specified, auto max determined by adminstrator
         if not specified, call the function a second time will auto renew expiration date (as long as share does not change)

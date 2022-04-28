@@ -3082,7 +3082,7 @@ def hashes(filename, reference=None):
 def readx(path, sheet=0, r=[1,], c=None, *args, **kwargs):
     """
     (path, sheet=0, r=[1,], c=None, *args, **kwargs)
-    Read xlsx, xls file into a list (see returns for details), using xlrd library
+    Read xlsx, xls file into a list (see returns for details), using openpyxl, xlrd library
     Args:
         path, a xlsx, xls file
         sheet, either sheet number (the first is 0) or sheet name (e.g., Sheet1)
@@ -3098,55 +3098,106 @@ def readx(path, sheet=0, r=[1,], c=None, *args, **kwargs):
     Raises:
        None
     """
-    import xlrd
-    wbobj = xlrd.open_workbook(path)
-    # convert sheet index to sheet name
-    if type(sheet) in [int]:
-        sheets = wbobj.sheet_names()
-        sheet = sheets[sheet]
-    else:
-        sheet = sheet
-    sheetobj = wbobj.sheet_by_name(sheet)
-
-    if r == None:
-        r = list(range(0,sheetobj.nrows))     # all rows
-    elif type(r) in [int]:
-        r = [r]     # a single row
-    elif type(r) in [list]:
-        if len(r) == 1:
-            r = list(range(r[0],sheetobj.nrows))  # from r to end
+    if path.endswith('.xls'):
+        import xlrd
+        wbobj = xlrd.open_workbook(path)
+        # convert sheet index to sheet name
+        if type(sheet) in [int]:
+            sheets = wbobj.sheet_names()
+            sheet = sheets[sheet]
         else:
-            r = r   # multiple rows
-    else:
-        raise Exception('Invalid row number(s)')
+            sheet = sheet
+        sheetobj = wbobj.sheet_by_name(sheet)
 
-    if c == None:
-        c = list(range(0,sheetobj.ncols))     # all cols
-    elif type(c) in [int]:
-        c = [c]    # a single col
-    elif type(c) in [list]:
-        if len(c) == 1:
-            c = list(range(c[0],sheetobj.ncols))  # from c to end
+        if r == None:
+            r = list(range(0,sheetobj.nrows))     # all rows
+        elif type(r) in [int]:
+            r = [r]     # a single row
+        elif type(r) in [list]:
+            if len(r) == 1:
+                r = list(range(r[0],sheetobj.nrows))  # from r to end
+            else:
+                r = r   # multiple rows
         else:
-            c = c   # multiple cols
-    else:
-        raise Exception('Invalid col number(s)')
+            raise Exception('Invalid row number(s)')
 
-    if len(r)==1 and len(c)==1:
-        result = sheetobj.cell_value(r[0],c[0])
-    elif len(r)==1 and len(c)>1:
-        result = sheetobj.row_values(r[0])
-        result = [result[i] for i in c]
-    elif len(r)>1 and len(c)==1:
-        result = sheetobj.col_values(c[0])
-        result = [result[i] for i in r]
-    elif len(r)>1 and len(c)>1:
-        result = []
-        for rr in r:
-            row = sheetobj.row_values(rr)
-            row = [row[i] for i in c]
-            result.append(row)
+        if c == None:
+            c = list(range(0,sheetobj.ncols))     # all cols
+        elif type(c) in [int]:
+            c = [c]    # a single col
+        elif type(c) in [list]:
+            if len(c) == 1:
+                c = list(range(c[0],sheetobj.ncols))  # from c to end
+            else:
+                c = c   # multiple cols
+        else:
+            raise Exception('Invalid col number(s)')
 
+        if len(r)==1 and len(c)==1:
+            result = sheetobj.cell_value(r[0],c[0])
+        elif len(r)==1 and len(c)>1:
+            result = sheetobj.row_values(r[0])
+            result = [result[i] for i in c]
+        elif len(r)>1 and len(c)==1:
+            result = sheetobj.col_values(c[0])
+            result = [result[i] for i in r]
+        elif len(r)>1 and len(c)>1:
+            result = []
+            for rr in r:
+                row = sheetobj.row_values(rr)
+                row = [row[i] for i in c]
+                result.append(row)
+    elif path.endswith('.xlsx'):
+        from openpyxl import load_workbook
+        wb = load_workbook(path)
+        # convert sheet index to sheet name
+        if type(sheet) in [int]:
+            sheets = wb.sheetnames
+            sheet = sheets[sheet]
+        else:
+            sheet = sheet
+        ws = wb[sheet]
+
+        if r == None:
+            r = list(range(0,ws.max_row))     # all rows
+        elif type(r) in [int]:
+            r = [r]     # a single row
+        elif type(r) in [list]:
+            if len(r) == 1:
+                r = list(range(r[0],ws.max_row))  # from r to end
+            else:
+                r = r   # multiple rows
+        else:
+            raise Exception('Invalid row number(s)')
+
+        if c == None:
+            c = list(range(0,ws.max_column))     # all cols
+        elif type(c) in [int]:
+            c = [c]    # a single col
+        elif type(c) in [list]:
+            if len(c) == 1:
+                c = list(range(c[0],ws.max_column))  # from c to end
+            else:
+                c = c   # multiple cols
+        else:
+            raise Exception('Invalid col number(s)')
+
+        # openpyxl is 1 based
+        if len(r)==1 and len(c)==1:
+            result = ws.cell(row=r[0]+1,column=c[0]+1).value
+        elif len(r)==1 and len(c)>1:
+            for row in ws.iter_rows(min_row=r[0]+1,max_row=r[0]+1,values_only=True):
+                result = list(row)
+            result = [result[i] for i in c]
+        elif len(r)>1 and len(c)==1:
+            for col in ws.iter_cols(min_col=c[0]+1,max_col=c[0]+1,values_only=True):
+                result = list(col)
+            result = [result[i] for i in r]
+        elif len(r)>1 and len(c)>1:
+            result = []
+            for row in ws.iter_rows(min_row=min(r)+1,max_row=max(r)+1,min_col=min(c)+1,max_col=max(c)+1,values_only=True):                
+                rc = [row[i] for i in c]
+                result.append(rc)
     return result
 
 def savex(path, data, header=None, delimiter=",", sheet_name='Sheet1', *args, **kwargs):
@@ -3216,7 +3267,7 @@ def savex(path, data, header=None, delimiter=",", sheet_name='Sheet1', *args, **
             xsheet.write_row(r, 0, row, *args, **kwargs)
         xbook.close()
     else:
-        import  csv
+        import csv
         with open(path,"w") as f:
             wr = csv.writer(f, delimiter=delimiter, *args, **kwargs)
             if header: wr.writerow(header)

@@ -4503,7 +4503,10 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
 mail = Mail
 gmail = Mail
 
-def o365auth(id=None, secret=None):
+def o365auth(id=None, secret=None, protocol='MSGraphProtocol'):
+    """
+    protocol: 'MSGraphProtocol', 'MSOffice365Protocol' (MS todo requires MSOffice365Protocol)
+    """
     try:
         credentials = (O365ID, O365SECRET)
     except:
@@ -4511,10 +4514,14 @@ def o365auth(id=None, secret=None):
     # https://stackoverflow.com/questions/8469122 
     # readline lifts Maximum characters that can be stuffed into raw_input() in Python
     import readline 
-    from O365 import Account, FileSystemTokenBackend
+    from O365 import Account, FileSystemTokenBackend, MSGraphProtocol, MSOffice365Protocol
+    if protocol=='MSGraphProtocol': 
+        protocol = MSGraphProtocol()
+    else:
+        protocol = MSOffice365Protocol()
     # save token to installation directory
     token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
-    account = Account(credentials, token_backend=token_backend)
+    account = Account(credentials, token_backend=token_backend, protocol=protocol)
     scopes=['basic', 'message_all','onedrive_all','sharepoint_dl','tasks_all','calendar_all','calendar_shared_all']
     if not account.is_authenticated:  # will check if there is a token and has not expired
         # ask for a login

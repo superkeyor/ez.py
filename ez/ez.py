@@ -4515,7 +4515,7 @@ def o365auth(id=None, secret=None):
     # save token to installation directory
     token_backend = FileSystemTokenBackend(token_path=os.path.dirname(os.path.abspath(__file__)), token_filename='o365_token.txt')
     account = Account(credentials, token_backend=token_backend)
-    scopes=['basic', 'message_all','onedrive_all','sharepoint_dl']
+    scopes=['basic', 'message_all','onedrive_all','sharepoint_dl','tasks_all','calendar_all','calendar_shared_all']
     if not account.is_authenticated:  # will check if there is a token and has not expired
         # ask for a login
         # console based authentication See Authentication for other flows

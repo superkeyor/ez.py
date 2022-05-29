@@ -5078,6 +5078,11 @@ class GSheet():
         # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.append_rows
         return self.ws.update(f'A{self.nrow+1}',values,value_input_option=value_input_option)
 
+    def switch(self,sheet_name):
+        """switch to a particular worksheet if there are multiple ones"""
+        self.ws = self.wb.worksheet(sheet_name)
+        return None
+
 # sheet = client.open("Master-Letter for Jerry's Teaching Application").sheet1
 # sheets = client.open_by_url('https://docs.google.com/spreadsheets/d/1VexrXFPEdh5oAFP9CuhpsRCVqiHJhbAd_p-FL3kiu0Q/edit')
 # sheets = client.open_by_url(gsheeturl)

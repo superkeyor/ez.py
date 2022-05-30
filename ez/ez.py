@@ -4486,7 +4486,7 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
     attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
     email, password: ignored if pysecrets exists
     """
-    from yagmail import SMTP, raw
+    from yagmail import SMTP
     import html
     # https://yagmail.readthedocs.io/en/latest/usage.html
     try:

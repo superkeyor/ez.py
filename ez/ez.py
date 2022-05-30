@@ -5183,11 +5183,11 @@ def delfilefolder(file):
 # https://stackoverflow.com/a/24542604/2292993 (outdated)
 
 # Steps:
-# 1) Create and save as client_secrets.json (I saved the contents to pysecrets.py and dump it to physical json file)
+# 1) Create and save as gdrive_secrets.json (I saved the contents to pysecrets.py and dump it to physical json file)
 # 2) Create settings.yaml
-# 3) Authorize via web with client_secrets.json for the first time
+# 3) Authorize via web with gdrive_secrets.json for the first time
 # 4) Get saved gdrive_credentials.json which can be used in the future without need to authroize via web
-def gdriveauth():
+def gauth():
     # work in library path
     oldpwd = os.getcwd()
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -5195,10 +5195,10 @@ def gdriveauth():
     from pydrive2.auth import GoogleAuth
     from pydrive2.drive import GoogleDrive
 
-    # jerry: dump client_secrets.json
-    savej(GDRIVE_KEY,'client_secrets.json')
+    # jerry: dump gdrive_secrets.json
+    savej(GDRIVE_KEY,'gdrive_secrets.json')
     settings="""
-            client_config_file: client_secrets.json
+            client_config_file: gdrive_secrets.json
             save_credentials: True
             save_credentials_backend: file
             save_credentials_file: gdrive_credentials.json
@@ -5207,19 +5207,19 @@ def gdriveauth():
     with open('settings.yaml', 'w') as f:
         f.write(settings)
 
-    gauth = GoogleAuth()
-    gauth.LocalWebserverAuth()
-    gdrive = GoogleDrive(gauth)
+    googleauth = GoogleAuth()
+    googleauth.LocalWebserverAuth()
+    gdrive = GoogleDrive(googleauth)
 
     os.chdir(oldpwd)
     return gdrive
 
-def gdrive_download(id,filename):
+def gdownload(id,filename):
     """
     export/download a file
     id: get from link
     """
-    gdrive = gdriveauth()
+    gdrive = gauth()
     # https://developers.google.com/drive/api/guides/ref-export-formats
     gfile = gdrive.CreateFile({'id': id})
     FORMATS = { 
@@ -5234,6 +5234,19 @@ def gdrive_download(id,filename):
                }
     gfile.GetContentFile(filename, FORMATS[splitpath(filename)[-1]])
     return filename
+
+def gcopy(id,filetitle):
+    """
+    make a copy of file in gdrive
+    id: get from link
+    filetitle: new file title/name
+    """
+    # https://developers.google.com/drive/api/v2/reference/files/copy
+    # https://stackoverflow.com/questions/43865016/python-copy-a-file-in-google-drive-into-a-specific-folder
+    # https://github.com/iterative/PyDrive2/issues/53
+    gdrive = gauth()
+    gdrive.auth.service.files().copy(fileId=id,
+                                     body={'title': filetitle}).execute()
 
 
 ####************************************************************************************************

@@ -5179,12 +5179,14 @@ def delfilefolder(file):
 ####************************************************************************************************
 # Reference: 
 # https://docs.iterative.ai/PyDrive2/quickstart/#authentication
-# https://stackoverflow.com/a/24542604/2292993
+# https://qiita-com.translate.goog/ftnext/items/60ced8bc432bec6101f0?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en&_x_tr_pto=wapp
+# https://stackoverflow.com/a/24542604/2292993 (outdated)
 
 # Steps:
 # 1) Create and save as client_secrets.json (I saved the contents to pysecrets.py and dump it to physical json file)
-# 2) Authorize via web with client_secrets.json for the first time
-# 3) Get saved gdrivecreds.txt which can be used in the future without need to authroize via web
+# 2) Create settings.yaml
+# 3) Authorize via web with client_secrets.json for the first time
+# 4) Get saved gdrive_credentials.json which can be used in the future without need to authroize via web
 def gdriveauth():
     # work in library path
     oldpwd = os.getcwd()
@@ -5193,25 +5195,23 @@ def gdriveauth():
     from pydrive2.auth import GoogleAuth
     from pydrive2.drive import GoogleDrive
 
-    gauth = GoogleAuth()
-    # Try to load saved client credentials
-    gauth.LoadCredentialsFile("gdrivecreds.txt")
-    if gauth.credentials is None:
-        # Authenticate if they're not there
-        # jerry: dump client_secrets.json
-        savej(GDRIVE_KEY,'client_secrets.json')
-        gauth.LocalWebserverAuth()
-    elif gauth.access_token_expired:
-        # Refresh them if expired
-        gauth.Refresh()
-    else:
-        # Initialize the saved creds
-        gauth.Authorize()
-    # Save the current credentials to a file
-    gauth.SaveCredentialsFile("gdrivecreds.txt")
+    # jerry: dump client_secrets.json
+    savej(GDRIVE_KEY,'client_secrets.json')
+    settings="""
+            client_config_file: client_secrets.json
+            save_credentials: True
+            save_credentials_backend: file
+            save_credentials_file: gdrive_credentials.json
+            get_refresh_token: True
+            """
+    with open('settings.yaml', 'w') as f:
+        f.write(settings)
 
-    os.chdir(oldpwd)
+    gauth = GoogleAuth()
+    gauth.LocalWebserverAuth()
     gdrive = GoogleDrive(gauth)
+    
+    os.chdir(oldpwd)
     return gdrive
 
 def gdrive_download(id,filename):

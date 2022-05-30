@@ -11,6 +11,7 @@ ver = ver.replace('.','')
 ver=int(ver)
 ver += 1
 ver = list(str(ver))
+ver = [''.join(ver[0:-2]),ver[-2],ver[-1]]    # ['1', '0', '0', '2'] --> ['10', '0', '2']
 ver = '.'.join(ver)
 ver = '__version__ = \'' + ver + '\''
 with open(os.path.join(HERE, 'version.py'), encoding='utf-8', mode='w') as f:

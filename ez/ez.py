@@ -5257,6 +5257,29 @@ def gcopy(id,filetitle,folderid=None):
                                          body={"parents": [{"id": folderid}],'title': filetitle}).execute()
     return filetitle
 
+def gls(folderid=None):
+    """
+    ls files in folder (not including trashed)
+    folderid: optional, if None (default), search root folder
+    returns a list of tuples (title,id)
+    """
+    gdrive = gauth()
+    res = []
+
+    # https://stackoverflow.com/questions/40224559/list-of-file-in-a-folder-drive-api-pydrive
+    # Build string dynamically (need to use escape characters to support single quote syntax)
+    if folderid is None:
+        str = "'root' in parents and trashed=false"
+    else:
+        str = "\'" + folderid + "\'" + " in parents and trashed=false"    
+
+    # Starting iterating over files
+    filelist = gdrive.ListFile({'q': str}).GetList()
+    for file in filelist:
+        # print('title: %s, id: %s' % (file['title'], file['id']))
+        res.append((file['title'], file['id']))
+    
+    return res
 ####************************************************************************************************
                                      ####*OrderedSet*####
 ####************************************************************************************************

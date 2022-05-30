@@ -5218,6 +5218,7 @@ def gdownload(id,filename):
     """
     export/download a file
     id: get from link
+    the downloaded file may not have the exact same content formatting
     """
     gdrive = gauth()
     # https://developers.google.com/drive/api/guides/ref-export-formats

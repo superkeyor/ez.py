@@ -5212,7 +5212,10 @@ def gdriveauth():
 
     os.chdir(oldpwd)
     drive = GoogleDrive(gauth)
+    return drive
 
+def gdrive_download():
+    pass
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

@@ -5235,20 +5235,25 @@ def gdownload(id,filename):
     gfile.GetContentFile(filename, FORMATS[splitpath(filename)[-1]])
     return filename
 
-def gcopy(id,filetitle):
+def gcopy(id,filetitle,folderid=None):
     """
     make a copy of file in gdrive
     id: get from link
     filetitle: new file title/name
+    folderid: copy to a folder other than root [optional], get from link
     """
     # https://developers.google.com/drive/api/v2/reference/files/copy
     # https://stackoverflow.com/questions/43865016/python-copy-a-file-in-google-drive-into-a-specific-folder
     # https://github.com/iterative/PyDrive2/issues/53
     gdrive = gauth()
-    gdrive.auth.service.files().copy(fileId=id,
-                                     body={'title': filetitle}).execute()
-
-
+    if folderid is None:
+        gdrive.auth.service.files().copy(fileId=id,
+                                         body={'title': filetitle}).execute()
+    else:
+        gdrive.auth.service.files().copy(fileId=id,
+                                         body={"parents": [{"kind": "drive#fileLink","id": folderid}],'title': filetitle}).execute()
+    return filetitle
+    
 ####************************************************************************************************
                                      ####*OrderedSet*####
 ####************************************************************************************************

@@ -5210,7 +5210,7 @@ def gdriveauth():
     gauth = GoogleAuth()
     gauth.LocalWebserverAuth()
     gdrive = GoogleDrive(gauth)
-    
+
     os.chdir(oldpwd)
     return gdrive
 
@@ -5232,7 +5232,7 @@ def gdrive_download(id,filename):
                 '.svg': 'image/svg+xml',
                 '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
                }
-    gfile.GetContentFile(filename, FORMATS[splitpath(filename)])
+    gfile.GetContentFile(filename, FORMATS[splitpath(filename)[-1]])
     return filename
 
 

@@ -5211,11 +5211,30 @@ def gdriveauth():
     gauth.SaveCredentialsFile("gdrivecreds.txt")
 
     os.chdir(oldpwd)
-    drive = GoogleDrive(gauth)
-    return drive
+    gdrive = GoogleDrive(gauth)
+    return gdrive
 
-def gdrive_download():
-    pass
+def gdrive_download(id,filename):
+    """
+    export/download a file
+    id: get from link
+    """
+    gdrive = gdriveauth()
+    # https://developers.google.com/drive/api/guides/ref-export-formats
+    gfile = gdrive.CreateFile({'id': id})
+    FORMATS = { 
+                '.txt': 'text/plain',
+                '.rtf': 'application/rtf',
+                '.pdf': 'application/pdf',
+                '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                '.png': 'image/png',
+                '.svg': 'image/svg+xml',
+                '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+               }
+    gfile.GetContentFile(filename, FORMATS[splitpath(filename)])
+    return filename
+
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

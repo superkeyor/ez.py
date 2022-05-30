@@ -5186,6 +5186,10 @@ def delfilefolder(file):
 # 2) Authorize via web with client_secrets.json for the first time
 # 3) Get saved gdrivecreds.txt which can be used in the future without need to authroize via web
 def gdriveauth():
+    # work in library path
+    oldpwd = os.getcwd()
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     from pydrive2.auth import GoogleAuth
     from pydrive2.drive import GoogleDrive
 
@@ -5206,6 +5210,7 @@ def gdriveauth():
     # Save the current credentials to a file
     gauth.SaveCredentialsFile("gdrivecreds.txt")
 
+    os.chdir(oldpwd)
     drive = GoogleDrive(gauth)
 
 

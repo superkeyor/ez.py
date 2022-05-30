@@ -5083,6 +5083,19 @@ class GSheet():
         self.ws = self.wb.worksheet(sheet_name)
         return None
 
+    def export(self,xlsx_filepath):
+        """export all worksheets to a xlsx (formula, color, etc will be discarded; essentially read into list of list and then write xlsx)"""
+        import xlsxwriter
+        xbook = xlsxwriter.Workbook(xlsx_filepath)
+        for ws in self.wb.worksheets():
+            data = ws.get_all_values()
+            xsheet = xbook.add_worksheet(ws.title)
+            for r, row in enumerate(data,0):
+                # https://xlsxwriter.readthedocs.io/worksheet.html#worksheet-write-row
+                xsheet.write_row(r, 0, row)
+        xbook.close()
+        return None
+
 # sheet = client.open("Master-Letter for Jerry's Teaching Application").sheet1
 # sheets = client.open_by_url('https://docs.google.com/spreadsheets/d/1VexrXFPEdh5oAFP9CuhpsRCVqiHJhbAd_p-FL3kiu0Q/edit')
 # sheets = client.open_by_url(gsheeturl)

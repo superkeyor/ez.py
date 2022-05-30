@@ -4478,8 +4478,8 @@ def GetClip():
     return pyperclip.paste()
 getclip=GetClip
 
-def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None, password=None):
-    """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None)
+def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, email=None, password=None):
+    """Mail(to, subject, body, attachments=None, bcc=None, cc=None, email=None, password=None)
     to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
     body: html code or text
     text: specified for weird text that is incompatible with html; when set, body is ignored
@@ -4497,13 +4497,13 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
         gclient = SMTP(EMAIL,PASSWORD)
     except:
         gclient = SMTP(email,password)
+    contents=None
     if text is not None: body=None
-    contents=[]
-    if text is not None: contents.append(raw(text))
-    if body is not None: contents.append(body)
-    res = gclient.send(subject=subject,to=to,cc=cc,bcc=bcc,contents=contents,attachments=attachments)
+    if text is not None: contents=raw(text)
+    if body is not None: contents=body
+    gclient.send(subject=subject,to=to,cc=cc,bcc=bcc,contents=contents,attachments=attachments)
     gclient.close()
-    return res
+    return None
 mail = Mail
 gmail = Mail
 

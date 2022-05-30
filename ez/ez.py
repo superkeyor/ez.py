@@ -5246,14 +5246,16 @@ def gcopy(id,filetitle,folderid=None):
     # https://stackoverflow.com/questions/43865016/python-copy-a-file-in-google-drive-into-a-specific-folder
     # https://github.com/iterative/PyDrive2/issues/53
     gdrive = gauth()
+    # https://github.com/googlearchive/PyDrive/blob/986ad8fb4f68dde6ffaa7c61c951d9573314dea0/pydrive/auth.py#L61
+    gdrive.auth.Authorize() # needed, otherwise gdrive.auth.service is None
     if folderid is None:
         gdrive.auth.service.files().copy(fileId=id,
                                          body={'title': filetitle}).execute()
     else:
         gdrive.auth.service.files().copy(fileId=id,
-                                         body={"parents": [{"kind": "drive#fileLink","id": folderid}],'title': filetitle}).execute()
+                                         body={"parents": [{"id": folderid}],'title': filetitle}).execute()
     return filetitle
-    
+
 ####************************************************************************************************
                                      ####*OrderedSet*####
 ####************************************************************************************************

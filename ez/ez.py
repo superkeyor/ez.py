@@ -5259,7 +5259,7 @@ def gcopy(id,filetitle,folderid=None):
 
 def gls(folderid=None):
     """
-    ls files in folder (not including trashed)
+    ls files and folders in a folder (not including trashed)
     folderid: optional, if None (default), search root folder
     returns a list of tuples (title,id)
     """
@@ -5280,6 +5280,7 @@ def gls(folderid=None):
         res.append((file['title'], file['id']))
     
     return res
+
 ####************************************************************************************************
                                      ####*OrderedSet*####
 ####************************************************************************************************

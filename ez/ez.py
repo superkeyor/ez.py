@@ -4487,6 +4487,7 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
     email, password: ignored if pysecrets exists
     """
     from yagmail import SMTP, raw
+    import html
     # https://yagmail.readthedocs.io/en/latest/usage.html
     try:
         # import os, sys
@@ -4499,7 +4500,7 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
         gclient = SMTP(email,password)
     contents=None
     if text is not None: body=None
-    if text is not None: contents=raw(text)
+    if text is not None: contents=html.escape(text)
     if body is not None: contents=body
     gclient.send(subject=subject,to=to,cc=cc,bcc=bcc,contents=contents,attachments=attachments)
     gclient.close()

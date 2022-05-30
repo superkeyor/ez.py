@@ -4487,7 +4487,7 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
     email, password: ignored if pysecrets exists
     """
     from yagmail import SMTP
-    import html
+    import html  # html is a python built-in lib (at least included in anaconda)?
     # https://yagmail.readthedocs.io/en/latest/usage.html
     try:
         # import os, sys

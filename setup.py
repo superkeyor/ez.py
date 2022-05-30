@@ -19,7 +19,7 @@ packages = find_packages()
 # 'opencv-python' for find on screen, 'easyocr' for ocr
 # pynput instead of pyautogui <- problematic dependencies on MacOS
 # setup.py upload depreciated -> twine
-install_requires=['twine','pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'gmail', 'O365', 'chardet', 'psutil',
+install_requires=['twine','pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'O365', 'chardet', 'psutil',
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 'noraise', 'fake_useragent', 'tldextract',
                  'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse',

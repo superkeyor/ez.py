@@ -4481,25 +4481,29 @@ getclip=GetClip
 def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, reply_to=None, email=None, password=None):
     """Mail(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, email=None,password=None)
     to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
-    reply_to: 'a@a.com'
     body: html code or text
     text: specified for weird text that is incompatible with html; when set, body is ignored
     attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
     email, password: ignored if pysecrets exists
     """
-    from gmail import GMail, Message
+    from yagmail import SMTP, raw
+    # https://yagmail.readthedocs.io/en/latest/usage.html
     try:
         # import os, sys
         # HERE = os.path.dirname(os.path.abspath(__file__))
         # sys.path.insert(0, HERE)
         
         # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-        gclient = GMail(EMAIL,PASSWORD)
+        gclient = SMTP(EMAIL,PASSWORD)
     except:
-        gclient = GMail(email,password)
+        gclient = SMTP(email,password)
     if text is not None: body=None
-    msg = Message(subject=subject,to=to,cc=cc,bcc=bcc,text=text,html=body,attachments=attachments,sender=None,reply_to=reply_to)
-    return gclient.send(msg)
+    contents=[]
+    if text is not None: contents.append(raw(text))
+    if body is not None: contents.append(body)
+    res = gclient.send(subject=subject,to=to,cc=cc,bcc=bcc,contents=contents,attachments=attachments)
+    gclient.close()
+    return res
 mail = Mail
 gmail = Mail
 

@@ -5040,6 +5040,16 @@ class GSheet():
         range = f"'{self.title}'!{range}"
         return self.wb.values_clear(range)
 
+    def getrc(self,irow,icol,option='FORMATTED_VALUE'):
+        """
+        returns a single cell value (trimmed if string)
+        irow,icol: int row/col number
+        option: 'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'
+        """
+        val = self.ws.cell(irow,icol,option)
+        if type(val) in [str]: val = val.strip()
+        return val
+
     def getval(self,*args,**kwargs):
         """
         range could be A:A, 2:2

@@ -5046,7 +5046,7 @@ class GSheet():
         irow,icol: int row/col number
         option: 'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'
         """
-        val = self.ws.cell(irow,icol,option)
+        val = self.ws.cell(irow,icol,option).value
         if type(val) in [str]: val = val.strip()
         return val
 

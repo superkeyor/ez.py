@@ -180,19 +180,6 @@ class Firefox:
         profile.set_preference("extensions.update.autoUpdateEnabled", False)
         profile.set_preference("extensions.update.enabled", False)
 
-        # https://stackoverflow.com/a/64987078/2292993
-        # Get about:config
-        self.driver.get('about:config')
-        time.sleep(1)
-        # Define Configurations        
-        script = """
-        var prefs = Components.classes['@mozilla.org/preferences-service;1'].getService(Components.interfaces.nsIPrefBranch);
-        prefs.setBoolPref('extensions.formautofill.creditCards.enabled', false);
-        """.format(filepath)
-        # Set Configurations
-        self.driver.execute_script(script)
-        time.sleep(1)
-
         if user_agent is not None:
             if user_agent == RANDOM_USERAGENT:
                 user_agent_path = os.path.join(cookies_folder_path, 'user_agent.txt')
@@ -373,6 +360,20 @@ class Firefox:
                     time.sleep(0.5)
                     self.driver.switch_to.window(self.driver.window_handles[-1])
                     self.driver.close()
+
+        # not save credit card
+        # https://stackoverflow.com/a/64987078/2292993
+        # Get about:config
+        self.driver.get('about:config')
+        time.sleep(1)
+        # Define Configurations        
+        script = """
+        var prefs = Components.classes['@mozilla.org/preferences-service;1'].getService(Components.interfaces.nsIPrefBranch);
+        prefs.setBoolPref('extensions.formautofill.creditCards.enabled', false);
+        """.format(filepath)
+        # Set Configurations
+        self.driver.execute_script(script)
+        time.sleep(1)
 
         # https://akarin.dev/2022/02/15/disable-geckodriver-detection-with-addon/
         # customized addon, xpi is zip

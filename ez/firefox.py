@@ -361,20 +361,6 @@ class Firefox:
                     self.driver.switch_to.window(self.driver.window_handles[-1])
                     self.driver.close()
 
-        # not save credit card
-        # https://stackoverflow.com/a/64987078/2292993
-        # Get about:config
-        self.driver.get('about:config')
-        time.sleep(1)
-        # Define Configurations        
-        script = """
-        var prefs = Components.classes['@mozilla.org/preferences-service;1'].getService(Components.interfaces.nsIPrefBranch);
-        prefs.setBoolPref('extensions.formautofill.creditCards.enabled', false);
-        """.format(filepath)
-        # Set Configurations
-        self.driver.execute_script(script)
-        time.sleep(1)
-
         # https://akarin.dev/2022/02/15/disable-geckodriver-detection-with-addon/
         # customized addon, xpi is zip
         # can be found at about:addons

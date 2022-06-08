@@ -4564,12 +4564,19 @@ def onedrive_share(path,share_type='view',share_scope='anonymous',share_password
     permission = item.share_with_link(share_type=share_type,share_scope=share_scope,share_password=share_password,share_expiration_date=share_expiration_date)
     return permission.share_link
 
-def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
+def getpasswordbw(item,what='usrpwd',sync=False,verbose=0,debug=False):
     """
     item: search string (not case sensitive, better be unique), or item id
     https://bitwarden.com/help/article/cli/#get
     get one at a time: item|username|password|uri|totp|exposed|attachment|folder|collection|organization|org-collection|template|fingerprint
     special customized what='usrpwd'
+
+    in case not working, try native bitwarden commands:
+    bw status
+    bw login
+    bw unlock
+    bw sync
+    bw get 
     """
     # todo: implement bw on linux
     oldwhat=what
@@ -4585,6 +4592,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
         _EMAIL = ''; _PASSWORD=''
 
     machine = getos()
+    debug_msg = ''
     if machine=='Darwin':
         bw = '/usr/local/bin/bw'
         sync = '' if sync else '# ' # comment out
@@ -4596,6 +4604,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
             export BW_PASSWORD={_PASSWORD}
             {bw} login $BW_USER $BW_PASSWORD
             """
+            debug_msg+=cmd
             execute(cmd,verbose=verbose)
             status = 'locked' # login first
         if status == 'locked' or status == 'unlocked':  # always unlock to get session id
@@ -4606,6 +4615,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
             {bw} get {what} {item}
             {bw} lock --quiet
             """
+            debug_msg+=cmd
             out = execute0(cmd,verbose=verbose)
             if what=='item':
                 import json
@@ -4623,6 +4633,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
             set BW_PASSWORD={_PASSWORD}
             {bw} login %BW_USER% %BW_PASSWORD%
             """
+            debug_msg+=cmd
             execute(cmd,verbose=verbose)
             status = 'locked' # login first
         if status == 'locked' or status == 'unlocked':  # always unlock to get session id
@@ -4633,6 +4644,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
             {bw} get {what} {item}
             {bw} lock --quiet
             """
+            debug_msg+=cmd
             out = execute0(cmd,verbose=verbose)
             if what=='item':
                 import json
@@ -4640,6 +4652,8 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0):
             else:
                 out = out[-1]
     
+    debug_msg+=out
+    if debug: print(debug_msg)
     if oldwhat=='usrpwd':
         (usr,pwd)=(out['login']['username'],out['login']['password'])
         return (usr,pwd)

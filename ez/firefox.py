@@ -173,7 +173,25 @@ class Firefox:
 
         import selenium
         profile = selenium.webdriver.FirefoxProfile(profile_path if profile_path and os.path.exists(profile_path) else None)
+        # https://erayerdin.com/how-to-make-selenium-load-faster-with-firefox-in-python-ck7ncjyvw00sd8ss1v4i5xob1
         profile.set_preference('browser.formfill.enable', False)
+        profile.set_preference("extensions.checkCompatibility", False) # Addon update disabled
+        profile.set_preference("extensions.checkUpdateSecurity", False)
+        profile.set_preference("extensions.update.autoUpdateEnabled", False)
+        profile.set_preference("extensions.update.enabled", False)
+
+        # https://stackoverflow.com/a/64987078/2292993
+        # Get about:config
+        self.driver.get('about:config')
+        time.sleep(1)
+        # Define Configurations        
+        script = """
+        var prefs = Components.classes['@mozilla.org/preferences-service;1'].getService(Components.interfaces.nsIPrefBranch);
+        prefs.setBoolPref('extensions.formautofill.creditCards.enabled', false);
+        """.format(filepath)
+        # Set Configurations
+        self.driver.execute_script(script)
+        time.sleep(1)
 
         if user_agent is not None:
             if user_agent == RANDOM_USERAGENT:

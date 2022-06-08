@@ -173,6 +173,7 @@ class Firefox:
 
         import selenium
         profile = selenium.webdriver.FirefoxProfile(profile_path if profile_path and os.path.exists(profile_path) else None)
+        profile.set_preference('browser.formfill.enable', False)
 
         if user_agent is not None:
             if user_agent == RANDOM_USERAGENT:

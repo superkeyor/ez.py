@@ -4546,7 +4546,7 @@ def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_t
     if attachments is not None: m.attachments.add(attachments)
     m.send()
 
-def onedrive_retrieve(file_or_folder_path,id=None,secret=None):
+def onedrive_connect(file_or_folder_path,id=None,secret=None):
     """
     retrieve a file/folder object for further operation from a path
     retrieve as is, if already a file/folder object
@@ -4577,7 +4577,7 @@ def onedrive_download(remote,local,id=None,secret=None):
     local: when remote is folder, a local folder path
            when remote is file, a local file path
     """
-    item = onedrive_retrieve(remote,id=id,secret=secret)
+    item = onedrive_connect(remote,id=id,secret=secret)
     if item.is_folder: item.download_contents(local)
     if item.is_file: 
         [to_path, name, ext] = splitpath(local)
@@ -4591,7 +4591,7 @@ def onedrive_upload(local,remote,id=None,secret=None):
     remote: a remote file path
     """
     [remote_folder, name, ext]=splitpath(remote)
-    folder = onedrive_retrieve(remote_folder,id=id,secret=secret)
+    folder = onedrive_connect(remote_folder,id=id,secret=secret)
     folder.upload_file(item=local, item_name=name+ext, chunk_size=5242880, upload_in_chunks=False, stream=None, stream_size=None, conflict_handling=None)
     return remote
 
@@ -4605,7 +4605,7 @@ def onedrive_share(path,share_type='view',share_scope='anonymous',share_password
         if not specified, auto max determined by adminstrator
         if not specified, call the function a second time will auto renew expiration date (as long as share does not change)
     """
-    item = onedrive_retrieve(path,id=id,secret=secret)
+    item = onedrive_connect(path,id=id,secret=secret)
     permission = item.share_with_link(share_type=share_type,share_scope=share_scope,share_password=share_password,share_expiration_date=share_expiration_date)
     return permission.share_link
 
@@ -4614,7 +4614,7 @@ def onedrive_lsfile(folder_path,limit=None,query=None,order_by=None,batch=None,i
     folder_path: '/University/Teaching/Class'
     returns a list of file objects; not recursive
     """
-    folder = onedrive_retrieve(folder_path,id=id,secret=secret)
+    folder = onedrive_connect(folder_path,id=id,secret=secret)
     res = []
     for item in folder.get_items(limit=limit,query=query,order_by=order_by,batch=batch):
         if item.is_folder:continue
@@ -4626,7 +4626,7 @@ def onedrive_lsfolder(folder_path,limit=None,query=None,order_by=None,batch=None
     folder_path: '/University/Teaching/Class'
     Returns a list of folder objects; not recursive
     """
-    folder = onedrive_retrieve(folder_path,id=id,secret=secret)
+    folder = onedrive_connect(folder_path,id=id,secret=secret)
     res = []
     for item in folder.get_items(limit=limit,query=query,order_by=order_by,batch=batch):
         if item.is_file:continue
@@ -4651,7 +4651,7 @@ def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
                 print(row.values)
             # see more: https://github.com/O365/python-o365#excel
     """
-    xlsx = onedrive_retrieve(xlsx,id=None,secret=secret)
+    xlsx = onedrive_connect(xlsx,id=None,secret=secret)
     
     from O365.excel import WorkBook
     excel_file = WorkBook(xlsx)

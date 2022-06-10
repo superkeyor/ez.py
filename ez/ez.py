@@ -4633,7 +4633,7 @@ def onedrive_lsfolder(folder_path,limit=None,query=None,order_by=None,batch=None
         res.append(item)
     return res
 
-def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
+def onedrive_excel(xlsx,sheet=1,id=None,secret=None):
     """
     xlsx: file path ('/University/Teaching/Class/Quiz/QuizCompletionAutomation.xlsx') or file object
     sheet: sheet number (1 based) or name ('Sheet1')
@@ -4659,6 +4659,16 @@ def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
         sheet=excel_file.get_worksheets()[sheet-1].name
     ws = excel_file.get_worksheet(sheet)
     return ws
+    
+def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
+    """
+    xlsx: file path ('/University/Teaching/Class/Quiz/QuizCompletionAutomation.xlsx') or file object
+    sheet: sheet number (1 based) or name ('Sheet1')
+    
+    Returns a list of list representing rows (that have been used)
+    """
+    ws = onedrive_excel(xlsx=xlsx,sheet=sheet,id=id,secret=secret)
+    return ws.get_used_range().values
     
 def getpasswordbw(item,what='usrpwd',sync=False,verbose=0,debug=False):
     """

@@ -4600,6 +4600,11 @@ def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
     sheet: sheet number (1 based) or name ('Sheet1')
     
     Returns a worksheet object, which can be further processed
+            cell = ws.get_cell(row,col) # row,col are 0 based!
+            cell = ws.get_range('A1')   # alternatively
+            cell.values = 1
+            cell.update()
+            
             table = ws.get_table('Quiz')
             for row in table.get_rows():
                 print(row.values)

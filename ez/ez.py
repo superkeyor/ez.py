@@ -4546,9 +4546,56 @@ def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_t
     if attachments is not None: m.attachments.add(attachments)
     m.send()
 
+def onedrive_retrieve(file_or_folder_path,id=None,secret=None):
+    """
+    retrieve a file/folder object for further operation from a path
+    retrieve as is, if already a file/folder object
+    
+    file_or_folder_path: str, '/University/Teaching/Class', '/University/Teaching/Class/Quiz/QuizCompletionAutomation.xlsx'
+                         or already a file/folder object
+        
+    Returns a file/folder item, which can be further processed
+        item.copy(target=None, name=None)
+        item.move(target)
+        item.delete() # to recycle bin
+        item.name
+    """
+    if type(file_or_folder_path) in [str]:
+        account = o365auth(id,secret)
+        storage = account.storage()  # here we get the storage instance that handles all the storage options.
+        # get the default drive
+        drive = storage.get_default_drive()
+        item = drive.get_item_by_path(file_or_folder_path)
+    return item
+
+def onedrive_download(remote,local,id=None,secret=None):
+    """
+    download from remote to local (supports file & folder)
+    remote: a folder or file path/object
+    local: when remote is folder, a local folder path
+           when remote is file, a local file path
+    """
+    item = onedrive_retrieve(remote,id=id,secret=secret)
+    if item.is_folder: item.download_contents(local)
+    if item.is_file: 
+        [to_path, name, ext] = splitpath(local)
+        item.download(to_path=to_path, name=name+ext, chunk_size='auto', convert_to_pdf=False, output=None)
+    return local
+
+def onedrive_upload(local,remote,id=None,secret=None):
+    """
+    upload from local to remote (supports file only, overwrite if conflict)
+    local: a local file path
+    remote: a remote file path
+    """
+    [remote_folder, name, ext]=splitpath(remote)
+    folder = onedrive_retrieve(remote_folder,id=id,secret=secret)
+    folder.upload_file(item=local, item_name=name+ext, chunk_size=5242880, upload_in_chunks=False, stream=None, stream_size=None, conflict_handling=None)
+    return remote
+
 def onedrive_share(path,share_type='view',share_scope='anonymous',share_password=None,share_expiration_date=None,id=None,secret=None):
     """
-    path: '/EIU/Teaching/4810Drug'
+    path: '/University/Teaching/Class'
     share_type: 'view','edit','embed'
     share_scope: 'anonymous','organization'
     share_password: str or None
@@ -4556,47 +4603,37 @@ def onedrive_share(path,share_type='view',share_scope='anonymous',share_password
         if not specified, auto max determined by adminstrator
         if not specified, call the function a second time will auto renew expiration date (as long as share does not change)
     """
-    account = o365auth(id,secret)
-    storage = account.storage()  # here we get the storage instance that handles all the storage options.
-    # get the default drive
-    drive = storage.get_default_drive()
-    item = drive.get_item_by_path(path)
+    item = onedrive_retrieve(path,id=id,secret=secret)
     permission = item.share_with_link(share_type=share_type,share_scope=share_scope,share_password=share_password,share_expiration_date=share_expiration_date)
     return permission.share_link
 
-def onedrive_lsfile(path,limit=None,query=None,order_by=None,batch=None,id=None,secret=None):
+def onedrive_lsfile(folder_path,limit=None,query=None,order_by=None,batch=None,id=None,secret=None):
     """
-    path: '/EIU/Teaching/4810Drug'
+    folder_path: '/University/Teaching/Class'
     returns a list of file objects; not recursive
     """
-    account = o365auth(id,secret)
-    storage = account.storage()  # here we get the storage instance that handles all the storage options.
-    # get the default drive
-    drive = storage.get_default_drive()
+    folder = onedrive_retrieve(folder_path,id=id,secret=secret)
     res = []
-    for item in drive.get_items(limit=limit,query=query,order_by=order_by,batch=batch):
+    for item in folder.get_items(limit=limit,query=query,order_by=order_by,batch=batch):
         if item.is_folder:continue
         res.append(item)
     return res
 
-def onedrive_lsfolder(path,limit=None,query=None,order_by=None,batch=None,id=None,secret=None):
+def onedrive_lsfolder(folder_path,limit=None,query=None,order_by=None,batch=None,id=None,secret=None):
     """
-    path: '/EIU/Teaching/4810Drug'
+    folder_path: '/University/Teaching/Class'
     Returns a list of folder objects; not recursive
     """
-    account = o365auth(id,secret)
-    storage = account.storage()  # here we get the storage instance that handles all the storage options.
-    # get the default drive
-    drive = storage.get_default_drive()
+    folder = onedrive_retrieve(folder_path,id=id,secret=secret)
     res = []
-    for item in drive.get_items(limit=limit,query=query,order_by=order_by,batch=batch):
+    for item in folder.get_items(limit=limit,query=query,order_by=order_by,batch=batch):
         if item.is_file:continue
         res.append(item)
     return res
 
 def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
     """
-    xlsx: file path ('/EIU/Teaching/4810Drug/Quiz/QuizCompletionAutomation.xlsx') or file object
+    xlsx: file path ('/University/Teaching/Class/Quiz/QuizCompletionAutomation.xlsx') or file object
     sheet: sheet number (1 based) or name ('Sheet1')
     
     Returns a worksheet object, which can be further processed
@@ -4605,17 +4642,14 @@ def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
             cell.values = 1
             cell.update()
             
+            cell.clear()
+            
             table = ws.get_table('Quiz')
             for row in table.get_rows():
                 print(row.values)
             # see more: https://github.com/O365/python-o365#excel
     """
-    if type(xlsx) in [str]:
-        account = o365auth(id,secret)
-        storage = account.storage()  # here we get the storage instance that handles all the storage options.
-        # get the default drive
-        drive = storage.get_default_drive()
-        xlsx = drive.get_item_by_path(xlsx)
+    xlsx = onedrive_retrieve(xlsx,id=None,secret=secret)
     
     from O365.excel import WorkBook
     excel_file = WorkBook(xlsx)

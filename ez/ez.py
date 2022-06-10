@@ -4566,6 +4566,8 @@ def onedrive_retrieve(file_or_folder_path,id=None,secret=None):
         # get the default drive
         drive = storage.get_default_drive()
         item = drive.get_item_by_path(file_or_folder_path)
+    else:
+        item = file_or_folder_path
     return item
 
 def onedrive_download(remote,local,id=None,secret=None):

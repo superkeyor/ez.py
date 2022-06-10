@@ -4564,6 +4564,61 @@ def onedrive_share(path,share_type='view',share_scope='anonymous',share_password
     permission = item.share_with_link(share_type=share_type,share_scope=share_scope,share_password=share_password,share_expiration_date=share_expiration_date)
     return permission.share_link
 
+def onedrive_lsfile(path,limit=None,query=None,order_by=None,batch=None,id=None,secret=None):
+    """
+    path: '/EIU/Teaching/4810Drug'
+    returns a list of file objects; not recursive
+    """
+    account = o365auth(id,secret)
+    storage = account.storage()  # here we get the storage instance that handles all the storage options.
+    # get the default drive
+    drive = storage.get_default_drive()
+    res = []
+    for item in drive.get_items(limit=limit,query=query,order_by=order_by,batch=batch):
+        if item.is_folder:continue
+        res.append(item)
+    return res
+
+def onedrive_lsfolder(path,limit=None,query=None,order_by=None,batch=None,id=None,secret=None):
+    """
+    path: '/EIU/Teaching/4810Drug'
+    Returns a list of folder objects; not recursive
+    """
+    account = o365auth(id,secret)
+    storage = account.storage()  # here we get the storage instance that handles all the storage options.
+    # get the default drive
+    drive = storage.get_default_drive()
+    res = []
+    for item in drive.get_items(limit=limit,query=query,order_by=order_by,batch=batch):
+        if item.is_file:continue
+        res.append(item)
+    return res
+
+def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
+    """
+    xlsx: file path ('/EIU/Teaching/4810Drug/Quiz/QuizCompletionAutomation.xlsx') or file object
+    sheet: sheet number (1 based) or name ('Sheet1')
+    
+    Returns a worksheet object, which can be further processed
+            table = ws.get_table('Quiz')
+            for row in table.get_rows():
+                print(row.values)
+            # see more: https://github.com/O365/python-o365#excel
+    """
+    if type(xlsx) in [str]:
+        account = o365auth(id,secret)
+        storage = account.storage()  # here we get the storage instance that handles all the storage options.
+        # get the default drive
+        drive = storage.get_default_drive()
+        xlsx = drive.get_item_by_path(xlsx)
+    
+    from O365.excel import WorkBook
+    excel_file = WorkBook(xlsx)
+    if type(sheet) in [int]:
+        sheet=excel_file.get_worksheets()[sheet-1].name
+    ws = excel_file.get_worksheet(sheet)
+    return ws
+    
 def getpasswordbw(item,what='usrpwd',sync=False,verbose=0,debug=False):
     """
     item: search string (not case sensitive, better be unique), or item id

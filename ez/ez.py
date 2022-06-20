@@ -3533,6 +3533,13 @@ def encoding_convert(file_path, source_encoding=None, backup=False):
             f.write(content.encode(target_encoding))
 
 def opens(filepath):
+    """
+    filepath: a str of file or list of files
+    opens with default program in Mac, Win, Linux
+    """
+    if type(filepath) in [list]:
+        for f in filepath:
+            opens(f)
     import subprocess, os, sys
     if sys.platform.startswith('darwin'):
         subprocess.call(('open', filepath))

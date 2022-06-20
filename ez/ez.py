@@ -2678,6 +2678,10 @@ class JDict(OrderedDict):
                     prev[key] = newVal
 
     def sort(self, reverse=False):
+        """
+        sort by keys, default ascending order
+        returns a new JDict object
+        """
         # self = JDict(sorted(self.items(),reverse=reverse)) will not work, see
         # http://stackoverflow.com/questions/1216356/
         return JDict(sorted(list(self.items()),reverse=reverse))

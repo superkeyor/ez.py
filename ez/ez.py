@@ -3540,13 +3540,14 @@ def opens(filepath):
     if type(filepath) in [list]:
         for f in filepath:
             opens(f)
-    import subprocess, os, sys
-    if sys.platform.startswith('darwin'):
-        subprocess.call(('open', filepath))
-    elif os.name == 'nt': # For Windows
-        os.startfile(filepath)
-    elif os.name == 'posix': # For Linux
-        subprocess.call(('xdg-open', filepath))
+    else:
+        import subprocess, os, sys
+        if sys.platform.startswith('darwin'):
+            subprocess.call(('open', filepath))
+        elif os.name == 'nt': # For Windows
+            os.startfile(filepath)
+        elif os.name == 'posix': # For Linux
+            subprocess.call(('xdg-open', filepath))
 
 def vx(df):
     import tempfile

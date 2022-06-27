@@ -2444,6 +2444,14 @@ def pause():
         # raise Exception('User cancelled.')
         return False
 
+def round2(x,y=None):
+    """
+    always round 0.5 up (Python 2 rounding behavior)
+    Python 3's way (called "round half to even" or "banker's rounding") is considered the standard rounding method these days
+    https://stackoverflow.com/questions/10825926/python-3-x-rounding-behavior
+    """
+    return round(x+1e-15,y)
+
 def num(s,force=True):
     """num(s)
     num(3),num(3.7)-->3

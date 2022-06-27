@@ -5177,52 +5177,61 @@ class GSheet():
         irow,icol: int row/col number
         option: 'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'
         """
-        val = self.ws.cell(irow,icol,option).value
+        val = self.ws.cell(irow,icol,value_render_option=option).value
         if type(val) in [str]: val = val.strip()
         return val
 
-    def getval(self,*args,**kwargs):
+    def getval(self,*args,option='FORMATTED_VALUE',**kwargs):
         """
         range could be A:A, 2:2
+        option: 'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'
         returns a list of list
         """
         # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.get
-        return self.ws.get(*args, **kwargs)
+        return list(self.ws.get(*args, value_render_option=option, **kwargs))
     
-    def getc(self,col,*args,**kwargs):
+    def getc(self,col,*args,option='FORMATTED_VALUE',**kwargs):
         """
         col int, 1 based
+        option: 'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'
         returns a list
         """
         # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.get
-        return self.ws.col_values(col, *args, **kwargs)
+        return self.ws.col_values(col, *args, value_render_option=option, **kwargs)
 
-    def getr(self,row,*args,**kwargs):
+    def getr(self,row,*args,option='FORMATTED_VALUE',**kwargs):
         """
         row int, 1 based
+        option: 'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'
         returns a list
         """
         # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.get
-        return self.ws.row_values(row, *args, **kwargs)
+        return self.ws.row_values(row, *args, value_render_option=option, **kwargs)
 
-    def insert(self,values,row=1,value_input_option="USER_ENTERED"):
+    def insert(self,values,row=1,option="USER_ENTERED"):
         """
         values (list) – List of list. eg, [[11,12],[21,22]]
         index (int) – Start row to update (one-based). Defaults to 1 (one).
-        value_input_option: "RAW", "USER_ENTERED"
+        option: "RAW", "USER_ENTERED"
         """
         # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.insert_rows
-        return self.ws.insert_rows(values=values, row=row, value_input_option=value_input_option)
+        return self.ws.insert_rows(values=values, row=row, value_input_option=option)
 
-    def update(self,range,values,value_input_option="USER_ENTERED"):
-        # Note that update range can be bigger than values array: update('A2:B4', [[42], [43]]) -> Updates A2 and A3 with values 42 and 43
+    def update(self,range,values,option="USER_ENTERED"):
+        """
+        option: "RAW", "USER_ENTERED"
+        Note that update range can be bigger than values array: update('A2:B4', [[42], [43]]) -> Updates A2 and A3 with values 42 and 43
+        """
         # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.update
-        return self.ws.update(range,values,value_input_option=value_input_option)
+        return self.ws.update(range,values,value_input_option=option)
 
-    def append(self,values,value_input_option="USER_ENTERED"):
-        """append to the end of data"""
+    def append(self,values,option="USER_ENTERED"):
+        """
+        append to the end of data
+        option: "RAW", "USER_ENTERED"
+        """
         # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.append_rows
-        return self.ws.update(f'A{self.nrow+1}',values,value_input_option=value_input_option)
+        return self.ws.update(f'A{self.nrow+1}',values,value_input_option=option)
 
     def switch(self,sheet_name):
         """switch to a particular worksheet if there are multiple ones"""

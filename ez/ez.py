@@ -5173,9 +5173,9 @@ class GSheet():
 
     def getrc(self,irow,icol,option='FORMATTED_VALUE'):
         """
-        returns a single cell value (trimmed if string)
         irow,icol: int row/col number
         option: 'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'
+        returns a single cell value (trimmed if string)
         """
         val = self.ws.cell(irow,icol,value_render_option=option).value
         if type(val) in [str]: val = val.strip()
@@ -5227,8 +5227,8 @@ class GSheet():
 
     def append(self,values,option="USER_ENTERED"):
         """
-        append to the end of data
         option: "RAW", "USER_ENTERED"
+        append to the end of data
         """
         # https://gspread.readthedocs.io/en/latest/api.html#gspread.models.Worksheet.append_rows
         return self.ws.update(f'A{self.nrow+1}',values,value_input_option=option)

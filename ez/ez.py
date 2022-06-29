@@ -3597,6 +3597,7 @@ def setkmvar(var,value):
 
 def runkm(uuid):
     """
+    run km macro
     Edit -> Copy macro as uuid
     """
     applescript = """

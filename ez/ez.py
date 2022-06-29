@@ -3565,7 +3565,7 @@ def vx(df):
 
 def getkmvar(var):
     # https://wiki.keyboardmaestro.com/action/Execute_a_Shell_Script
-    # Keyboard Maestro only allows Get env variable from shell script
+    # Keyboard Maestro only allows Get (cannot set) env variable from shell script
     # eg., getkmvar('PathFinderSelection')
     # returns stripped string, or none if not exist or empty in user input in KM
     import os
@@ -3575,6 +3575,38 @@ def getkmvar(var):
     except KeyError:
         value = None
     return value
+
+def setkmvar(var,value):
+    """
+    var: KM variable in gui, e.g., MouseLoc
+    value: a string or number--number will be converted to a string in KMVAR(?)
+    Keyboard Maestro does not allow to set env variable from shell script, but applescript would be OK
+    """
+    # https://wiki.keyboardmaestro.com/manual/Scripting
+    applescript = f"""
+    tell application "Keyboard Maestro Engine"
+      -- set calcResult to getvariable "Calculation Result"
+      -- If the Keyboard Maestro Variable does not exist, the AppleScript Variable will be set to empty string
+     
+      setvariable "{var}" to "{value}"
+      -- If the Keyboard Maestro Variable does not exist, it will be created
+    end tell
+    """
+    espA(applescript)
+    return None
+
+def msgbox(msg):
+    """
+    a trick to call Keyboard Maestro to display large text
+    """
+    setkmvar('PyMsg',msg)
+    applescript = """
+    tell application "Keyboard Maestro Engine"
+        do script "7D38B1AD-720C-491F-8C07-2C33D9B2A958"
+    end tell
+    """
+    espA(applescript)
+    return None
 
 def setpassword(acount,password):
     """

@@ -3595,17 +3595,24 @@ def setkmvar(var,value):
     espA(applescript)
     return None
 
+def runkm(uuid):
+    """
+    Edit -> Copy macro as uuid
+    """
+    applescript = """
+    tell application "Keyboard Maestro Engine"
+        do script "{uuid}"
+    end tell
+    """
+    espA(applescript)
+    return None
+
 def msgbox(msg):
     """
     a trick to call Keyboard Maestro to display large text
     """
     setkmvar('PyMsg',msg)
-    applescript = """
-    tell application "Keyboard Maestro Engine"
-        do script "7D38B1AD-720C-491F-8C07-2C33D9B2A958"
-    end tell
-    """
-    espA(applescript)
+    runkm("7D38B1AD-720C-491F-8C07-2C33D9B2A958")
     return None
 
 def setpassword(acount,password):

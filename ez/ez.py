@@ -3600,7 +3600,7 @@ def runkm(uuid):
     run km macro
     Edit -> Copy macro as uuid
     """
-    applescript = """
+    applescript = f"""
     tell application "Keyboard Maestro Engine"
         do script "{uuid}"
     end tell

@@ -401,6 +401,24 @@ def splitpath(path):
     return [dir, file, ext]
 sp = splitpath
 
+def extpath(path,newext):
+    """
+    path: 'a/b/c.txt', or a list of path
+    newext: '.md' or a list of newext
+    returns new filepath with changed extension: 'a/b/c.md'
+    Supports vectorization.
+    """
+    if type(path) in [list, tuple]:
+        [pth, fname, ext] = splitpath(path)
+        result = []
+        for p,f,e in zip(pth,fname,newext):
+            result.apend(joinpath(p,f+newext))
+        return result
+
+    [pth, fname, ext] = splitpath(path)
+    return joinpath(pth,fname+newext)
+ep=extpath
+
 def cleanpath(path,allow_unicode=False):
     """
     clean file name only (not whole path!, but takes whole path as parameter)
@@ -433,6 +451,7 @@ def cleanpath(path,allow_unicode=False):
         raise Exception(f"Could not clean path '{path}'")
     path = joinpath(pth,fname+ext)
     return path
+#mnemonic: x = clean
 xp=cleanpath
 
 def trim(s, how=4, chars=None):

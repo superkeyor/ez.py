@@ -3614,14 +3614,18 @@ def setkmvar(var,value):
     espA(applescript)
     return None
 
-def runkm(uuid):
+def runkm(uuid,timeout=3600):
     """
     run km macro
-    Edit -> Copy macro as uuid
+    uuid: Edit -> Copy macro as uuid
+    timeout: seconds (Applescripts default timeout of 2 mins)
     """
+    # https://stackoverflow.com/a/22446535/2292993
     applescript = f"""
     tell application "Keyboard Maestro Engine"
-        do script "{uuid}"
+        with timeout of {timeout} seconds
+            do script "{uuid}"
+        end timeout
     end tell
     """
     espA(applescript)

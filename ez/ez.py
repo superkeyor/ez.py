@@ -3133,7 +3133,7 @@ def hashes(str_or_filepath, reference=None):
             password.encode('utf-8'), # Convert the password to bytes
             salt, # Provide the salt
             100000, # It is recommended to use at least 100,000 iterations of SHA-256 
-            # dklen=128 # Get a 128 byte key
+            # dklen=128 # Get a 128 byte key 
         )
         if reference:
             return hashed==reference[32:]        

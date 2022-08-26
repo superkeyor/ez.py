@@ -22,7 +22,7 @@ packages = find_packages()
 install_requires=['twine','pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'O365', 'chardet', 'psutil',
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 'noraise', 'fake_useragent', 'tldextract',
-                 'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 'ezgooey',
+                 'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 
                  'beautifulsoup4', 
                  'pyarrow', 'cachelib', 'Pillow', 'mss', 'SpeechRecognition',
                  'dropbox','pydrive2']
@@ -31,7 +31,7 @@ import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
-if platform.system()!='Linux': install_requires.extend(['opencv-python','easyocr','pandas', 'numpy', 'lxml'])
+if platform.system()!='Linux': install_requires.extend(['opencv-python','easyocr','pandas','numpy','lxml','ezgooey',])
 ######################################################################################
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:

@@ -23,7 +23,7 @@ install_requires=['twine','pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 'noraise', 'fake_useragent', 'tldextract',
                  'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 'ezgooey',
-                 'pandas', 'numpy', 'beautifulsoup4', 'lxml',
+                 'beautifulsoup4', 'lxml',
                  'pyarrow', 'cachelib', 'Pillow', 'mss', 'SpeechRecognition',
                  'dropbox','pydrive2']
 # 'imessage_reader' not available on heroku/linux when installing ez
@@ -31,7 +31,7 @@ import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
-if platform.system()!='Linux': install_requires.extend(['opencv-python','easyocr'])
+if platform.system()!='Linux': install_requires.extend(['opencv-python','easyocr','pandas', 'numpy'])
 ######################################################################################
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:

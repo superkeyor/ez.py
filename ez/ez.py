@@ -3088,27 +3088,62 @@ def keygen(length=8, complexity=3):
         chars = str(complexity)
     return ''.join(random.choice(chars) for x in range(length))
 
-def hashes(filename, reference=None):
-    """Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way"""
+def hashes(str_or_filepath, reference=None):
+    """
+    str_or_filepath:
+        if str, hashes a str with a random salt using pbkdf2_hmac
+        if filepath, calculate/print a file's md5 32, sha1 32 (and optionally compare with a reference); can handle big files in a memory efficient way
+    reference: 
+        if str, when reference provided returns T/F; otherwise return hashed 
+        if filepath, when reference provided, print matched/not matched; otherwise print hashed only
+    """
     import hashlib
-    md5 = hashlib.md5()
-    sha1 = hashlib.sha1()
-    with open(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
-            md5.update(chunk)
-            sha1.update(chunk)
-    if reference:
-        if reference.lower() == md5.hexdigest().lower():
-            print('md5 32: ' + md5.hexdigest() + ' (matched)!')
+    if exists(str_or_filepath):
+        filename = str_or_filepath
+        md5 = hashlib.md5()
+        sha1 = hashlib.sha1()
+        with open(filename, 'rb') as f:
+            for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
+                md5.update(chunk)
+                sha1.update(chunk)
+        if reference:
+            if reference.lower() == md5.hexdigest().lower():
+                print('md5 32: ' + md5.hexdigest() + ' (matched)!')
+            else:
+                print('md5 32: ' + md5.hexdigest() + ' (NOT MATCHED)!')
+            if reference.lower() == sha1.hexdigest().lower():
+                print('sha1 32: ' + sha1.hexdigest() + ' (matched)!')
+            else:
+                print('sha1 32: ' + sha1.hexdigest() + ' (NOT MATCHED)!')
         else:
-            print('md5 32: ' + md5.hexdigest() + ' (NOT MATCHED)!')
-        if reference.lower() == sha1.hexdigest().lower():
-            print('sha1 32: ' + sha1.hexdigest() + ' (matched)!')
-        else:
-            print('sha1 32: ' + sha1.hexdigest() + ' (NOT MATCHED)!')
+            print('md5 32: ' + md5.hexdigest())
+            print('sha1 32: ' + sha1.hexdigest())
     else:
-        print('md5 32: ' + md5.hexdigest())
-        print('sha1 32: ' + sha1.hexdigest())
+        # https://nitratine.net/blog/post/how-to-hash-passwords-in-python/
+        import binascii
+        if reference:
+            reference = reference.encode('utf-8')
+            reference = binascii.a2b_hex(reference)
+            salt = reference[:32] 
+        else:
+            salt = os.urandom(32)
+        password = str_or_filepath
+        hashed = hashlib.pbkdf2_hmac(
+            'sha256', # The hash digest algorithm for HMAC
+            password.encode('utf-8'), # Convert the password to bytes
+            salt, # Provide the salt
+            100000, # It is recommended to use at least 100,000 iterations of SHA-256 
+            # dklen=128 # Get a 128 byte key
+        )
+        if reference:
+            return hashed==reference[32:]        
+        else:
+            storage = salt + hashed
+            # hexadecimal representation of the binary data
+            storage = binascii.b2a_hex(storage)
+            # byte to string
+            storage = storage.decode('utf-8')
+            return storage
 
 def readx(path, sheet=0, r=[1,], c=None, *args, **kwargs):
     """

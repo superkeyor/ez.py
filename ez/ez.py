@@ -3145,6 +3145,15 @@ def hashes(str_or_filepath, reference=None):
             storage = storage.decode('utf-8')
             return storage
 
+def readt(path, *args, **kwargs):
+    """
+    read text file
+    returns a list of lines
+    """
+    with open(path, 'r') as f: 
+        lines = f.readlines()
+    return lines
+
 def readx(path, sheet=0, r=[1,], c=None, *args, **kwargs):
     """
     (path, sheet=0, r=[1,], c=None, *args, **kwargs)
@@ -3423,6 +3432,30 @@ def savej(x,file='data.json',indent=4,*args,**kwargs):
     with open(file, 'w') as f:
         json.dump(x,f,indent=indent,*args,**kwargs)
 writej = savej
+
+def savet(lines,file='data.txt',*args,**kwargs):
+    """
+    save a list of lines to text
+    """
+    with open(file, 'w') as f: 
+        f.writelines(lines)
+writet = savet
+
+def savew(lines,file='data.docx',heading=None,heading_level=1,*args,**kwargs):
+    """
+    save a list of line to word
+    heading: optional heading immediately before the lines
+    heading_level: 0-9 0=title, 1=h1, 2=h2 etc
+    """
+    # https://www.geeksforgeeks.org/working-with-text-in-python-docx-module/
+    import docx
+    doc = docx.Document()
+    if heading: doc.add_heading(heading,heading_level)
+    # https://stackoverflow.com/a/29312199/2292993
+    lines = re.sub(r'[^\x00-\x7F]+|\x0c',' ', lines) # remove all non-XML-compatible characters
+    doc.add_paragraph(lines)
+    doc.save(file)
+writew = savew
 
 def hanzifreq(filename, size=10, outfile=None, encoding='utf8'):  
     """

@@ -3455,7 +3455,7 @@ def savew(lines,file='data.docx',heading=None,heading_level=1,*args,**kwargs):
     lines = re.sub(r'[^\x00-\x7F]+|\x0c',' ', lines) # remove all non-XML-compatible characters
     doc.add_paragraph(lines)
     doc.save(file)
-writew = savew
+writew = savew 
 
 def hanzifreq(filename, size=10, outfile=None, encoding='utf8'):  
     """

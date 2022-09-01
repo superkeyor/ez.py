@@ -3453,7 +3453,8 @@ def savew(lines,file='data.docx',heading=None,heading_level=1,*args,**kwargs):
     if heading: doc.add_heading(heading,heading_level)
     # https://stackoverflow.com/a/29312199/2292993
     lines = re.sub(r'[^\x00-\x7F]+|\x0c',' ', lines) # remove all non-XML-compatible characters
-    doc.add_paragraph(lines)
+    for l in lines:
+        doc.add_paragraph(l.rstrip('\n'))
     doc.save(file)
 writew = savew
 

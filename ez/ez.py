@@ -1834,13 +1834,14 @@ def ver(package_name='python'):
     ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
     """
     print(package_name + ' version installed:')
-    if package_name == 'python':
+    if package_name == 'python' or package_name == 'ez':
         print((sys.version))
         HERE = os.path.dirname(os.path.abspath(__file__))
         with open(os.path.join(HERE,'version.py'),'r') as f:
             ezv=f.readline()
         ezv = ezv.split(" = ")[1].strip("'").strip('"')
-        print(f'\nez: {ezv}')
+        print(f'\n{HERE}')
+        print(f'ez: {ezv}')
     else:
         # https://docs.python.org/2.7/reference/simple_stmts.html#exec
         theNameSpace = {}

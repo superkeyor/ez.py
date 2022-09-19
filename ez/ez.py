@@ -2639,6 +2639,7 @@ def duplicate(seq):
     df=(df.loc[df.duplicated(subset=['col'],keep='first').tolist()]).drop_duplicates()
     return df.col.tolist()
 
+# As of Python version 3.7, dictionaries are ordered. In Python 3.6 and earlier, dictionaries are unordered.
 from collections import OrderedDict
 class JDict(OrderedDict):
     """Jerry's dictionary

@@ -1097,7 +1097,7 @@ def mv(source, destination, debugMode=False):
         #     print source + " not moved to " + destination
 
 def lns(source, destination):
-    """Creates a soft link / symbolic link /shortcut."""
+    """Creates a soft link/symbolic link/shortcut."""
     source = fullpath(source)
     destination = fullpath(destination)
 

@@ -1840,7 +1840,7 @@ def ver(package_name='python'):
         with open(os.path.join(HERE,'version.py'),'r') as f:
             ezv=f.readline()
         ezv = ezv.split(" = ")[1].strip("'").strip('"')
-        print(f'\n{HERE}')
+        print(f'\nLib: {HERE}')
         print(f'ez: {ezv}')
     else:
         # https://docs.python.org/2.7/reference/simple_stmts.html#exec

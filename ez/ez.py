@@ -4685,7 +4685,7 @@ def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_t
     """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
     to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
     reply_to: 'a@a.com'
-    body: html code or text. Best practice: Write/Format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
+    body: html code or text. Best practice: three quotes f string (\\n will be auto replaced with <br>) or write/format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
     attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
     id, secret: ignored if pysecrets exists
     """
@@ -4693,7 +4693,7 @@ def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_t
     m = account.new_message()
     m.to.add(to)
     m.subject = subject
-    m.body = body
+    m.body = body.replace('\n','<br>')
     if cc is not None: m.cc.add(cc)
     if bcc is not None: m.bcc.add(bcc)
     if reply_to is not None: m.reply_to.add(reply_to)

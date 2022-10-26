@@ -6136,6 +6136,42 @@ def gif(imgs,out='animation.gif',crop=None,duration=300,loop=0):
                    duration=duration, loop=loop)
     print(f"Output gif: {out}")
 
+def pdf2gif(pdf,out='animation.gif',crop=None,duration=300,loop=0):
+    """
+    pdf: a multiple-page pdf file with each page being a frame
+         workflow: 
+         -draw.io more powerful and flexible than powerpoint
+         -set up paper size: custom, 4 in x 4in
+         -draw, will auto expand to another page
+         -print to pdf (easier than export as pdf)
+    out: path of gif to save
+    crop: [left, up, right, bottom] of the image to crop
+    duration: a single value or a list of values for each frame (in ms)
+    loop: >=0, 0 forever
+    """
+    # https://pymupdf.readthedocs.io/en/latest/recipes-images.html#recipesimages
+    import fitz  # import the bindings
+    doc = fitz.open(fullpath(pdf))  # open document
+
+    from PIL import Image
+    frames = []
+
+    for page in doc:  # iterate through the pages
+        pix = page.get_pixmap()  # render page to an image
+        # pix.save("page-%i.png" % page.number)  # store image as a PNG
+        # https://github.com/pymupdf/PyMuPDF/issues/322
+        im=Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        print(f"Input image {page.number+1}: w {im.size[0]} x h {im.size[1]}")
+        if crop is not None: im = im.crop(crop)
+        frames.append(im)
+
+    # Save into a GIF file
+    frames[0].save(out, format='GIF',
+                   append_images=frames[1:],
+                   save_all=True,
+                   duration=duration, loop=loop)
+    print(f"Output gif: {out}")
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

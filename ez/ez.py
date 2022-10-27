@@ -6159,7 +6159,7 @@ def pdf2gif(pdf,out='animation.gif',dpi=300,alpha=True,crop=None,duration=300,lo
     frames = []
 
     for page in doc:  # iterate through the pages
-        pix = page.get_pixmap(dpi)  # render page to an image
+        pix = page.get_pixmap(dpi=dpi,alpha=alpha)  # render page to an image
         # pix.save("page-%i.png" % page.number)  # store image as a PNG
         # https://github.com/pymupdf/PyMuPDF/issues/322
         im=Image.frombytes("RGB", [pix.width, pix.height], pix.samples)

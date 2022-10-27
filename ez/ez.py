@@ -6152,7 +6152,7 @@ def pdf2gif(pdf,out='animation.gif',dpi=300,crop=None,duration=300,loop=0):
     """
     # auto trim to 10% of blank margins
     office_pdf_crop(pdf,'-u')
-    root, ext = ez.splitext(pdf)
+    root, ext = splitext(pdf)
     pdf = root+'_cropped'+ext
 
     # https://pymupdf.readthedocs.io/en/latest/recipes-images.html#recipesimages

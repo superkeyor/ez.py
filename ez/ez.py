@@ -3946,10 +3946,11 @@ def office_pdf_unlock(inputpdfs):
 def office_pdf_crop(inputpdfs,parameters=''):
     """
     inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
-    new file in the same folder suffixed _cropped
+    new file in the same folder suffixed _cropped (or provide -o outfile option, but currently only works for single pdf input)
     less effective than acrobat pro's Save Reduced Size
     # https://github.com/abarker/pdfCropMargins
-    parameters:'-u -s -a4 left bottom right top' separated by space. 
+    parameters: if empty '', default of retaining 10% of the existing margins (not necessarily implying -u)
+                '-u -s -a4 left bottom right top' separated by space. 
                 left bottom right top are the margin to crop in unit of bp (72 bp = 1 inch)
                 -u Crop all the pages uniformly
                 -s force each page to the same size
@@ -6136,21 +6137,24 @@ def gif(imgs,out='animation.gif',crop=None,duration=300,loop=0):
                    duration=duration, loop=loop)
     print(f"Output gif: {out}")
 
-def pdf2gif(pdf,out='animation.gif',dpi=300,alpha=True,crop=None,duration=300,loop=0):
+def pdf2gif(pdf,out='animation.gif',dpi=300,crop=None,duration=300,loop=0):
     """
-    pdf: a multiple-page pdf file with each page being a frame
-         workflow: 
-         -draw.io more powerful and flexible than powerpoint
+    pdf: a multiple-page pdf file with each page being a frame (can auto trim blank margins)
+         draw.io workflow (as of 20.3.0, slightly misaligned thus causing flickering in gif; recommend to use powerpoint instead): 
          -set up paper size: custom, 4 in x 4 in
          -draw, will auto expand to another page
          -print to pdf (easier than export as pdf)
-    out: path of gif to save
+    out: path of gif to save (I have not implemented transparent background; Pillow seems to be buggy in this feature)
     dpi: None or int
-    alpha: True/False, transparent areas where the page is empty
     crop: [left, up, right, bottom] of the image to crop
     duration: a single value or a list of values for each frame (in ms)
     loop: >=0, 0 forever
     """
+    # auto trim to 10% of blank margins
+    office_pdf_crop(pdf,'-u')
+    root, ext = ez.splitext(pdf)
+    pdf = root+'_cropped'+ext
+
     # https://pymupdf.readthedocs.io/en/latest/recipes-images.html#recipesimages
     import fitz  # import the bindings
     doc = fitz.open(fullpath(pdf))  # open document
@@ -6159,7 +6163,7 @@ def pdf2gif(pdf,out='animation.gif',dpi=300,alpha=True,crop=None,duration=300,lo
     frames = []
 
     for page in doc:  # iterate through the pages
-        pix = page.get_pixmap(dpi=dpi,alpha=alpha)  # render page to an image
+        pix = page.get_pixmap(dpi=dpi)  # render page to an image
         # pix.save("page-%i.png" % page.number)  # store image as a PNG
         # https://github.com/pymupdf/PyMuPDF/issues/322
         im=Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
@@ -6168,6 +6172,7 @@ def pdf2gif(pdf,out='animation.gif',dpi=300,alpha=True,crop=None,duration=300,lo
         frames.append(im)
 
     # Save into a GIF file
+    # Pillow seems to be buggy with transparent background; not implementing this feature 
     frames[0].save(out, format='GIF',
                    append_images=frames[1:],
                    save_all=True,

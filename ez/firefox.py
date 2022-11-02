@@ -39,6 +39,11 @@
 # 'xpath': By.XPATH,
 # 'tag': By.TAG_NAME,
 
+# xpath quick syntax:
+# //tagname/child[@Attribute='value']
+# //p[contains(text(),"Unit A")][1]  --1 based
+# (//input[@type="RADIO"])[2]
+
 # config
 # http://kb.mozillazine.org/Firefox_%3A_FAQs_%3A_About%3Aconfig_Entries
 
@@ -1061,8 +1066,12 @@ class Firefox:
         if element is None:
             element = self.driver
         elif by == By.XPATH and not key.startswith('.'):
-            # selenium has a bug with xpath. If xpath does not start with '.' it will search in the whole doc
-            key = '.' + key
+            # selenium has a bug with xpath. If xpath does not start with '.', it will search in the whole doc
+            if key.startswith('('): 
+                # (//input[@type="RADIO"])[2]
+                key = '(.' + key[1:]
+            else:
+                key = '.' + key
 
         try:
             es = WebDriverWait(element, timeout).until(

@@ -33,7 +33,7 @@ import platform
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
 # if platform.system()!='Linux': install_requires.extend(['opencv-python','easyocr']) 
-#                                'opencv-python' for findimg on screen (not using now)
+#                                'opencv-python' for findimg on screen (commented out)
 #                                'easyocr' for ocr (commented out, also requires opencv)
 ######################################################################################
 # Get the long description from the relevant file

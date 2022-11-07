@@ -685,12 +685,12 @@ def ce():
 
 def cf():
     """Changes to working directory in QSpace"""
-    cmd = """
+    cmd = '''
     item=$(osascript -e 'tell app "QSpace" to return the url of selected items')
     if [[ "$item" == "" ]]; then item=$(osascript -e 'tell app "QSpace" to return the url of root item'); fi
     if [[ -f "$item" ]]; then item=$( dirname "${item}" ); fi
     [[ -d "$item" ]] && echo "${item}"
-    """
+    '''
     path = execute0(cmd,verbose=0)[0]
     os.chdir(path)
     print("Start working in " + os.getcwd())

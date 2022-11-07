@@ -13,19 +13,19 @@ packages = find_packages()
 # packages.append('ez.timezone.pytz')
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
 # install_requires=['']
-install_requires=['twine', # setup.py upload depreciated -> twine
+install_requires=['twine', 
                  'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'O365', 'chardet', 'psutil',
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 
-                 'noraise', # seems not actually used, might be useful
-                 'fake_useragent', 'tldextract', # firefox
-                 'pynput', # pynput instead of pyautogui <- problematic dependencies on MacOS
+                 'noraise', 
+                 'fake_useragent', 'tldextract', 
+                 'pynput', 
                  'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 
-                 'ezgooey', # gui
+                 'ezgooey', 
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
-                 'cachelib' # flask
+                 'cachelib' 
                  'pyarrow', 'Pillow', 'mss', 'SpeechRecognition',
-                 'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
+                 'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', 
                  'dropbox','pydrive2']
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform

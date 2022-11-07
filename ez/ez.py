@@ -5011,61 +5011,103 @@ def send(*keys,delay=[0.025,0.25],times=1):
                     keyboard.release(k)
                 sleep(random.uniform(delay[0],delay[1]))
 
-def findimg(image, area=None, p=0.8, show=False):
-    '''
-    Searchs for an image on the screen
-    
-    image: path to the image file (see opencv imread for supported types)
-    area: [x,y,w,h]
-    p: precision the higher, the lesser tolerant and fewer false positives are found default is 0.8
-    show: show all matches (highlighted)
+# def ocr(img=None,lang=['en'],gpu=False,*args,**kwargs):
+#     # cannot work with certain opencv version, use instead: https://github.com/schappim/macOCR
+#     """
+#     img: filepath, OpenCV image object (numpy array), image file as bytes, URL to raw image (default None=clipboard img)
+#     lang: ['en','ch_sim','ch_tra']
+#     https://www.jaided.ai/easyocr/documentation/
+#     """
+#     from PIL import ImageGrab
+#     import easyocr
+#     if img is None: img = ImageGrab.grabclipboard()
+#     reader = easyocr.Reader(lang,gpu=gpu)
+#     result = reader.readtext(img,detail=True,paragraph=False,*args,**kwargs)
+#     # result=[([[189, 75], [469, 75], [469, 165], [189, 165]], '愚园路', 0.3754989504814148),
+#     #  ([[86, 80], [134, 80], [134, 128], [86, 128]], '西', 0.40452659130096436),
+#     #  ([[517, 81], [565, 81], [565, 123], [517, 123]], '东', 0.9989598989486694),
+#     #  ([[78, 126], [136, 126], [136, 156], [78, 156]], '315', 0.8125889301300049),
+#     #  ([[514, 126], [574, 126], [574, 156], [514, 156]], '309', 0.4971577227115631),
+#     #  ([[226, 170], [414, 170], [414, 220], [226, 220]], 'Yuyuan Rd.', 0.8261902332305908),
+#     #  ([[79, 173], [125, 173], [125, 213], [79, 213]], 'W', 0.9848111271858215),
+#     #  ([[529, 173], [569, 173], [569, 213], [529, 213]], 'E', 0.8405593633651733)]
+#     top=[]; left=[]; out={}
+#     for r in result:
+#         top=r[0][0][1]; left=r[0][0][0]; text=r[1]
+#         if top not in out.keys():
+#             # /10 to scale
+#             out[top]=' '*int(left/10)+text
+#         else:
+#             text_old = out[top].lstrip()
+#             text_new = text
+#             left_old = len(out[top]) - len(out[top].lstrip())
+#             left_new = int(left/10)
+#             if left_new > left_old:
+#                 part1 = ' '*int(left_old/10)+text_old; part2 = ' '*int(left_new - len(part1))+text_new
+#             else:
+#                 # unlike to trigger, since result ordered by top already
+#                 part1 = ' '*int(left_new/10)+text_new; part2 = ' '*int(left_old - len(part1))+text_old
+#             out[top] = part1+part2
+#     result=[text for (top, text) in sorted(out.items())]
+#     return result
+#     # for r in result:
+#     #     print(r)
 
-    returns :
-    [[x,y,w,h]] or [] if not found
-    '''
-    # modified from https://github.com/drov0/python-imagesearch/blob/master/python_imagesearch/imagesearch.py
-    import cv2
-    import numpy as np
-    import mss
-    from PIL import Image
-
-    # https://python-mss.readthedocs.io/examples.html
-    sct = mss.mss()
-    if area is None: 
-        area=sct.monitors[0]
-    else:
-        area={'left': area[0], 'top': area[1], 'width': area[2], 'height': area[3]}
-    im = sct.grab(area)
-    # raw is bgra
-    # Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX").show()
-    img = np.array(im)
-    img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-    # cv2.imshow("OpenCV", img)
-    # Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).show()
-    template = cv2.imread(image, cv2.IMREAD_COLOR) 
-    # cv2.imshow("OpenCV", template)
-    # Image.fromarray(cv2.cvtColor(template, cv2.COLOR_BGR2RGB)).show()
-    if template is None:
-        raise FileNotFoundError('Image file not found: {}'.format(image))
-    res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+# def findimg(image, area=None, p=0.8, show=False):
+#     '''
+#     Searchs for an image on the screen
     
-    matches = []
-    # https://docs.opencv.org/3.4/d4/dc6/tutorial_py_template_matching.html
-    h, w, channels = template.shape
-    loc = np.where( res >= p )
-    for pt in zip(*loc[::-1]):
-        cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
-        matches.append([ pt[0],pt[1],w,h,res[pt[1],pt[0]] ])
-    if show:
-        # cv2.imshow("OpenCV", img)
-        # cv2.imwrite('res.png',img)
-        # https://stackoverflow.com/a/43234001/2292993
-        Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).show()
-    # min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    # if max_val < p:
-    #     return None
-    # return max_loc
-    return matches
+#     image: path to the image file (see opencv imread for supported types)
+#     area: [x,y,w,h]
+#     p: precision the higher, the lesser tolerant and fewer false positives are found default is 0.8
+#     show: show all matches (highlighted)
+
+#     returns :
+#     [[x,y,w,h]] or [] if not found
+#     '''
+#     # modified from https://github.com/drov0/python-imagesearch/blob/master/python_imagesearch/imagesearch.py
+#     import cv2
+#     import numpy as np
+#     import mss
+#     from PIL import Image
+
+#     # https://python-mss.readthedocs.io/examples.html
+#     sct = mss.mss()
+#     if area is None: 
+#         area=sct.monitors[0]
+#     else:
+#         area={'left': area[0], 'top': area[1], 'width': area[2], 'height': area[3]}
+#     im = sct.grab(area)
+#     # raw is bgra
+#     # Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX").show()
+#     img = np.array(im)
+#     img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+#     # cv2.imshow("OpenCV", img)
+#     # Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).show()
+#     template = cv2.imread(image, cv2.IMREAD_COLOR) 
+#     # cv2.imshow("OpenCV", template)
+#     # Image.fromarray(cv2.cvtColor(template, cv2.COLOR_BGR2RGB)).show()
+#     if template is None:
+#         raise FileNotFoundError('Image file not found: {}'.format(image))
+#     res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+    
+#     matches = []
+#     # https://docs.opencv.org/3.4/d4/dc6/tutorial_py_template_matching.html
+#     h, w, channels = template.shape
+#     loc = np.where( res >= p )
+#     for pt in zip(*loc[::-1]):
+#         cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
+#         matches.append([ pt[0],pt[1],w,h,res[pt[1],pt[0]] ])
+#     if show:
+#         # cv2.imshow("OpenCV", img)
+#         # cv2.imwrite('res.png',img)
+#         # https://stackoverflow.com/a/43234001/2292993
+#         Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).show()
+#     # min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+#     # if max_val < p:
+#     #     return None
+#     # return max_loc
+#     return matches
 
 def _mouse(init_pos, fin_pos, deviation=25, delay=2):
     from random import randint, choice
@@ -6083,48 +6125,6 @@ class OrderedSet(MutableSet, Sequence):
         self._update_items(
             [item for item in self.items if item not in items_to_remove] + items_to_add
         )
-
-# def ocr(img=None,lang=['en'],gpu=False,*args,**kwargs):
-#     # cannot work with certain opencv version, use instead: https://github.com/schappim/macOCR
-#     """
-#     img: filepath, OpenCV image object (numpy array), image file as bytes, URL to raw image (default None=clipboard img)
-#     lang: ['en','ch_sim','ch_tra']
-#     https://www.jaided.ai/easyocr/documentation/
-#     """
-#     from PIL import ImageGrab
-#     import easyocr
-#     if img is None: img = ImageGrab.grabclipboard()
-#     reader = easyocr.Reader(lang,gpu=gpu)
-#     result = reader.readtext(img,detail=True,paragraph=False,*args,**kwargs)
-#     # result=[([[189, 75], [469, 75], [469, 165], [189, 165]], '愚园路', 0.3754989504814148),
-#     #  ([[86, 80], [134, 80], [134, 128], [86, 128]], '西', 0.40452659130096436),
-#     #  ([[517, 81], [565, 81], [565, 123], [517, 123]], '东', 0.9989598989486694),
-#     #  ([[78, 126], [136, 126], [136, 156], [78, 156]], '315', 0.8125889301300049),
-#     #  ([[514, 126], [574, 126], [574, 156], [514, 156]], '309', 0.4971577227115631),
-#     #  ([[226, 170], [414, 170], [414, 220], [226, 220]], 'Yuyuan Rd.', 0.8261902332305908),
-#     #  ([[79, 173], [125, 173], [125, 213], [79, 213]], 'W', 0.9848111271858215),
-#     #  ([[529, 173], [569, 173], [569, 213], [529, 213]], 'E', 0.8405593633651733)]
-#     top=[]; left=[]; out={}
-#     for r in result:
-#         top=r[0][0][1]; left=r[0][0][0]; text=r[1]
-#         if top not in out.keys():
-#             # /10 to scale
-#             out[top]=' '*int(left/10)+text
-#         else:
-#             text_old = out[top].lstrip()
-#             text_new = text
-#             left_old = len(out[top]) - len(out[top].lstrip())
-#             left_new = int(left/10)
-#             if left_new > left_old:
-#                 part1 = ' '*int(left_old/10)+text_old; part2 = ' '*int(left_new - len(part1))+text_new
-#             else:
-#                 # unlike to trigger, since result ordered by top already
-#                 part1 = ' '*int(left_new/10)+text_new; part2 = ' '*int(left_old - len(part1))+text_old
-#             out[top] = part1+part2
-#     result=[text for (top, text) in sorted(out.items())]
-#     return result
-#     # for r in result:
-#     #     print(r)
 
 def gif(imgs,out='animation.gif',crop=None,duration=300,loop=0):
     """

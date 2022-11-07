@@ -12,26 +12,29 @@ keywords='shell, cross-platform, easy, wrapper'
 packages = find_packages()
 # packages.append('ez.timezone.pytz')
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
-# install_requires=['peppercorn']
 # install_requires=['']
-# 'noraise' (seems not actually used, might be useful for myself), 'fake_useragent', 'tldextract' --> firefox
-# 'cachelib': for flask
-# 'opencv-python' for find on screen, 'easyocr' for ocr
-# pynput instead of pyautogui <- problematic dependencies on MacOS
-# setup.py upload depreciated -> twine
-install_requires=['twine','pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'O365', 'chardet', 'psutil',
+install_requires=['twine', # setup.py upload depreciated -> twine
+                 'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'O365', 'chardet', 'psutil',
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
-                 'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 'noraise', 'fake_useragent', 'tldextract',
-                 'pynput', 'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 'ezgooey',
+                 'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 
+                 'noraise', # seems not actually used, might be useful
+                 'fake_useragent', 'tldextract', # firefox
+                 'pynput', # pynput instead of pyautogui <- problematic dependencies on MacOS
+                 'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 
+                 'ezgooey', # gui
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
-                 'pyarrow', 'cachelib', 'Pillow', 'mss', 'SpeechRecognition',
+                 'cachelib' # flask
+                 'pyarrow', 'Pillow', 'mss', 'SpeechRecognition',
+                 'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
                  'dropbox','pydrive2']
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
-if platform.system()!='Linux': install_requires.extend(['opencv-python','easyocr'])
+# if platform.system()!='Linux': install_requires.extend(['opencv-python','easyocr']) 
+#                                'opencv-python' for findimg on screen (not using now)
+#                                'easyocr' for ocr (commented out, also requires opencv)
 ######################################################################################
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:

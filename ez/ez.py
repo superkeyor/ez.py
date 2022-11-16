@@ -3722,6 +3722,13 @@ def msgbox(msg):
     runkm("7D38B1AD-720C-491F-8C07-2C33D9B2A958")
     return None
 
+def menubar(msg):
+    """
+    a trick to call Keyboard Maestro to display menubar text
+    """
+    setkmvar('KM_MENUBAR_TEXT',msg)
+    return None
+
 def setpassword(acount,password):
     """
     under Keychains-->login-->km.py

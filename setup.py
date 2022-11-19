@@ -34,7 +34,8 @@ import platform
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
 if platform.system()=='Linux': 
     install_requires.remove('ezgooey') # buggy with ezgooey/wxpython
-    install_requires.remove('psutil') 
+    install_requires.remove('psutil')
+    install_requires.remove('fake_useragent')
 #                                install_requires.extend(['opencv-python','easyocr']) 
 #                                'opencv-python' for findimg on screen (commented out)
 #                                'easyocr' for ocr (commented out, also requires opencv)

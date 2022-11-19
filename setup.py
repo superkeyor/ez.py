@@ -32,7 +32,7 @@ import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
-if platform.system()=='Linux': install_requires.append('ezgooey') # buggy with ezgooey/wxpython
+if platform.system()=='Linux': install_requires.remove('ezgooey') # buggy with ezgooey/wxpython
 #                                install_requires.extend(['opencv-python','easyocr']) 
 #                                'opencv-python' for findimg on screen (commented out)
 #                                'easyocr' for ocr (commented out, also requires opencv)

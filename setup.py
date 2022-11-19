@@ -24,6 +24,7 @@ install_requires=['twine', # setup.py upload depreciated -> twine
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
                  'pyarrow', 'Pillow', 'mss', 'SpeechRecognition',
                  'cachelib', # flask
+                 'ezgooey', # gui
                  'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
                  'dropbox','pydrive2']
 # 'imessage_reader' not available on heroku/linux when installing ez
@@ -31,7 +32,7 @@ import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
-if platform.system()!='Linux': install_requires.append('ezgooey') # gui requires wxpython, but linux buggy with wxpython
+if platform.system()=='Linux': install_requires.append('ezgooey') # buggy with ezgooey/wxpython
 #                                install_requires.extend(['opencv-python','easyocr']) 
 #                                'opencv-python' for findimg on screen (commented out)
 #                                'easyocr' for ocr (commented out, also requires opencv)

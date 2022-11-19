@@ -21,7 +21,6 @@ install_requires=['twine', # setup.py upload depreciated -> twine
                  'fake_useragent', 'tldextract', # firefox
                  'pynput', # pynput instead of pyautogui <- problematic dependencies on MacOS
                  'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 
-                 'ezgooey', # gui
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
                  'pyarrow', 'Pillow', 'mss', 'SpeechRecognition',
                  'cachelib', # flask
@@ -32,7 +31,8 @@ import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
-# if platform.system()!='Linux': install_requires.extend(['opencv-python','easyocr']) 
+if platform.system()!='Linux': install_requires.append('ezgooey') # gui requires wxpython, but linux buggy with wxpython
+#                                install_requires.extend(['opencv-python','easyocr']) 
 #                                'opencv-python' for findimg on screen (commented out)
 #                                'easyocr' for ocr (commented out, also requires opencv)
 ######################################################################################

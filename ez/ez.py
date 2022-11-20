@@ -163,12 +163,13 @@ debug = ShellDebug
 try: # local
     from . pysecrets import *
 except:
-    try: # heroku
-        if '/app/fz' in sys.path: sys.path.remove('/app/fz')
-        sys.path.insert(0,'/app/fz')
-        from pysecrets import *
-    except:
-        pass
+    pass
+    # try: # heroku
+    #     if '/app/fz' in sys.path: sys.path.remove('/app/fz')
+    #     sys.path.insert(0,'/app/fz')
+    #     from pysecrets import *
+    # except:
+    #     pass
 
 def clorox(path='~/Dropbox',delete=False):
     """

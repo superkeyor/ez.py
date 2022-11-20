@@ -2852,7 +2852,9 @@ class Moment(object):
                 moment = datetime.datetime.now()
                 # first: assign local timezone
                 tz = tzlocal.get_localzone()
-                moment = tz.localize(moment)
+                # moment = tz.localize(moment)
+                import zoneinfo
+                moment = moment.replace(tzinfo=zoneinfo.ZoneInfo(str(tz)))
                 # second: convert to desired timezone
                 moment = timezone.normalize(moment.astimezone(timezone))
             else:
@@ -2923,7 +2925,9 @@ class Moment(object):
         if self.timezone is None:
             tz = tzlocal.get_localzone()
             # attach local tz
-            dt = tz.localize(self.moment)
+            # dt = tz.localize(self.moment)
+            import zoneinfo
+            dt = self.moment.replace(tzinfo=zoneinfo.ZoneInfo(str(tz)))
         else:
             dt = self.moment
         timezone = pytz.timezone(timezone)

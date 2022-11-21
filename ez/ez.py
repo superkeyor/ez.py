@@ -5483,6 +5483,13 @@ class GSheet():
 import dropbox
 # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#
 
+def dropbox_spaceusage():
+    # returns in GB [left, used, total (individual)]
+    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    usage = dbx.users_get_space_usage()
+    usage = [usage.used/1024/1024/1024, usage.allocation.get_individual().allocated/1024/1024/1024]
+    return [round(usage[1]-usage[0],2), round(usage[0],2), round(usage[1],2)]
+
 def upload(localfile,cloudfile=None):
     # shortcut if only one cloudpath passed in, assuming current local working directory
     # e.g., '/Investment/fz/fz/fz/data_td.json'

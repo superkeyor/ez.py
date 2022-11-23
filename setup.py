@@ -25,7 +25,7 @@ install_requires=['twine', # setup.py upload depreciated -> twine
                  'pyarrow', 'Pillow', 'mss', 'SpeechRecognition',
                  'cachelib', # flask
                  'ezgooey', # gui
-                 'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', "qrcode", # bash terminal cmd
+                 'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
                  'dropbox','pydrive2']
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform

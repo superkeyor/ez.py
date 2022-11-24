@@ -22,7 +22,7 @@ install_requires=['twine', # setup.py upload depreciated -> twine
                  'pynput', # pynput instead of pyautogui <- problematic dependencies on MacOS
                  'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
-                 'pyarrow', 'Pillow', 'mss', 'SpeechRecognition',
+                 'pyarrow', 'Pillow', 'mss',
                  'cachelib', # flask
                  'ezgooey', # gui
                  'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd

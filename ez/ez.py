@@ -2788,8 +2788,8 @@ class TimeStamp(object):
 
 class Moment(object):
     """A datetime like class, but with convenient attributes and methods
-    Moment(moment=datetime.datetime(2020,05,30,15,30,00,100)).moment                 -> naive 15:30 datetime
-    Moment('US/Mountain',moment=datetime.datetime(2020,05,30,15,30,00,100)).moment   -> 15:30 in mountain time
+    Moment(moment=datetime.datetime(2020,5,30,15,30,00,100)).moment                  -> naive 15:30 datetime
+    Moment('US/Mountain',moment=datetime.datetime(2020,5,30,15,30,00,100)).moment    -> 15:30 in mountain time
     Moment('US/Mountain').moment                                                     -> current time converted to mountain
     Moment().Convert('US/Mountain').moment                                           -> current time converted to mountain
     Moment().moment                                                                  -> current naive time

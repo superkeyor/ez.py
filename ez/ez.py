@@ -5546,6 +5546,65 @@ def delfilefolder(file):
     return dbx.files_delete(file)
 
 ####************************************************************************************************
+                                     ####*GCal*####
+####************************************************************************************************
+# Reference: 
+# https://github.com/kuzmoyev/google-calendar-simple-api
+# https://google-calendar-simple-api.readthedocs.io/en/latest/getting_started.html
+class GCal():
+    """
+    
+    """
+    def __init__(self,default_calendar: str = 'primary'):
+        """
+        default_calendar: 
+                Users email address or name/id of the calendar. Default: primary calendar of the user
+                If user's email or "primary" is specified, then primary calendar of the user is used.
+                You don't need to specify this parameter in this case as it is a default behaviour.
+        """
+        # work in library path
+        oldpwd = os.getcwd()
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+        from gcsa.google_calendar import GoogleCalendar
+        savej(GCAL_KEY,'gcal_secrets.json')
+        
+        calendar = GoogleCalendar(default_calendar,credentials_path='gcal_secrets.json',token_path='gcal_token.pickle',save_token=True)
+
+        os.chdir(oldpwd)
+        self.gcal = calendar
+
+    def addevent(self,*args,**kwargs):
+        """
+        summary: str,
+        start: Union[datetime.date, datetime.datetime, beautiful_date.beautiful_date.BeautifulDate],
+        end: Union[datetime.date, datetime.datetime, beautiful_date.beautiful_date.BeautifulDate] = None,
+        *,
+        timezone: str = 'America/Chicago',
+        event_id: str = None,
+        description: str = None,
+        location: str = None,
+        recurrence: Union[str, List[str]] = None,
+        color_id: str = None,
+        visibility: str = 'default',
+        attendees: Union[gcsa.attendee.Attendee, str, List[gcsa.attendee.Attendee], List[str]] = None,
+        attachments: Union[gcsa.attachment.Attachment, List[gcsa.attachment.Attachment]] = None,
+        conference_solution: Union[gcsa.conference.ConferenceSolution, gcsa.conference.ConferenceSolutionCreateRequest] = None,
+        reminders: Union[gcsa.reminders.Reminder, List[gcsa.reminders.Reminder]] = None,
+        default_reminders: bool = False,
+        minutes_before_popup_reminder: int = None,
+        minutes_before_email_reminder: int = None,
+        guests_can_invite_others: bool = True,
+        guests_can_modify: bool = False,
+        guests_can_see_other_guests: bool = True,
+        transparency: str = None
+        """
+        from gcsa.event import Event
+
+        event = Event(*args,**kwargs)
+        self.gcal.add_event(event)
+
+####************************************************************************************************
                                      ####*GDrive*####
 ####************************************************************************************************
 # Reference: 

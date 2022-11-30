@@ -14,7 +14,7 @@ packages = find_packages()
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
 install_requires=['']
 install_requires=['twine', # setup.py upload depreciated -> twine
-                 'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'O365', 'chardet', 'psutil',
+                 'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'gcsa','O365', 'chardet', 'psutil',
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 
                  'noraise', # seems not actually used, might be useful

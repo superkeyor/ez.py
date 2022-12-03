@@ -4793,13 +4793,14 @@ def onedrive_download(remote,local,id=None,secret=None):
     download from remote to local (supports file & folder)
     remote: a folder or file path/object
     local: when remote is folder, a local folder path
-           when remote is file, a local file path
+           when remote is file, a local file path or folder
     """
     item = onedrive_connect(remote,id=id,secret=secret)
     if item.is_folder: item.download_contents(local)
     if item.is_file: 
         [to_path, name, ext] = splitpath(local)
-        item.download(to_path=to_path, name=name+ext, chunk_size='auto', convert_to_pdf=False, output=None)
+        name=item.name if ext=="" else name+ext
+        item.download(to_path=to_path, name=name, chunk_size='auto', convert_to_pdf=False, output=None)
     return local
 
 def onedrive_upload(local,remote,id=None,secret=None):

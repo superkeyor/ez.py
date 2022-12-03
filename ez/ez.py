@@ -4749,6 +4749,45 @@ def onedrive_connect(file_or_folder_path,id=None,secret=None):
         item = file_or_folder_path
     return item
 
+def onedrive_move(source,targetFolder,id=None,secret=None):
+    """
+    remotely move an item (supports file & folder) to another Folder
+    source: a folder or file path/object
+    targetFolder: a remote folder (fullpath)
+    """
+    source = onedrive_connect(source,id=id,secret=secret)
+    target = onedrive_connect(targetFolder,id=id,secret=secret)
+    return source.move(target)
+
+def onedrive_copy(source,targetFolder,id=None,secret=None):
+    """
+    remotely copy an item (supports file & folder) to another Folder
+    source: a folder or file path/object
+    targetFolder: a remote folder (fullpath)
+    """
+    source = onedrive_connect(source,id=id,secret=secret)
+    target = onedrive_connect(targetFolder,id=id,secret=secret)
+    return source.copy(target)
+
+def onedrive_delete(remote,id=None,secret=None):
+    """
+    remotely delete an item (supports file & folder) to Recycle Bin
+    source: a folder or file path/object
+    """
+    remote = onedrive_connect(remote,id=id,secret=secret)
+    return remote.delete()
+
+def onedrive_rename(remote,newname,id=None,secret=None):
+    """
+    remotely rename an item (supports file & folder) to the same folder
+    remote: a folder or file path/object
+    newname: a str (not a full path)
+    internally copy to a new name and then delete the original item.
+    """
+    remote = onedrive_connect(remote,id=id,secret=secret)
+    remote.copy(name=newname)
+    return remote.delete()
+
 def onedrive_download(remote,local,id=None,secret=None):
     """
     download from remote to local (supports file & folder)

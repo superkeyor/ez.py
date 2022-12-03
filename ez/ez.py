@@ -5661,7 +5661,7 @@ class GCal():
 # 1) Create and save as gdrive_secrets.json (I saved the contents to pysecrets.py and dump it to physical json file)
 # 2) Create settings.yaml
 # 3) Authorize via web with gdrive_secrets.json for the first time
-# 4) Get saved gdrive_credentials.json which can be used in the future without need to authroize via web
+# 4) Get saved gdrive_token.json which can be used in the future without need to authroize via web
 def gauth():
     # work in library path
     oldpwd = os.getcwd()
@@ -5676,7 +5676,7 @@ def gauth():
             client_config_file: gdrive_secrets.json
             save_credentials: True
             save_credentials_backend: file
-            save_credentials_file: gdrive_credentials.json
+            save_credentials_file: gdrive_token.json
             get_refresh_token: True
             """
     with open('settings.yaml', 'w') as f:

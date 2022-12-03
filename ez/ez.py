@@ -4799,7 +4799,12 @@ def onedrive_download(remote,local,id=None,secret=None):
     if item.is_folder: item.download_contents(local)
     if item.is_file: 
         [to_path, name, ext] = splitpath(local)
-        name=item.name if ext=="" else name+ext
+        if ext=="":
+            to_path = local
+            name = item.name
+        else:
+            to_path = to_path
+            name = name+ext
         item.download(to_path=to_path, name=name, chunk_size='auto', convert_to_pdf=False, output=None)
     return local
 

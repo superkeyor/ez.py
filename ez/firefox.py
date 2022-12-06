@@ -4,11 +4,11 @@
 # e.send(KEYS.COMMAND,KEYS.SHIFT,KEYS.ARROW_LEFT)
 # e.send(KEYS.COMMAND,'a')
 # e.submit(), e.sendsubmit()
-# f.findall(By.CLASS_NAME,'d2l-datetime-selector-date-input.d2l-edit')  
+# f.findall('class','d2l-datetime-selector-date-input.d2l-edit')  
 # https://stackoverflow.com/questions/17000703/is-string-matches-supported-in-selenium-webdriver-2
 # https://stackoverflow.com/questions/22436789/xpath-ends-with-does-not-work
-# f.findall('xpath','//*[starts-with(@id,"z_")]')  #contains(), but matches() ends-with() not supported by webdriver/xpath1.0
-# f.findall('xpath','//*[contains(@id,"time")][contains(@title,"Date")]')
+# f.findall(['xpath',]'//*[starts-with(@id,"z_")]')  #contains(), but matches() ends-with() not supported by webdriver/xpath1.0
+# f.findall(['xpath',]'//*[contains(@id,"time")][contains(@title,"Date")]')
 # f.findsel('id','activity--history',timeout=10).select_by_visible_text('history')
 #                                               .select_by_value()
 #                                               .select_by_index(2)  # 0-based
@@ -36,7 +36,7 @@
 # 'css': By.CSS_SELECTOR,
 # 'id': By.ID,
 # 'name': By.NAME,
-# 'xpath': By.XPATH,
+# 'xpath': By.XPATH,   # I hacked to make 'xpath' is optional for findall(), but rest are not
 # 'tag': By.TAG_NAME,
 
 # xpath quick syntax:
@@ -1058,6 +1058,9 @@ class Firefox:
             By.XPATH: By.XPATH,
             By.TAG_NAME: By.TAG_NAME,
         }
+        if by.startswith('/'):
+            key=by
+            by='xpath'
         by=bydict[by]
         key = key.strip()
         if by == By.CLASS_NAME:

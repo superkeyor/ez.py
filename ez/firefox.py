@@ -651,6 +651,9 @@ class Firefox:
         timeout: Optional[int] = None,
         element: Optional = None
     ) -> Union[Optional[WebElement], List[WebElement]]:
+        if by.startswith('/'):
+            key=by
+            by='xpath'
         return self.__find(
             by,
             EC.presence_of_element_located,
@@ -698,6 +701,9 @@ class Firefox:
         timeout: Optional[int] = None,
         element: Optional = None
     ) -> List[WebElement]:
+        if by.startswith('/'):
+            key=by
+            by='xpath'
         return self.__find(
             by,
             EC.presence_of_all_elements_located,
@@ -906,6 +912,9 @@ class Firefox:
 
     def find_frame(self,by,key,*args,**kwargs):
         # first frame is 0
+        if by.startswith('/'):
+            key=by
+            by='xpath'
         self.driver.switch_to.default_content()
         time.sleep(1)
         n = self.driver.execute_script('return window.length')
@@ -1167,9 +1176,6 @@ class Firefox:
             By.XPATH: By.XPATH,
             By.TAG_NAME: By.TAG_NAME,
         }
-        if by.startswith('/'):
-            key=by
-            by='xpath'
         by=bydict[by]
         key = key.strip()
         if by == By.CLASS_NAME:

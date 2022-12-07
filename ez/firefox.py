@@ -83,6 +83,89 @@ RANDOM_USERAGENT = 'random'
 # ---------------------------------------------------------------------------------------------------------------------------------------- #
 
 
+# ------------------------------------------------------------ class: LocalStorage ------------------------------------------------------------ #
+# certain stuff is stored as local storage, besides cookies
+# https://vistacoder.com/forums/how-to-get-the-localstorage-with-python-and-selenium-webdriver
+# ------------------------------------------------------------
+# # get the local storage
+# storage = LocalStorage(driver)
+
+# # set an item
+# storage["mykey"] = 1234
+# storage.set("mykey2", 5678)
+
+# # get an item
+# print(storage["mykey"])      # raises a KeyError if the key is missing
+# print(storage.get("mykey"))  # returns None if the key is missing
+
+# # delete an item
+# storage.remove("mykey")
+
+# # iterate items
+# for key, value in storage.items():
+#   print("%s: %s" % (key, value))
+
+# # delete items
+# storage.clear()
+# ------------------------------------------------------------
+class LocalStorage:
+
+    def __init__(self, driver) :
+        self.driver = driver
+
+    def __len__(self):
+        return self.driver.execute_script("return window.localStorage.length;")
+
+    def items(self) :
+        return self.driver.execute_script( \
+            "var ls = window.localStorage, items = {}; " \
+            "for (var i = 0, k; i < ls.length; ++i) " \
+            "  items[k = ls.key(i)] = ls.getItem(k); " \
+            "return items; ")
+
+    def keys(self) :
+        return self.driver.execute_script( \
+            "var ls = window.localStorage, keys = []; " \
+            "for (var i = 0; i < ls.length; ++i) " \
+            "  keys[i] = ls.key(i); " \
+            "return keys; ")
+
+    def get(self, key):
+        return self.driver.execute_script("return window.localStorage.getItem(arguments[0]);", key)
+
+    def set(self, key, value):
+        self.driver.execute_script("window.localStorage.setItem(arguments[0], arguments[1]);", key, value)
+
+    def has(self, key):
+        return key in self.keys()
+
+    def remove(self, key):
+        self.driver.execute_script("window.localStorage.removeItem(arguments[0]);", key)
+
+    def clear(self):
+        self.driver.execute_script("window.localStorage.clear();")
+
+    def __getitem__(self, key) :
+        value = self.get(key)
+        if value is None :
+          raise KeyError(key)
+        return value
+
+    def __setitem__(self, key, value):
+        self.set(key, value)
+
+    def __contains__(self, key):
+        return key in self.keys()
+
+    def __iter__(self):
+        return self.items().__iter__()
+
+    def __repr__(self):
+        return self.items().__str__()
+
+# ---------------------------------------------------------------------------------------------------------------------------------------- #
+
+
 # ------------------------------------------------------------ class: Firefox ------------------------------------------------------------ #
 
 class Firefox:
@@ -94,16 +177,16 @@ class Firefox:
         url = 'https://bot.sannysoft.com/',
         headless: bool = False,
         wire: bool = False, # Use seleniumwire only when necessary, because it would slow things down a bit (not working if session is True)
-        session: bool = False, # Use seleniumrequests for cross-session cookies (overrides wire)
         wait_ajax = 60 if platform.system()=='Linux' else 10,
         default_find_func_timeout: int = 3,
         service_log_path: Optional[str] = os.devnull,
         log_path: Optional[str] = os.devnull,
-        cookies_folder_path: Optional[str] = None, # not working? Use session instead
+        cookies_folder_path: Optional[str] = None, # cookies & local storage
         extensions_folder_path: Optional[str] = None, # about:support  ~/Library/Application Support/Firefox/Profiles/h7d5u192.default-esr/extensions
         host: Optional[str] = None,
         port: Optional[int] = None,
         cookies_id: Optional[str] = None,
+        session: bool = False, # Use seleniumrequests for cross-session cookies (overrides wire) --not the way I wanted? not use
         firefox_binary_path: Optional[str] = None,
         # proxy: Optional[str] = None,
         profile_path: Optional[str] = None,
@@ -373,6 +456,9 @@ class Firefox:
         self.driver.install_addon(os.path.join(HERE,'firefox.xpi'), temporary=True)
         if url is not None: self.driver.get(url)
 
+        self.driver.storage = LocalStorage(self.driver)
+        self.storage = self.driver.storage
+
     # -------------------------------------------------------- Public methods -------------------------------------------------------- #
     def install(self,xpi,signed=True):
         """
@@ -466,22 +552,9 @@ class Firefox:
     def source(self):
         return self.driver.page_source
 
-    def get_cookies(self,*args,**kwargs):
-        return self.driver.get_cookies(*args,**kwargs)
-
-    def get_cookie(self,*args,**kwargs):
-        return self.driver.get_cookie(*args,**kwargs)
-    
     def save_screenshot(self,*args,**kwargs):
         return self.driver.save_screenshot(*args,**kwargs)
     snap=save_screenshot
-    
-    def has_cookie(self, cookie_name: str) -> bool:
-        for cookie in self.driver.get_cookies():
-            if 'name' in cookie and cookie['name'] == cookie_name:
-                return True
-
-        return False
 
     def get(
         self,
@@ -673,6 +746,19 @@ class Firefox:
         except:
             return None
 
+    def get_cookies(self,*args,**kwargs):
+        return self.driver.get_cookies(*args,**kwargs)
+
+    def get_cookie(self,*args,**kwargs):
+        return self.driver.get_cookie(*args,**kwargs)
+        
+    def has_cookie(self, cookie_name: str) -> bool:
+        for cookie in self.driver.get_cookies():
+            if 'name' in cookie and cookie['name'] == cookie_name:
+                return True
+
+        return False
+
     def save_cookies(self, cookies: Optional[List[Dict]] = None) -> None:
         cookies_path = self.__cookies_path()
 
@@ -681,12 +767,30 @@ class Firefox:
         except:
             pass
 
+        # json.dump(
+        #     cookies or self.driver.get_cookies(),
+        #     open(self.__cookies_path(), 'w')
+        # )
+
+        # jerry: save storage together with cookies
+        # get_cookies() returns a list
+        cookies = [{'JERRYLOCALSTORAGE':self.driver.storage.items()}] + self.driver.get_cookies()
         json.dump(
-            cookies or self.driver.get_cookies(),
+            cookies,
             open(self.__cookies_path(), 'w')
         )
 
     def load_cookies(self,verbose=False) -> None:
+        """
+        cookies/local storage are domain/url specific. call firefox get() first
+        in general:
+            get url
+            save cookies
+
+            get url
+            load cookies
+            get url
+        """
         if not self.has_cookies_for_current_website():
             self.save_cookies()
 
@@ -698,8 +802,13 @@ class Firefox:
 
         for cookie in cookies:
             try:
-                self.driver.add_cookie(cookie)
-                cookies_to_save.append(cookie)
+                if 'JERRYLOCALSTORAGE' in cookie:
+                    storage = cookie['JERRYLOCALSTORAGE']
+                    for k,v in storage.items():
+                        self.driver.storage.set(k,v)
+                else:
+                    self.driver.add_cookie(cookie)
+                    cookies_to_save.append(cookie)
             except Exception as e:
                 should_save = True
                 if verbose:

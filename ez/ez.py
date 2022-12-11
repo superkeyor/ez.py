@@ -4749,6 +4749,7 @@ def outlookget(
         get_body_text() Parse the body html and returns the body text using bs4
     """
     account = o365auth(id,secret)
+    mailbox = account.mailbox()
     folder = mailbox.get_folder(folder_name=folder)
     return list(folder.get_messages(limit=limit,query=query,order_by=order_by,batch=batch,download_attachments=download_attachments))
 

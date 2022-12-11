@@ -4725,6 +4725,33 @@ def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_t
     if attachments is not None: m.attachments.add(attachments)
     m.send()
 
+def outlookget(
+    folder='Inbox',
+    limit=25,
+    query=None,
+    order_by=None,
+    batch=None,
+    download_attachments=False)
+    """
+    :param int folder: folder name, such as "Inbox", "Archive"
+    :param int limit: limits the result set. Over 999 uses batch.
+    :param query: applies a filter to the request such as "displayName eq 'HelloFolder'"
+    :type query: Query or str
+    :param order_by: orders the result set based on this condition
+    :type order_by: Query or str
+    :param int batch: batch size, retrieves items in batches allowing to retrieve more items than the limit.
+    :param bool download_attachments: whether or not to download attachments
+    :return: list of messages
+    :rtype: list[Message] or Pagination
+        https://o365.github.io/python-o365/latest/api/message.html?highlight=message#O365.message.Message
+        message.body    Get body text of current message
+        get_body_soup() Returns the beautifulsoup4 of the html body
+        get_body_text() Parse the body html and returns the body text using bs4
+    """
+    account = o365auth(id,secret)
+    folder = mailbox.get_folder(folder_name=folder)
+    return list(folder.get_messages(limit=limit,query=query,order_by=order_by,batch=batch,download_attachments=download_attachments))
+
 def onedrive_connect(file_or_folder_path,id=None,secret=None):
     """
     retrieve a file/folder object for further operation from a path

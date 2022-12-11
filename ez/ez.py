@@ -2728,6 +2728,14 @@ class JDict(OrderedDict):
         # http://stackoverflow.com/questions/1216356/
         return JDict(sorted(list(self.items()),reverse=reverse))
 
+    def json(self, *, indent=4, **kw):
+        """
+        returns json object
+        see more parameters at json.dumps()
+        """
+        import json
+        return json.dumps(dict(self), *, indent=indent, **kw)
+
 class TimeStamp(object):
     """
     Essentially pd timestamp with default timezone that has a "candy coat"

@@ -4731,7 +4731,7 @@ def outlookget(
     query=None,
     order_by=None,
     batch=None,
-    download_attachments=False):
+    download_attachments=False,id=None,secret=None):
     """
     :param int folder: folder name, such as "Inbox", "Archive"
     :param int limit: limits the result set. Over 999 uses batch.

@@ -2728,13 +2728,11 @@ class JDict(OrderedDict):
         # http://stackoverflow.com/questions/1216356/
         return JDict(sorted(list(self.items()),reverse=reverse))
 
-    def json(self, indent=4, **kw):
+    def dict(self):
         """
-        returns json object
-        see more parameters at json.dumps()
+        returns dict object, instead of JDict()
         """
-        import json
-        return json.dumps(dict(self), indent=indent, **kw)
+        return dict(self)
 
 class TimeStamp(object):
     """

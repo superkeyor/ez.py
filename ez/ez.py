@@ -4799,8 +4799,14 @@ def onedrive_copy(source,targetFolder,newname=None,id=None,secret=None):
     source: a folder or file path/object
     targetFolder: a remote folder (fullpath)
     newname: new name of target
+    if file exists, will override (delete and then copy)
     """
     source = onedrive_connect(source,id=id,secret=secret)
+    try:
+        newfile = onedrive_connect(joinpath(targetFolder,newname),id=id,secret=secret)
+        newfile.delete()
+    except:
+        pass
     target = onedrive_connect(targetFolder,id=id,secret=secret)
     return source.copy(target,name=newname)
 

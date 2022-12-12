@@ -4803,8 +4803,10 @@ def onedrive_copy(source,targetFolder,newname=None,id=None,secret=None):
     """
     source = onedrive_connect(source,id=id,secret=secret)
     try:
-        newfile = onedrive_connect(joinpath(targetFolder,newname),id=id,secret=secret)
-        newfile.delete()
+        # hide msg: Client Error: 404 Client Error: Not Found for url
+        with nooutput():
+            newfile = onedrive_connect(joinpath(targetFolder,newname),id=id,secret=secret)
+            newfile.delete()
     except:
         pass
     target = onedrive_connect(targetFolder,id=id,secret=secret)

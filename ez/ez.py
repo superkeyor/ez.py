@@ -4793,15 +4793,16 @@ def onedrive_move(source,targetFolder,id=None,secret=None):
     target = onedrive_connect(targetFolder,id=id,secret=secret)
     return source.move(target)
 
-def onedrive_copy(source,targetFolder,id=None,secret=None):
+def onedrive_copy(source,targetFolder,newname=None,id=None,secret=None):
     """
     remotely copy an item (supports file & folder) to another Folder
     source: a folder or file path/object
     targetFolder: a remote folder (fullpath)
+    newname: new name of target
     """
     source = onedrive_connect(source,id=id,secret=secret)
     target = onedrive_connect(targetFolder,id=id,secret=secret)
-    return source.copy(target)
+    return source.copy(target,name=newname)
 
 def onedrive_delete(remote,id=None,secret=None):
     """
@@ -4902,7 +4903,8 @@ def onedrive_excel(xlsx,sheet=1,id=None,secret=None):
             cell.values = 1
             cell.update()
             
-            cell.clear()
+            cell.values = ''
+            cell.clear()  # also clear formatting
             
             table = ws.get_table('Quiz')
             for row in table.get_rows():

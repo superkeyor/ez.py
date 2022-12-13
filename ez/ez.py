@@ -4712,12 +4712,13 @@ def o365auth(id=None, secret=None):
         account.authenticate(scopes=scopes)
     return account
 
-def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None):
+def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_to=None, draft=False, id=None, secret=None):
     """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
     to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
     reply_to: 'a@a.com'
     body: html code or text. Best practice: three quotes f string (\\n will be auto replaced with <br>) or write/format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
     attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
+    draft: True/False save as draft or send out
     id, secret: ignored if pysecrets exists
     """
     account = o365auth(id,secret)
@@ -4729,7 +4730,10 @@ def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_t
     if bcc is not None: m.bcc.add(bcc)
     if reply_to is not None: m.reply_to.add(reply_to)
     if attachments is not None: m.attachments.add(attachments)
-    m.send()
+    if draft:
+        m.save_draft()
+    else:
+        m.send()
 
 def outlookget(
     folder='Inbox',

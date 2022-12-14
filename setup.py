@@ -15,7 +15,7 @@ packages = find_packages()
 install_requires=['']
 install_requires=['twine', # setup.py upload depreciated -> twine
                  'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'gcsa','O365', 'chardet', 'psutil',
-                 'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx',
+                 'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'python-docx', 'python-pptx', 'docx2pdf',
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 
                  'noraise', # seems not actually used, might be useful
                  'fake_useragent', 'tldextract', # firefox
@@ -36,6 +36,7 @@ if platform.system()=='Linux':
     install_requires.remove('ezgooey') # buggy with ezgooey/wxpython
     install_requires.remove('psutil')
     install_requires.remove('pynput')
+    install_requires.remove('docx2pdf') # not tested, but no MS Word for linux
 #                                install_requires.extend(['opencv-python','easyocr']) 
 #                                'opencv-python' for findimg on screen (commented out)
 #                                'easyocr' for ocr (commented out, also requires opencv)

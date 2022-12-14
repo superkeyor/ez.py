@@ -3889,6 +3889,20 @@ def office_docx_replace(docx_path, replacedict, save_path=None):
     if save_path is None: save_path=docx_path
     doc.save(save_path)
 
+def office_pdf_from_docx(input,output=None,keep_active=False):
+    """
+    input: a docx file or folder
+    output: a pdf file or folder, if not provided, same file name.pdf or same folder
+    keep_active: prevent closing word after conversion
+
+    From author: I wrote this tool after struggling to find a cross-platform solution for batch converting docx to pdf with zero formatting issues since it directly uses Microsoft Word. 
+    https://github.com/AlJohri/docx2pdf
+    Convert docx to pdf on Windows or macOS directly using Microsoft Word (must be installed).
+    Use docx2pdf On Windows, this is implemented via win32com while on macOS this is implemented via JXA (Javascript for Automation, aka AppleScript in JS).
+    """
+    from docx2pdf import convert
+    convert(input,output,keep_active)
+
 def office_pdf_from(inputfile,outputdir=None):
     """
     call libreoffice headless mode to convert to pdf
@@ -3901,7 +3915,7 @@ def office_pdf_from(inputfile,outputdir=None):
 
     # TODO: Provide support for more platforms
     if sys.platform == 'darwin':
-        libreoffice=os.path.expanduser('~/Dropbox/Apps/PDF/LibreOffice.app/Contents/MacOS/soffice')
+        libreoffice=os.path.expanduser('/Applications/LibreOffice.app/Contents/MacOS/soffice')
     else:
         libreoffice='libreoffice'
 
@@ -3922,7 +3936,7 @@ def office_doc2docx(inputfile,outputdir=None):
 
     # TODO: Provide support for more platforms
     if sys.platform == 'darwin':
-        libreoffice=os.path.expanduser('~/Dropbox/Apps/PDF/LibreOffice.app/Contents/MacOS/soffice')
+        libreoffice=os.path.expanduser('/Applications/LibreOffice.app/Contents/MacOS/soffice')
     else:
         libreoffice='libreoffice'
 

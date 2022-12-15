@@ -4752,6 +4752,7 @@ def outlook(to, subject, body='', attachments=None, bcc=None, cc=None, reply_to=
 def outlookget(
     folder='Inbox',
     limit=25,
+    mark_as_read=True,
     query=None,
     order_by=None,
     batch=None,
@@ -4775,7 +4776,13 @@ def outlookget(
     account = o365auth(id,secret)
     mailbox = account.mailbox()
     folder = mailbox.get_folder(folder_name=folder)
-    return list(folder.get_messages(limit=limit,query=query,order_by=order_by,batch=batch,download_attachments=download_attachments))
+    res = list(folder.get_messages(limit=limit,query=query,order_by=order_by,batch=batch,download_attachments=download_attachments))
+    try:
+        if mark_as_read:
+            [r.mark_as_read() fr r in res]
+    except:
+        pass
+    return res
 
 def onedrive_connect(file_or_folder_path,id=None,secret=None):
     """

@@ -4075,22 +4075,22 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
     for pdf2 in inputpdfs[1:]:
         doc2 = fitz.open(pdf2)                 # must be a PDF
         pages1 = len(doc1)                     # save doc1's page count
-        toc1 = doc1.getToC(simple=False)        # save TOC 1
-        toc2 = doc2.getToC(simple=False)        # save TOC 2
-        # https://pymupdf.readthedocs.io/en/latest/document/#Document.getToC
+        toc1 = doc1.get_toc(simple=False)        # save TOC 1
+        toc2 = doc2.get_toc(simple=False)        # save TOC 2
+        # https://pymupdf.readthedocs.io/en/latest/document/#Document.get_toc
         # [lvl, title, page, dest] page is 1 based
         # dest – (dict) included only if simple=False. Contains details of the link destination.
         # dest contains additional fine position of bookmark
         if len(toc1)==0: toc1=[[1,splitpath(pdf1)[1],1]]
         if len(toc2)==0: toc2=[[1,splitpath(pdf2)[1],1]]
-        doc1.insertPDF(doc2)                   # doc2 at end of doc1
+        doc1.insert_pdf(doc2)                   # doc2 at end of doc1
         for t in toc2:                         # increase toc2 page numbers
             t[2] += pages1                     # by old len(doc1)
-        doc1.setToC(toc1 + toc2)               # now result has total TOC
+        doc1.set_toc(toc1 + toc2)               # now result has total TOC
 
     if outputpdf is None: outputpdf=joinpath(splitpath(pdf1)[0],'AllCombined.pdf')
     # create time zone value in PDF format
-    cdate = fitz.getPDFnow()
+    cdate = fitz.get_pdf_now()
     pdf_dict = {"creator": "PDF Joiner",
                "producer": "PyMuPDF",
                "creationDate": cdate,
@@ -4099,7 +4099,7 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
                "author": "Jerry",
                "subject": "",
                "keywords": ""}
-    doc1.setMetadata(pdf_dict)      # put in meta data
+    doc1.set_metadata(pdf_dict)      # put in meta data
 
     # https://pymupdf.readthedocs.io/en/latest/document/#Document.save
     # doc.save cannot overwrite
@@ -4159,8 +4159,8 @@ def office_pdf_autoname(inputpdfs):
             # first 4 pages
             i = 0; j = min(3,len(doc))
             for page in doc:
-                # text = page.getText("text")
-                html_text = page.getText("html")
+                # text = page.get_text("text")
+                html_text = page.get_text("html")
                 from bs4 import BeautifulSoup
                 soup = BeautifulSoup(html_text,"lxml")
                 # https://stackoverflow.com/a/39016902/2292993

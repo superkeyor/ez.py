@@ -4726,7 +4726,7 @@ def o365auth(id=None, secret=None):
         account.authenticate(scopes=scopes)
     return account
 
-def outlook(to, subject, body=None, attachments=None, bcc=None, cc=None, reply_to=None, draft=False, id=None, secret=None):
+def outlook(to, subject, body='', attachments=None, bcc=None, cc=None, reply_to=None, draft=False, id=None, secret=None):
     """outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, id=None, secret=None)
     to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
     reply_to: 'a@a.com'

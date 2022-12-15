@@ -4779,7 +4779,7 @@ def outlookget(
     res = list(folder.get_messages(limit=limit,query=query,order_by=order_by,batch=batch,download_attachments=download_attachments))
     try:
         if mark_as_read:
-            [r.mark_as_read() fr r in res]
+            [r.mark_as_read() for r in res]
     except:
         pass
     return res

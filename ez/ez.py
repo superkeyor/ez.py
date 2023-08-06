@@ -2662,7 +2662,7 @@ def duplicated(seq):
         folder_of_interest = seq
         # fastscan: True compare file size first
         df=dup.list_all_duplicates(folder_of_interest, to_csv=False, csv_path=folder_of_interest, fastscan=True)
-        db = ez.JDict()
+        db = JDict()
         for row in df.to_records():
             db.update({row['hash']:[row['file']]})
         duplicated_files = []

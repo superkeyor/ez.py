@@ -115,10 +115,10 @@ seq could be a list
             ['r', 'c', 'd']
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
-duplicate(seq) # returns a list of duplicated elements in original order
+duplicated(seq) # returns a list of duplicated elements in original order
     # e.g.
     # a = [1,5,2,3,2,1,5,6,5,5,5]
-    # duplicate(a) # yields [2, 1, 5]
+    # duplicated(a) # yields [2, 1, 5]
 
 JDict() # Jerry's dictionary, customized ordered dictionary class with convient attributes and methods, see help(JDict)
 Moment(timezone)    # Generates the current datetime in specified timezone, or local naive datetime if omitted.
@@ -2528,10 +2528,10 @@ def unique(seq):
             ['r', 'c', 'd']
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
-    duplicate(seq) # returns a list of duplicated elements in original order
+    duplicated(seq) # returns a list of duplicated elements in original order
     # e.g.
     # a = [1,5,2,3,2,1,5,6,5,5,5]
-    # duplicate(a) # yields [2, 1, 5]
+    # duplicated(a) # yields [2, 1, 5]
     """
     # from .orderedset import OrderedSet
     return list(OrderedSet(seq))
@@ -2550,10 +2550,10 @@ def union(seq1,seq2):
             ['r', 'c', 'd']
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
-    duplicate(seq) # returns a list of duplicated elements in original order
+    duplicated(seq) # returns a list of duplicated elements in original order
     # e.g.
     # a = [1,5,2,3,2,1,5,6,5,5,5]
-    # duplicate(a) # yields [2, 1, 5]
+    # duplicated(a) # yields [2, 1, 5]
     """
     # from .orderedset import OrderedSet
     return list(OrderedSet(seq1) | OrderedSet(seq2))
@@ -2572,10 +2572,10 @@ def intersect(seq1,seq2):
             ['r', 'c', 'd']
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
-    duplicate(seq) # returns a list of duplicated elements in original order
+    duplicated(seq) # returns a list of duplicated elements in original order
     # e.g.
     # a = [1,5,2,3,2,1,5,6,5,5,5]
-    # duplicate(a) # yields [2, 1, 5]
+    # duplicated(a) # yields [2, 1, 5]
     """
     # from .orderedset import OrderedSet
     return list(OrderedSet(seq1) & OrderedSet(seq2))
@@ -2594,10 +2594,10 @@ def setdiff(seq1,seq2):
             ['r', 'c', 'd']
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
-    duplicate(seq) # returns a list of duplicated elements in original order
+    duplicated(seq) # returns a list of duplicated elements in original order
     # e.g.
     # a = [1,5,2,3,2,1,5,6,5,5,5]
-    # duplicate(a) # yields [2, 1, 5]
+    # duplicated(a) # yields [2, 1, 5]
     """
     # from .orderedset import OrderedSet
     return list(OrderedSet(seq1) - OrderedSet(seq2))
@@ -2620,8 +2620,13 @@ def compare(lh,rh,value=False):
         print('RH>:')
         ppprint(','.join(setdiff(rh,lh)))
 
-def duplicate(seq):
+def duplicated(seq):
     """
+    if seq is a folder path:
+    return a list of duplicated files in the folder and subfolders whose filenames are longer
+    e.g., file.pdf, file(1).pdf --> file(1).pdf will be identified as duplicated
+
+    if seq is a list:
     unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in original order
     seq could be a list
     note: setdiff(seq1,seq2) may not be equal to setdiff(seq2,seq1)
@@ -2634,10 +2639,10 @@ def duplicate(seq):
             ['r', 'c', 'd']
             >>> setdiff('simsalabim','abracadaba')
             ['s', 'i', 'm', 'l']
-    duplicate(seq) # returns a list of duplicated elements in original order
+    duplicated(seq) # returns a list of duplicated elements in original order
     # e.g.
     # a = [1,5,2,3,2,1,5,6,5,5,5]
-    # duplicate(a) # yields [2, 1, 5]
+    # duplicated(a) # yields [2, 1, 5]
     """
     # not working...
     # # from .orderedset import OrderedSet
@@ -2647,10 +2652,26 @@ def duplicate(seq):
     # seen_twice = OrderedSet( x for x in seq if x in seen or seen_add(x) )
     # # turn the set into a list (as requested)
     # return list( seen_twice )
-    import pandas as pd
-    df=pd.DataFrame({'col':seq})
-    df=(df.loc[df.duplicated(subset=['col'],keep='first').tolist()]).drop_duplicates()
-    return df.col.tolist()
+    if type(seq) in [list]:
+        import pandas as pd
+        df=pd.DataFrame({'col':seq})
+        df=(df.loc[df.duplicated(subset=['col'],keep='first').tolist()]).drop_duplicates()
+        return df.col.tolist()
+    else:
+        import duplicates as dup
+        folder_of_interest = seq
+        # fastscan: True compare file size first
+        df=dup.list_all_duplicates(folder_of_interest, to_csv=False, csv_path=folder_of_interest, fastscan=True)
+        db = ez.JDict()
+        for row in df.to_records():
+            db.update({row['hash']:[row['file']]})
+        duplicated_files = []
+        for k in db:
+            v = db[k]
+            l = [len(e) for e in v]         # filename length
+            _ = db[k].pop(l.index(min(l)))  # keep the file with shortest filename length
+            duplicated_files.extend(db[k])
+        return duplicated_files
 
 # As of Python version 3.7, dictionaries are ordered. In Python 3.6 and earlier, dictionaries are unordered.
 from collections import OrderedDict

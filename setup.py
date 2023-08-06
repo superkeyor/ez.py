@@ -25,6 +25,7 @@ install_requires=['twine', # setup.py upload depreciated -> twine
                  'pyarrow', 'Pillow', 'mss',
                  'cachelib', # flask
                  'ezgooey', # gui
+                 'Duplicate-Finder', # find duplicated files
                  'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
                  'dropbox','pydrive2']
 # 'imessage_reader' not available on heroku/linux when installing ez

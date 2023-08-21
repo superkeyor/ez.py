@@ -5022,6 +5022,7 @@ def getpasswordbw(item,what='usrpwd',sync=False,verbose=0,debug=False):
             cmd = f"""
             export BW_USER={_EMAIL}
             export BW_PASSWORD={_PASSWORD}
+            {bw} config server https://vault.zhupsy.com
             {bw} login $BW_USER $BW_PASSWORD
             """
             debug_msg+=cmd

@@ -258,7 +258,7 @@ def error(msg):
 
 def fullpath(path):
     """
-    fullpath(path) # Returns the full path by resolving ~ and relative path.
+    fullpath(path) # Returns the full path by resolving ~, $Var, %Var%, and relative path in *nix and Windows.
     note: no trailing / returned, at least on mac os x
     """
     # https://stackoverflow.com/a/40311142/2292993
@@ -267,7 +267,7 @@ def fullpath(path):
     # both abspath and realpath imply os.path.normpath
     # neither abspath or realpath will resolve ~ to the user's home directory
     # abspath and realpath: if fullpath provided, simply return fullpath. if not, resolved relative to pwd
-    return os.path.abspath(os.path.expanduser(path))
+    return os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
 fp = fullpath
 
 def csd():
@@ -782,9 +782,10 @@ def lsd(path="./", regex=".*", full=False, dotfolder=False, sort=True, case=True
         return result
 
 def fls(path="./", regex=".*", dotf=False, sort=True, case=True):
-    """fls([path[, regex=".*", dotf=False], sort=True])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
-    case: if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
-          if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
+    """fls([path[, regex=".*", dotf=False], sort=True, case=True])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
+            case: 
+                if True, get ['Ant', 'Bat', 'Cat', 'Goat', 'Lion', 'ant', 'bat', 'cat']
+                if false, get ['ant', 'Ant', 'bat', 'Bat', 'cat', 'Cat', 'Goat', 'Lion']
     """
     def _FilterList(flist, pattern_regex):
         # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search

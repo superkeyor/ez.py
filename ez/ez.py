@@ -3482,10 +3482,11 @@ writej = savej
 
 def savet(lines,file='data.txt',*args,**kwargs):
     """
-    save a list of lines to text
+    save a list of lines to text; each line does not have to line separators
     """
     with open(file, 'w') as f: 
-        f.writelines(lines)
+        # writelines() does not add line separators
+        f.writelines('\n'.join(lines) + '\n')
 writet = savet
 
 def savew(lines,file='data.docx',heading=None,heading_level=1,*args,**kwargs):

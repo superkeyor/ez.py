@@ -3484,7 +3484,7 @@ def savet(lines,file='data.txt',*args,**kwargs):
     """
     save a list of lines to text; each line does not have to line separators
     """
-    with open(file, 'w') as f: 
+    with open(file, 'w', encoding='utf-8') as f: 
         # writelines() does not add line separators
         f.writelines('\n'.join(lines) + '\n')
 writet = savet

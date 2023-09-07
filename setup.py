@@ -27,6 +27,7 @@ install_requires=['twine', # setup.py upload depreciated -> twine
                  'ezgooey', # gui
                  'Duplicate-Finder', # find duplicated files
                  'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
+                 'raindrop-io-py', # 0.1.7
                  'dropbox','pydrive2']
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform

@@ -3465,6 +3465,10 @@ def readk(file='data.pickle',*args, **kwargs):
     return obj
 
 def readj(file='data.json',*args,**kwargs):
+    """
+    to parse isoformat (e.g., 2023-03-23T17:58:37.599000+00:00) into datetime
+    import datetime; datetime.datetime.fromisoformat('2023-03-23T17:58:37.599000+00:00')
+    """
     import json
     with open(file, 'r') as f:
         res=json.loads(f.read(),*args,**kwargs)
@@ -3474,10 +3478,19 @@ def readj(file='data.json',*args,**kwargs):
 def savej(x,file='data.json',indent=4,*args,**kwargs):
     """
     save a dictionary, a list, a value
+    datetime will be automatically encoded (e.g., 2023-03-23T17:58:37.599000+00:00)
     """
+    # https://pynative.com/python-serialize-datetime-into-json/
+    from json import JSONEncoder
+    import datetime
+    class DateTimeEncoder(JSONEncoder):
+        #Override the default method
+        def default(self, obj):
+            if isinstance(obj, (datetime.date, datetime.datetime)):
+                return obj.isoformat()
     import json
     with open(file, 'w') as f:
-        json.dump(x,f,indent=indent,*args,**kwargs)
+        json.dump(x,f,indent=indent,cls=DateTimeEncoder,*args,**kwargs)
 writej = savej
 
 def savet(lines,file='data.txt',*args,**kwargs):

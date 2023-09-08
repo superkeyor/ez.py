@@ -23,7 +23,7 @@ install_requires=['twine', # setup.py upload depreciated -> twine
                  'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
                  'pyarrow', 'Pillow', 'mss',
-                 'cachelib', # flask
+                 'cachelib', 'flask_ipban', # flask
                  'ezgooey', # gui
                  'Duplicate-Finder', # find duplicated files
                  'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd

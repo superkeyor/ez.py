@@ -4724,15 +4724,18 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
     from yagmail import SMTP
     import html  # html is a python built-in lib (at least included in anaconda)?
     # https://yagmail.readthedocs.io/en/latest/usage.html
-    try:
-        # import os, sys
-        # HERE = os.path.dirname(os.path.abspath(__file__))
-        # sys.path.insert(0, HERE)
-        
-        # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-        gclient = SMTP(EMAIL,PASSWORD)
-    except:
+    if email is not None:
         gclient = SMTP(email,password)
+    else:
+        try:
+            # import os, sys
+            # HERE = os.path.dirname(os.path.abspath(__file__))
+            # sys.path.insert(0, HERE)
+            
+            # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
+            gclient = SMTP(EMAIL,PASSWORD)
+        except:
+            gclient = SMTP(email,password)
     contents=None
     if text is not None: body=None
     if text is not None: contents=html.escape(text)
@@ -4742,6 +4745,29 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
     return None
 mail = Mail
 gmail = Mail
+
+def gmailget(email,password,unread=True,attachments=True):
+    """
+    unread: retrieve all or only unread emails
+    attachments: download attachments (to working dir with overriding) or not
+    returns a list of dict {'subject','message','sender','date','size','attachments'}
+            attachments is [] if no attachments or parameter attachments=False
+    """
+    # https://github.com/dros1986/EmailClient
+    # https://pypi.org/project/supermail/
+    # this library also supports email sending, but buggy as of v1.3 (e.g., cc does not work)
+    # retrieving seems fine
+    from supermail import EmailClient
+    gmail = EmailClient(email,password)
+    filter = ['UNSEEN'] if unread else ['ALL']
+    messages = gmail.read(filter=filter)
+    res = []
+    for msg in messages:
+        # returns a list of filenames saved in specified dir
+        files = msg.attachments(save_dir='.') if attachments else []
+        res.append({'subject':msg.subject(),'message':msg.message(),'sender':msg.sender(),'date':msg.date(),'size':msg.size(),'attachments':files})
+        msg.set_as_read()  # seems unnecessary, because auto set as read after retrieving 
+    return res
 
 def o365auth(id=None, secret=None):
     try:
@@ -5795,15 +5821,17 @@ def gauth():
     os.chdir(oldpwd)
     return gdrive
 
-def gdownload(id,filename):
+def gdownload(id,filename=None):
     """
     export/download a file
     id: get from link
+    filename: local file path, if none, same file name as cloudfile in pwd (override if exists)
     the downloaded file may not have the exact same content formatting
     """
     gdrive = gauth()
     # https://developers.google.com/drive/api/guides/ref-export-formats
     gfile = gdrive.CreateFile({'id': id})
+    if filename is None: filename=joinpath(pwd(),gfile['title'])
     FORMATS = { 
                 '.txt': 'text/plain',
                 '.rtf': 'application/rtf',
@@ -5816,6 +5844,23 @@ def gdownload(id,filename):
                }
     gfile.GetContentFile(filename, FORMATS[splitpath(filename)[-1]])
     return filename
+
+def gupload(localfile,id=None):
+    """
+    upload a file
+    id: folder id, get from link, if none, then upload to root folder
+    returns id of cloudfile
+    """
+    gdrive = gauth()
+    # same file name as localfile
+    cloudfile = ''.join(splitpath(localfile)[1:])
+    if id is None:
+        gfile = gdrive.CreateFile({'title': cloudfile})
+    else:
+        gfile = gdrive.CreateFile({'title': cloudfile,'parents': [{'id': id}]})
+    gfile.SetContentFile(localfile)
+    gfile.Upload()
+    return gfile['id']
 
 def gcopy(id,filetitle,folderid=None):
     """
@@ -5838,6 +5883,23 @@ def gcopy(id,filetitle,folderid=None):
                                          body={"parents": [{"id": folderid}],'title': filetitle}).execute()
     return filetitle
 
+def gmove(file_id,new_folder_id):
+    """
+    file_id: file's ID
+    new_folder_id: destination folder's ID
+    """
+    gdrive = gauth()
+    # Fetch the existing file
+    gfile = gdrive.CreateFile({'id': file_id})
+    gfile.FetchMetadata(fetch_all=True)
+
+    # Retrieve the current parents of the gfile for removal
+    current_parents = ",".join([parent['id'] for parent in gfile['parents']])
+
+    # Move the gfile by updating its parents
+    gfile['parents'] = [{'id': new_folder_id}]
+    gfile.Upload(param={'removeParents': current_parents})
+    
 def gls(folderid=None):
     """
     ls files and folders in a folder (not including trashed)

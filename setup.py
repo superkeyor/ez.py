@@ -14,7 +14,7 @@ packages = find_packages()
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
 install_requires=['']
 install_requires=['twine', # setup.py upload depreciated -> twine
-                 'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'yagmail', 'gcsa','O365', 'chardet', 'psutil',
+                 'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'chardet', 'psutil',
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'pdfannots', 'python-docx', 'python-pptx', 'docx2pdf',
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 
                  'noraise', # seems not actually used, might be useful
@@ -28,7 +28,8 @@ install_requires=['twine', # setup.py upload depreciated -> twine
                  'Duplicate-Finder', # find duplicated files
                  'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
                  'raindrop-io-py', # 0.1.7
-                 'dropbox','pydrive2']
+                 'dropbox', 'pydrive2', 'yagmail', 'supermail', 'gcsa','O365', # cloud stuff, gcsa=gcalendar
+                 ]
 # 'imessage_reader' not available on heroku/linux when installing ez
 import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30

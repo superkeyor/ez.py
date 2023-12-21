@@ -5864,15 +5864,15 @@ def gupload(localfile,id=None):
     file_list = gdrive.ListFile({'q': f"title='{cloudfile}' and trashed=false"}).GetList()
     if file_list:
         # File exists, update it
-        gfile = gdrive.CreateFile({'id': file_list[0]['id'], 'title': file_name, 'parents': parents})
-        print(f'Updated file {file_name}')
+        gfile = gdrive.CreateFile({'id': file_list[0]['id'], 'title': cloudfile, 'parents': parents})
+        print(f'Updated file {cloudfile}')
     else:
         # File does not exist, create new
-        gfile = gdrive.CreateFile({'title': file_name, 'parents': parents})
+        gfile = gdrive.CreateFile({'title': cloudfile, 'parents': parents})
     
     gfile.SetContentFile(localfile)
     gfile.Upload()
-    return (file_name,gfile['id'])
+    return (cloudfile,gfile['id'])
 
 def gcopy(id,filetitle,folderid=None):
     """

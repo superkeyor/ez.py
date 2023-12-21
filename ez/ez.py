@@ -5847,20 +5847,32 @@ def gdownload(id,filename=None):
 
 def gupload(localfile,id=None):
     """
-    upload a file
+    upload a file with overriding the file of the same title
     id: folder id, get from link, if none, then upload to root folder
     returns id of cloudfile
     """
     gdrive = gauth()
     # same file name as localfile
     cloudfile = ''.join(splitpath(localfile)[1:])
+
     if id is None:
-        gfile = gdrive.CreateFile({'title': cloudfile})
+        parents_id = [{'id': 'root'}]
     else:
-        gfile = gdrive.CreateFile({'title': cloudfile,'parents': [{'id': id}]})
+        parents_id = [{'id': id}]
+
+    # Search for existing file
+    file_list = gdrive.ListFile({'q': f"title='{cloudfile}' and trashed=false"}).GetList()
+    if file_list:
+        # File exists, update it
+        gfile = gdrive.CreateFile({'id': file_list[0]['id'], 'title': file_name, 'parents': parents})
+        print(f'Updated file {file_name}')
+    else:
+        # File does not exist, create new
+        gfile = gdrive.CreateFile({'title': file_name, 'parents': parents})
+    
     gfile.SetContentFile(localfile)
     gfile.Upload()
-    return gfile['id']
+    return (file_name,gfile['id'])
 
 def gcopy(id,filetitle,folderid=None):
     """

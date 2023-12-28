@@ -3999,7 +3999,8 @@ def office_pdf_unlock(inputpdfs):
 
         # # windows version
         # gswin32c -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sFONTPATH=%windir%/fonts;xfonts;. -sPDFPassword= -dPDFSETTINGS=/prepress -dPassThroughJPEGImages=true -sOutputFile=OUTPUT.pdf INPUT.pdf
-        cmd = f"/usr/local/bin/gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile='{outputpdf}' -c .setpdfwrite -f '{pdf}'"
+        # https://stackoverflow.com/questions/57787990/strange-error-on-ghostscript-conversion-ps-to-pdf
+        cmd = f"/usr/local/bin/gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile='{outputpdf}' '{pdf}'"
         execute(cmd, False)
 
         # # to download ghostscript:

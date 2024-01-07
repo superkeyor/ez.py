@@ -13,7 +13,7 @@ packages = find_packages()
 # packages.append('ez.timezone.pytz')
 # install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
 install_requires=['']
-install_requires=['twine', # setup.py upload depreciated -> twine
+install_requires=['twine>=4', # setup.py upload depreciated -> twine
                  'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'chardet', 'psutil',
                  'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'pdfannots', 'python-docx', 'python-pptx', 'docx2pdf',
                  'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 

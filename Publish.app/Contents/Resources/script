@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source ~/.bash_profile
 
 csd=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # hack app
@@ -33,7 +34,7 @@ git commit -m 'update'
 git push origin master 
 
 # /Library/Frameworks/Python.framework/Versions/2.7/bin/pip install $package --upgrade
-source ~/.bash_profile
+
 # repeat several time to force upgrade
 pip install $package --upgrade --no-cache-dir --disable-pip-version-check
 pip install $package --upgrade --no-cache-dir --disable-pip-version-check

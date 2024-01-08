@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+source ~/.bash_profile
 
 csd=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # hack app
@@ -17,8 +18,8 @@ cd $csd
 # fallback for wxpython
 python $csd/$package/prepublish.py || pythonw $csd/$package/prepublish.py
 
-rm -r dist
-rm -r *.egg-info
+rm -rf dist
+rm -rf *.egg-info
 
 # python setup.py register
 
@@ -26,14 +27,14 @@ python setup.py sdist
 # python setup.py sdist upload
 twine upload dist/*
 
-rm -r *.egg-info
+rm -rf *.egg-info
 
 git add -A 
 git commit -m 'update' 
 git push origin master 
 
 # /Library/Frameworks/Python.framework/Versions/2.7/bin/pip install $package --upgrade
-source ~/.bash_profile
+
 # repeat several time to force upgrade
 pip install $package --upgrade --no-cache-dir --disable-pip-version-check
 pip install $package --upgrade --no-cache-dir --disable-pip-version-check

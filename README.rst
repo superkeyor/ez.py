@@ -1,241 +1,193 @@
-This module is for easy interaction with linux, Mac OS X, Windows shell.
-=============================================
-jerryzhujian9_at_gmail.com
-Tested under python 2.7
-To see your python version
-in terminal: python -V
-or in python: import sys; print (sys.version)
-=============================================
-Install:
-https://pypi.python.org/pypi/ez
-pip install ez
-no dependencies
+To make it easy to interact with Linux, Mac OS, Windows shell.
+===============================================================
 
-Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
-Symbolic link itself is the target of file operations; the actual file should be safe.
+.. code-block:: none
 
-see also pyg.py
-debug(1/0)
-    # 0 = everything will be actually executed
-    # 1 = simulate operations of cp, mv, execute; other commands will be actually performed.
-          will print out simulated commands, useful for debugging and for counting files when necessary.
-error(msg)
+    jerryzhujian9_at_gmail.com
+    Tested under python 3.11
+    To see your python version
+    in terminal: python -V
+    or in python: import sys; print (sys.version)
 
-readx(path, sheet=0, r=[1,], c=None)  # Read xlsx, xls file into a list
-savex(path, data, header=None, delimiter=",", sheet_name='Sheet1') # Write a list of list to a xlsx (xlsxwriter), xls(xlwt), csv file
+Install
+-------
 
-fullpath(path) fp()
-pwd() or cwd()  # Returns current working director.
-csd() # Returns full path of current script directory, i.e. the directory where the running script is. 
-csf() # Returns current script name without ext.
-parentdir(path) pr() # Returns the parent directory of a path.
-joinpath(path1[, path2[, ...]])   jp() # Returns the joined path. Supports vectorization.
-splitpath(path) sp() # Returns a list of path elements: [path, file, ext]. Supports vectorization.
-cd(path)    # Changes to a new working directory.
-stepfolder(-1)
+also hosted at https://pypi.python.org/pypi/ez
 
-trim(string,how[,chars]) quote(string)
-join(sep,string1,string2), join(sep,array) # Glues together strings with sep. Supports vectorization.
-sort(array)
-replace(theList,theItem,replacement), remove(theList,theItem)
+.. code-block:: none
 
-ls([path[, regex]], full=True, dotfile=False)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
-lsd([path[, regex]], full=False, dotfolder=False)
-fls([path[, regex, dotf=False]])   # Returns a list of files with their full paths in flattened path (i.e. walk each subdirectory).
-# the filter only works for short file name not for full file name, i.e. the file name itself not its full path
-# regular expression is case-sensitive
-# usage: ls(); ls(cwd()); ls(cwd(), "\.py$")
+    pip install ez
 
-mkdir("path/to/a/directory")    # Makes a directory (also any one of the "path", "to", "a" directories if not exits).
-rn(old, new) # Renames old to new.
-exists(path)    # Returns the existence of path (0 or 1).
-rm(path)    # Deletes a file or folder. Supports wildcards, vectorization.
-cp(source, destination)  # Copies source file(s) or folder to destination. Supports wildcards, vectorization.
-mv(source, destination)  # Moves source file(s) or folder to destination. Supports wildcards, vectorization.
+General note
+------------
 
-sprintf(formatString, *args, **kwargs)
-evaluate(exp)
-# Executes a shell command
-# execute/esp/espR no capture output (subprocess.call), execute1 discard--not return--captured, execute2 captures output (subprocess.Popen)
-execute, execute1, execute2    
-esp, esp1, esp2 # execute sprintf shell commands
-espR, espR1, espR2 # execute sprintf R codes
-with nooutput():
-    print 'this is will not be printed in stdout'
-pprint(text,color='green') # color print; ppprint() # "pretty-print" arbitrary Python data structures
-beep()  # Beeps to notify user.
-which(name) # Prints where a module is and in which module a function is. which('python') returns which python is being used.
-help(name)/doc(name) # name is a string, Prints the doc string of a module/class/function
-    when write a module, add:
-    __doc__ = three double quotes blabla three double quotes         <-----this is module's docstring, use explicit
+- Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls, fls only support regular expression).
+- Symbolic link itself is the target of file operations; the actual file should be safe.
 
-    when write a function/class:
-    def function(arg):
-        three double quotes Returns, blabla three double quotes      <-----this is function's doctoring, use implicit
-        return sth
-ver(package_name) version(package_name), see a package's version.  package_name could be 'python'
-whos(name),whos() list imported functions/packages
+Function list
+-------------
 
-logon(file="log.txt", mode='a', status=True, timestamp=True), logoff()
+- ``debug(1/0)``
+    - 0 = everything will be actually executed
+    - 1 = simulate operations of cp, mv, execute; other commands will be actually performed. Will print out simulated commands, useful for debugging and for counting files when necessary.
 
-tree([path[, sum=True, save=None, sort=True, case=True]) # Prints a directory tree structure. 
-    sum=True (default) prints only folders, i.e., print less to show the big structure
-    sum=False prints files plus folders
+- ``error(msg)``
 
-[starts, ends] = regexp(string, pattern); regexp(string, pattern, method='split/match'), regexpi
-regexprep(string, pattern, replace, count=0), regexprepi
+- ``readx(path, sheet=0, r=[1,], c=None)`` - Read xlsx, xls file into a list
+- ``savex(path, data, header=None, delimiter=",", sheet_name='Sheet1')`` - Write a list of list to a xlsx (xlsxwriter), xls(xlwt), csv file
 
-iff(expression, result1, result2), ifelse()
-clear(module, recursive=False)
+- ``fullpath(path)`` ``fp()``
+- ``pwd()`` or ``cwd()``  - Returns current working directory.
+- ``csd()`` - Returns full path of current script directory, i.e., the directory where the running script is. 
+- ``csf()`` 0 Returns current script name without ext.
+- ``parentdir(path)`` ``pr()`` - Returns the parent directory of a path.
+- ``joinpath(path1[, path2[, ...]])``  ``jp()`` - Returns the joined path. Supports vectorization.
+- ``splitpath(path)`` ``sp()`` - Returns a list of path elements: [path, file, ext]. Supports vectorization.
+- ``cd(path)`` - Changes to a new working directory.
+- ``stepfolder(-1)``
 
-num(string)
-isempty(s)
-Randomize(x), randomize(x) # Sets a randomization seed.
-RandomizeArray(list=[])   randomizearray(list=[])  # Shuffles a list in place.
-Random(a,b) random(a,b) # Returns a random integer N such that a <= N <= b.
-RandomChoice(seq), randomchoice(seq) # Returns a random element from sequence
-Permute(iterable=[]) permute(iterable=[]) # Returns permutations in a list
+- ``trim(string,how[,chars])`` ``quote(string)``
+- ``join(sep, string1, string2)``, ``join(sep, array)`` - Glues together strings with sep. Supports vectorization.
+- ``sort(array)``
+- ``replace(theList, theItem, replacement)``, ``remove(theList, theItem)``
 
-unique(seq), union(seq1,seq2), intersect(seq1,seq2), setdiff(seq1,seq2) in original order
-seq could be a list
-    note: setdiff(seq1,seq2) may not be equal to setdiff(seq2,seq1)
-            >>> unique('abracadaba')
-            ['a', 'b', 'r', 'c', 'd']
-            >>> unique('simsalabim')
-            ['s', 'i', 'm', 'a', 'l', 'b']
-            >>>
-            >>> setdiff('abracadaba','simsalabim')
-            ['r', 'c', 'd']
-            >>> setdiff('simsalabim','abracadaba')
-            ['s', 'i', 'm', 'l']
-duplicate(seq) # returns a list of duplicated elements in original order
-    # e.g.
-    # a = [1,5,2,3,2,1,5,6,5,5,5]
-    # duplicate(a) # yields [2, 1, 5]
+- ``ls([path[, regex]], full=True, dotfile=False)`` - Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.
+- ``lsd([path[, regex]], full=False, dotfolder=False)``
+- ``fls([path[, regex, dotf=False]])`` - Returns a list of files with their full paths in flattened path (i.e., walk each subdirectory). The filter only works for the short file name, not for the full file name, i.e., the file name itself not its full path. Regular expression is case-sensitive. Usage examples: ``ls(); ls(cwd()); ls(cwd(), "\.py$")``
 
-JDict() # Jerry's dictionary, customized ordered dictionary class with convient attributes and methods, see help(JDict)
-Moment(timezone)    # Generates the current datetime in specified timezone, or local naive datetime if omitted.
+- ``mkdir("path/to/a/directory")`` - Makes a directory (also any one of the "path", "to", "a" directories if not exists).
+- ``rn(old, new)`` - Renames old to new.
+- ``exists(path)`` - Returns the existence of path (0 or 1).
+- ``rm(path)`` - Deletes a file or folder. Supports wildcards, vectorization.
+- ``cp(source, destination)`` - Copies source file(s) or folder to destination. Supports wildcards, vectorization.
+- ``mv(source, destination)`` - Moves source file(s) or folder to destination. Supports wildcards, vectorization.
 
-SetClip(content), setclip(content)   # Copy/Write something to current clipboard
-content = GetClip(), content = getclip()   # Read out content from current clipboard and assign to a variable
+- ``sprintf(formatString, *args, **kwargs)``
+- ``evaluate(exp)`` - Executes a shell command. ``execute``, ``execute1``, ``execute2``: no capture output (`subprocess.call`), `execute1` discards (does not return) captured output, `execute2` captures output (`subprocess.Popen`).
+- ``esp``, ``esp1``, ``esp2`` - Execute sprintf shell commands.
+- ``espR``, ``espR1``, ``espR2`` - Execute sprintf R codes.
+- ``with nooutput():`` - Used to suppress output in stdout. Example: `print 'this will not be printed in stdout'`.
+- ``pprint(text, color='green')`` - Color print. `ppprint()` is used to "pretty-print" arbitrary Python data structures.
+- ``beep()`` - Beeps to notify user.
+- ``which(name)`` - Prints where a module is and in which module a function is. For example, `which('python')` returns which Python is being used.
+- ``help(name)``/``doc(name)`` - Prints the documentation string of a module/class/function. For modules, use explicit docstring with `__doc__`. For functions/classes, use implicit docstring within the function/class definition.
+- ``ver(package_name)``, ``version(package_name)`` - Checks a package's version. `package_name` could be 'python'.
+- ``whos(name)``, ``whos()`` - Lists imported functions/packages.
 
-lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True) # Counts lines of codes, counting empty lines as well.
-keygen(length=8, complexity=3)  # generate a random key
-hashes(filename): # Calculate/Print a file's md5 32; sha1 32; can handle big files in a memory efficient way
-pinyin() pinyinauthor()
-encoding_detect(), encoding_convert()
-hanzifreq()
-pipe usage: # http://0101.github.io/pipetools/doc/
-    # result = [1,2,3,0] > ez.pipe | len | str
-    # countdown = ez.pipe|(range, -1)|reversed|ez.pipetools.foreach('{0}...')|' '.join|'{0} boom'; countdown(5)
+- ``logon(file="log.txt", mode='a', status=True, timestamp=True)``, ``logoff()``
+- ``tree([path[, sum=True, save=None, sort=True, case=True]])`` - Prints a directory tree structure. `sum=True` (default) prints only folders, showing the larger structure. `sum=False` prints files plus folders.
 
+- ``[starts, ends] = regexp(string, pattern)``, ``regexp(string, pattern, method='split/match')``, ``regexpi``
+- ``regexprep(string, pattern, replace, count=0)``, ``regexprepi``
 
+- ``iff(expression, result1, result2)``, ``ifelse()``
+- ``clear(module, recursive=False)``
 
+- ``num(string)``
+- ``isempty(s)``
 
+- ``Randomize(x)``, ``randomize(x)`` - Sets a randomization seed.
+- ``RandomizeArray(list=[])``, ``randomizearray(list=[])`` - Shuffles a list in place.
+- ``Random(a, b) random(a, b)`` - Returns a random integer N such that a <= N <= b.
+- ``RandomChoice(seq)``, ``randomchoice(seq)`` - Returns a random element from a sequence.
+- ``Permute(iterable=[])``, ``permute(iterable=[])`` - Returns permutations in a list.
+- ``unique(seq)``, ``union(seq1, seq2)``, ``intersect(seq1, seq2)``, ``setdiff(seq1, seq2)`` - Operates on sequences in their original order. Note: `setdiff(seq1, seq2)` may not be equal to `setdiff(seq2, seq1)`. Examples: 
+  - ``unique('abracadaba')`` results in ``['a', 'b', 'r', 'c', 'd']``.
+  - ``setdiff('abracadaba', 'simsalabim')`` results in ``['r', 'c', 'd']``.
+- ``duplicate(seq)`` - Returns a list of duplicated elements in original order. Example: `duplicate([1,5,2,3,2,1,5,6,5,5,5])` yields `[2, 1, 5]`.
 
-To avoid typing email password each time, place a file named pygmailconfig.py with
-EMAIL = 'someone@gmail.com'
-PASSWORD = 'abcdefghik'
-or better pygmailconfig.pyc
-in the site-packages/ez folder, check with ez.which('ez')
-The functions will no longer need email/password and become like this
-Mail(to, subject, body, attach=None), AddEvent(event), Sheet(fileName)
+- ``JDict()`` - Jerry's dictionary, a customized ordered dictionary class with convenient attributes and methods. Use `help(JDict)` for more information.
+- ``Moment(timezone)`` - Generates the current datetime in specified timezone, or local naive datetime if omitted.
 
-Mail([EMAIL, PASSWORD, ] to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None)
-        to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
-        reply_to: 'a@a.com'
-        attachment: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
-AddEvent([EMAIL, PASSWORD, ] event)     on DATE at TIME for DURATION in PLACE
+- ``SetClip(content)``, ``setclip(content)`` - Copy/Write something to the current clipboard.
+- ``GetClip()``, ``getclip()`` - Read out content from the current clipboard and assign it to a variable.
 
-Sheet([EMAIL, PASSWORD, ] fileName)
-    returns a sheet object representing "Sheet 1"
+- ``lines(path='.', pattern='\\.py$|.ini$|\\.c$|\\.h$|\\.m$', recursive=True)`` - Counts lines of codes, including empty lines.
+- ``keygen(length=8, complexity=3)`` - Generates a random key.
+- ``hashes(filename)`` - Calculates/Prints a file's md5 and sha1 hashes; can handle big files in a memory-efficient way.
+- ``pinyin()``, ``pinyinauthor()``
+- ``encoding_detect()``, ``encoding_convert()``
+- ``hanzifreq()``
 
-    your google account doesn't have to the owner of this sheet, as long as you can edit it.
-    but you need to initialize/create this sheet and maybe the header by hand to begin with
-    the header could have spaces, ? etc, and when they are used as the keywords of dictionary, they are all converted to lowercase and all illegal characters are removed e.g. Delayed Test_date?  --> delayedtestdate
+- Pipe usage: 
+  - Example: ``[1,2,3,0] > ez.pipe | len | str``.
+  - Countdown example: ``ez.pipe|(range, -1)|reversed|ez.pipetools.foreach('{0}...')|' '.join|'{0} boom'``; ``countdown(5)``.
 
-    fileName should be unique, can have spaces
+Email and Password Configuration
+--------------------------------
+To avoid typing email and password each time, place a file named `pygmailconfig.py` with the following contents in the `site-packages/ez` folder (check location with `ez.which('ez')`):
+- EMAIL = 'someone@gmail.com'
+- PASSWORD = 'abcdefghik'
 
+Alternatively, use `pygmailconfig.pyc` for better security.
 
-GetRows(query=None, order_by=None,
-        reverse=None, filter_func=None)
-    :param query:
-        A string structured query on the full text in the worksheet.
-          [columnName][binaryOperator][value]
-          Supported binaryOperators are:
-          - (), for overriding order of operations
-          - = or ==, for strict equality
-          - <> or !=, for strict inequality
-          - and or &&, for boolean and
-          - or or ||, for boolean or.
-    :param order_by:
-        A string which specifies what column to use in ordering the
-        entries in the feed. By position (the default): 'position' returns
-        rows in the order in which they appear in the GUI. Row 1, then
-        row 2, then row 3, and so on. By column:
-        'column:columnName' sorts rows in ascending order based on the
-        values in the column with the given columnName, where
-        columnName is the value in the header row for that column.
-    :param reverse:
-        A string which specifies whether to sort in descending or ascending
-        order.Reverses default sort order: 'true' results in a descending
-        sort; 'false' (the default) results in an ascending sort.
-    :param filter_func:
-        A lambda function which applied to each row, Gets a row dict as
-        argument and returns True or False. Used for filtering rows in
-        memory (as opposed to query which filters on the service side).
-    :return:
-        A list of row dictionaries.
+With this configuration, the functions will no longer require explicit email/password input:
 
+- ``Mail(to, subject, body, attach=None)``
+- ``AddEvent(event)``
+- ``Sheet(fileName)``
 
-UpdateRow(row_data):
-    Update Row (By ID).
+Function Details
+----------------
+- ``Mail([EMAIL, PASSWORD, ] to, subject, body, attachment=None, bcc=None, cc=None, reply_to=None)``
+  - to/bcc/cc: Can be a list like `['a@a.com','b@b.com']` or a single string `'a@a.com, b@b.com'`.
+  - reply_to: For example, `'a@a.com'`.
+  - attachment: Either a single file `'file_in_working_dir.txt'` or a list like `['a.txt','b.py','c.pdf']`.
 
-    Only the fields supplied will be updated.
-    :param row_data:
-        A dictionary containing row data. The row will be updated according
-        to the value in the ID_FIELD.
-    :return:
-        The updated row.
+- ``AddEvent([EMAIL, PASSWORD, ] event)``
+  - Event details like date, time, duration, and place.
 
+- ``Sheet([EMAIL, PASSWORD, ] fileName)``
+  - Returns a sheet object representing "Sheet 1".
+  - Your Google account does not need to be the owner of the sheet, as long as you have edit access.
+  - Initialization/creation of the sheet and its header may need to be done manually.
+  - Headers with spaces or special characters are normalized (e.g., 'Delayed Test_date?' becomes 'delayedtestdate').
+  - Ensure `fileName` is unique and can contain spaces.
 
-UpdateRowByIndex(index, row_data):
-    Update Row By Index
+GetRows Function
+----------------
+- ``GetRows(query=None, order_by=None, reverse=None, filter_func=None)``
+  - :param query: A structured query on the full text in the worksheet. Supported binary operators include `()`, `=`, `==`, `<>`, `!=`, `and`, `&&`, `or`, `||`.
+  - :param order_by: Specifies the column for ordering entries. 'position' (default) or 'column:columnName'.
+  - :param reverse: Sort order, 'true' for descending, 'false' (default) for ascending.
+  - :param filter_func: A lambda function for filtering rows in memory.
+  - :return: A list of row dictionaries.
 
-    :param index:
-        An integer designating the index of a row to update (zero based).
-        Index is relative to the returned result set, not to the original
-        spreadseet.
-    :param row_data:
-        A dictionary containing row data.
-    :return:
-        The updated row.
+UpdateRow Function
+------------------
+- ``UpdateRow(row_data)``
+  - Updates a row by ID.
+  - :param row_data: A dictionary containing row data, updated according to the ID_FIELD.
+  - :return: The updated row.
 
+UpdateRowByIndex Function
+-------------------------
+- ``UpdateRowByIndex(index, row_data)``
+  - Updates a row by its index.
+  - :param index: The index of the row to update (zero-based).
+  - :param row_data: A dictionary containing row data.
+  - :return: The updated row.
 
-InsertRow(row_data):
-    Append Row at the end
+InsertRow Function
+------------------
+- ``InsertRow(row_data)``
+  - Appends a row at the end.
+  - :param row_data: A dictionary containing row data.
+  - :return: A dictionary for the inserted row.
 
-    :param row_data:
-        A dictionary containing row data.
-    :return:
-        A row dictionary for the inserted row.
+DeleteRow Function
+------------------
+- ``DeleteRow(row)``
+  - Deletes a row by ID.
+  - :param row: A row dictionary to delete.
 
+DeleteRowByIndex Function
+-------------------------
+- ``DeleteRowByIndex(index)``
+  - Deletes a row by index.
+  - :param index: A row index, relative to the returned result set.
 
-DeleteRow(row):
-    Delete Row (By ID).
-
-    Requires that the given row dictionary contains an ID_FIELD.
-    :param row:
-        A row dictionary to delete.
-
-
-DeleteRowByIndex(index):
-    Delete Row By Index
-
-    :param index:
-        A row index. Index is relative to the returned result set, not to
-        the original spreadsheet.
-
-
-DeleteAllRows():
-    Delete All Rows
+DeleteAllRows Function
+----------------------
+- ``DeleteAllRows()``
+  - Deletes all rows in the spreadsheet.

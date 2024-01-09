@@ -1859,8 +1859,12 @@ def ver(package_name='python'):
     else:
         # https://docs.python.org/2.7/reference/simple_stmts.html#exec
         theNameSpace = {}
+        package_name=package_name.replace("-","_")    # e.g., fake-useragent
         exec('import ' + package_name, theNameSpace)
-        print(theNameSpace[package_name].__version__)
+        try:
+            print(theNameSpace[package_name].__version__)
+        except AttributeError:
+            print(theNameSpace[package_name].VERSION) # e.g., fake-useragent
 version = ver
 
 def evaluate(exp):

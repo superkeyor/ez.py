@@ -31,6 +31,9 @@ install_requires=['twine>=4', # setup.py upload depreciated -> twine
                  'dropbox', 'pydrive2', 'yagmail', 'supermail', 'gcsa','O365', # cloud stuff, gcsa=gcalendar
                  ]
 # 'imessage_reader' not available on heroku/linux when installing ez
+import sys
+if sys.version_info < (3,10):
+    install_requires.remove('raindrop-io-py') # raindrop-io-py requires python 3.10+
 import platform
 # see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'

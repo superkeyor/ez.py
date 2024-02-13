@@ -24,11 +24,10 @@ install_requires=['twine>=4', # setup.py upload depreciated -> twine
                  'pandas', 'numpy', 'beautifulsoup4', 'lxml',
                  'pyarrow', 'Pillow', 'mss',
                  'cachelib', 'flask_ipban', # flask
-                 'ezgooey', # gui
                  'Duplicate-Finder', # find duplicated files
                  'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
                  'raindrop-io-py', # 0.1.7
-                 'dropbox', 'pydrive2', 'yagmail', 'supermail', 'gcsa','O365', # cloud stuff, gcsa=gcalendar
+                 'dropbox', 'pydrive2', 'yagmail', 'supermail', 'gcsa', 'O365', # cloud stuff, gcsa=gcalendar
                  ]
 # 'imessage_reader' not available on heroku/linux when installing ez
 import sys
@@ -39,7 +38,7 @@ import platform
 # 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
 if platform.system()=='Darwin': install_requires.append('imessage_reader')
 if platform.system()=='Linux': 
-    install_requires.remove('ezgooey') # buggy with ezgooey/wxpython
+    # install_requires.remove('ezgooey') # buggy with ezgooey/wxpython
     install_requires.remove('psutil')
     install_requires.remove('pynput')
     install_requires.remove('docx2pdf') # not tested, but no MS Word for linux

@@ -445,7 +445,7 @@ def cleanpath(path,allow_unicode=False):
         fname = unicodedata.normalize('NFKD', fname).encode('ascii', 'ignore').decode('ascii')
     
     # (?u) switch on unicode
-    fname = re.sub(r'(?u)[^\w]', '-', fname)  # \s space, \w means letters, digit, underscore 
+    fname = re.sub(r'(?u)[^\w]|_', '-', fname)  # \s space, \w means letters, digit, underscore 
     expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\s|_|\-','\s|_|\-','\s|_|\-','\s|_|\-')
     fname = re.sub(expression, "", fname, count=0)
     if fname in {'', '.', '..'}:

@@ -426,7 +426,7 @@ def cleanpath(path,allow_unicode=False):
 
     Removal or replacement of CGI escaped ASCII characters, i.e. %20 becomes " ".
     Convert to ASCII if 'allow_unicode' is False. 
-    Remove anything that is not an alphanumeric, ".", " ", "_" and "-"
+    Replace non-alphanumeric, "_", " ", "." with "-"
     Convert consecutive " ", "_" and "-" to single one.
     Strip leading and trailing " ", "_" and "-".
     """
@@ -445,7 +445,7 @@ def cleanpath(path,allow_unicode=False):
         fname = unicodedata.normalize('NFKD', fname).encode('ascii', 'ignore').decode('ascii')
     
     # (?u) switch on unicode
-    fname = re.sub(r'(?u)[^\w.\s-]', '', fname)
+    fname = re.sub(r'(?u)[^\w]', '-', fname)  # \s space, \w means letters, digit, underscore 
     expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\s|_|\-','\s|_|\-','\s|_|\-','\s|_|\-')
     fname = re.sub(expression, "", fname, count=0)
     if fname in {'', '.', '..'}:

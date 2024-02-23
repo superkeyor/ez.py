@@ -143,7 +143,11 @@ gmail(), mail(), Mail()
 
 """
 # for __all__
-import fire,requests,sqlite3,json,io,os,sys,platform,string,random,re,datetime,tzlocal,pandas as pd,numpy as np,urllib.parse as urlparse;from bs4 import BeautifulSoup
+# try for ez.SPSS
+try:
+    import fire,requests,sqlite3,json,io,os,sys,platform,string,random,re,datetime,tzlocal,pandas as pd,numpy as np,urllib.parse as urlparse;from bs4 import BeautifulSoup
+except:
+    pass
 
 # reference: abspath for ../ ./, expanduser for ~, glob to resolve wildcards, fnmatch.translate wildcards to re
 import os, sys, platform, string, random, shutil, re, subprocess, glob, fnmatch
@@ -5662,7 +5666,10 @@ class GSheet():
 ####************************************************************************************************
                                      ####*Dropbox*####
 ####************************************************************************************************
-import dropbox
+try:
+    import dropbox
+except:
+    pass
 # https://dropbox-sdk-python.readthedocs.io/en/latest/api/dropbox.html#
 
 def dropbox_spaceusage():

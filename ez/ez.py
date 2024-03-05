@@ -262,7 +262,7 @@ def error(msg):
 
 def fullpath(path):
     """
-    fullpath(path) # Returns the full path by resolving ~, $Var, %Var%, and relative path in *nix and Windows.
+    fullpath(path) # Returns the full path by resolving ~, $Var, %Var%, * or ? wildcard, and relative path in *nix and Windows.
     note: no trailing / returned, at least on mac os x
     """
     # https://stackoverflow.com/a/40311142/2292993
@@ -271,7 +271,9 @@ def fullpath(path):
     # both abspath and realpath imply os.path.normpath
     # neither abspath or realpath will resolve ~ to the user's home directory
     # abspath and realpath: if fullpath provided, simply return fullpath. if not, resolved relative to pwd
-    return os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
+    path = glob.glob(os.path.abspath(os.path.expandvars((os.path.expanduser(path)))))
+    if len(path) == 1: path = path[0]  # glob.glob returns a list
+    return path
 fp = fullpath
 
 def csd():

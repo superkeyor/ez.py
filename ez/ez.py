@@ -838,6 +838,52 @@ def fls(path="./", regex=".*", dotf=False, sort=True, case=True):
     else:
         return result
 
+def flsd(path="./", regex=".*", dotf=False, sort=True, case=True):
+    def _FilterList(flist, pattern_regex):
+        # match_pattern = re.compile(pattern_regex, re.IGNORECASE).search
+        match_pattern = re.compile(pattern_regex).search
+        return list(filter(match_pattern, flist))
+    def _ListingParse(path="./", pattern_regex=".*"):
+        # ls() or ls('homebrew'), ls("homebrew", "\.py$")
+        if os.path.isdir(path):
+            path = path
+            pattern_regex = pattern_regex
+        # ls('*.py'), ls('homebrew/*.py')
+        else:
+            path, pattern = os.path.split(path)
+            pattern_regex = fnmatch.translate(pattern)
+        return path, pattern_regex
+
+    path = fullpath(path)
+    pattern_regex = regex
+    path, pattern_regex = _ListingParse(path, pattern_regex)
+
+    flatFolders = []
+    for root, dirs, files in os.walk(path):
+        # skip any folder whose name starts with . and its any subfolders
+        if not dotf:
+            # operationally, check if the path root has /.folder
+            parts = root.split(os.sep)
+            dotfolders = [part for part in parts if len(part)>=2 and part.startswith('.') and part!='..']
+            if len(dotfolders)>0: continue
+
+        filteredFolders = _FilterList(dirs, pattern_regex)
+        if not dotf: filteredFolders = _FilterList(filteredFolders,'^[^\.]')
+        ## If there is matched
+        if filteredFolders:
+            for folder in filteredFolders:
+                folderFullName = os.path.join(root, folder)
+                flatFolders.append(folderFullName)
+    result = flatFolders
+    if sort: 
+        if case:
+            return sorted(result)
+        else:
+            # https://stackoverflow.com/questions/13954841/sort-list-of-strings-ignoring-upper-lower-case
+            return sorted(result, key=lambda v: v.upper())
+    else:
+        return result
+
 def mkdir(path):
     """mkdir("path/to/a/directory") , Makes a directory (also any one of the "path", "to", "a" directories if not exits)."""
     path = fullpath(path)

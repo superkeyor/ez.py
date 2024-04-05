@@ -260,10 +260,11 @@ from os import getcwd as cwd
 def error(msg):
     raise Exception(msg)
 
-def fullpath(path):
+def fullpath(path,alwayslist=False):
     """
     fullpath(path) # Returns the full path by resolving ~, $Var, %Var%, * or ? wildcard, and relative path in *nix and Windows.
     note: no trailing / returned, at least on mac os x
+    alwayslist: if True, for single path, returns list of path
     """
     # https://stackoverflow.com/a/40311142/2292993
     # os.path.abspath returns the absolute path, but does NOT resolve symlinks
@@ -272,7 +273,7 @@ def fullpath(path):
     # neither abspath or realpath will resolve ~ to the user's home directory
     # abspath and realpath: if fullpath provided, simply return fullpath. if not, resolved relative to pwd
     path = glob.glob(os.path.abspath(os.path.expandvars((os.path.expanduser(path)))))
-    if len(path) == 1: path = path[0]  # glob.glob returns a list
+    if len(path) == 1 and not alwayslist: path = path[0]  # glob.glob returns a list
     return path
 fp = fullpath
 
@@ -893,8 +894,7 @@ def mkdir(path):
 
 def exists(path):
     """Returns the existence of path (0 or 1, supports wildcards such as "../homebrew/*.pyc" but not regular expression)."""
-    path = fullpath(path)
-    paths = glob.glob(path)
+    paths = fullpath(path,True)
     return True if paths else False
 
 def rn(*args):
@@ -971,8 +971,7 @@ def trash(path):
         return
 
     if not path: return  # trash('')
-    path = fullpath(path)
-    paths = glob.glob(path)
+    paths = fullpath(path,True)
     if not paths: return # wildcard found nothing to remove
 
     from send2trash import send2trash
@@ -1001,8 +1000,7 @@ def rm(path):
         return
 
     if not path: return  # rm('')
-    path = fullpath(path)
-    paths = glob.glob(path)
+    paths = fullpath(path,True)
     if not paths: return # wildcard found nothing to remove
 
     for path in paths:
@@ -1062,9 +1060,8 @@ def cp(source, destination, ignores=None, debugMode=False):
         return
 
     if (not source) or (not destination): return  # cp('','')
-    source = fullpath(source)
+    sources = fullpath(source,True)
     destination = fullpath(destination)
-    sources = glob.glob(source)
     if not sources: return  # wildcard found nothing to copy
 
     for source in sources:
@@ -1136,9 +1133,8 @@ def mv(source, destination, debugMode=False):
         return
 
     if (not source) or (not destination): return  # mv('','')
-    source = fullpath(source)
+    sources = fullpath(source,True)
     destination = fullpath(destination)
-    sources = glob.glob(source)
     if not sources: return  # wildcard found nothing to copy
 
     # prepare destination dir if not exist

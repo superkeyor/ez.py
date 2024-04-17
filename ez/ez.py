@@ -4766,7 +4766,7 @@ def GetClip():
     return pyperclip.paste()
 getclip=GetClip
 
-def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None, email=None, password=None):
+def Mail(to, subject=None, body=None, text=None, attachments=None, bcc=None, cc=None, email=None, password=None):
     """Mail(to, subject, body, attachments=None, bcc=None, cc=None, email=None, password=None)
     to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
     body: html code or text
@@ -4774,6 +4774,11 @@ def Mail(to, subject, body=None, text=None, attachments=None, bcc=None, cc=None,
     attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
     email, password: ignored if pysecrets exists
     """
+    import traceback
+    msg = f'{sys.argv[0][:-3]} Error!'
+    if subject is None: subject = msg
+    if text is None: text = traceback.format_exc()
+
     from yagmail import SMTP
     import html  # html is a python built-in lib (at least included in anaconda)?
     # https://yagmail.readthedocs.io/en/latest/usage.html

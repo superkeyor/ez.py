@@ -273,7 +273,7 @@ def fullpath(path,alwayslist=False):
     # neither abspath or realpath will resolve ~ to the user's home directory
     # abspath and realpath: if fullpath provided, simply return fullpath. if not, resolved relative to pwd
     path = os.path.abspath(os.path.expandvars((os.path.expanduser(path))))
-    if '*' in path or '?' in path: path = glob.glob(path)  # use glob only when needed, otherwise glob returns [] for non-exisiting path
+    if ('*' in path or '?' in path) or alwayslist: path = glob.glob(path)  # use glob only when needed, otherwise glob returns [] for non-exisiting path
     if len(path) == 1 and not alwayslist: path = path[0]  # glob.glob returns a list
     return path
 fp = fullpath

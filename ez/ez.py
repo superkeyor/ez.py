@@ -381,11 +381,18 @@ def joinpath(*args):
         for i in range(0,length):
             result = ''
             for j in range(0,len(args)):
-                result = os.path.join(result, args[j][i])
+                part = args[j][i].lstrip(os.path.sep) if j != 0 else args[j][i]
+                result = os.path.join(result, part)
             results.append(result)
         return results
     else:
-        return os.path.join(*args)
+        if len(args) > 1:
+            # Remove leading slashes from all but the first argument
+            processed_args = [args[0]] + [arg.lstrip(os.path.sep) for arg in args[1:]]
+        else:
+            # If only one argument or none, no need to process further
+            processed_args = list(args)  # Just convert tuple to list, if only one no change needed
+        return os.path.join(*processed_args)
 jp = joinpath
 
 def splitpath(path):

@@ -6747,7 +6747,10 @@ def pdfannot(pdfpath, mdpath=None, force=1):
             try:
                 _process_pdfpath(pdf, mdpath, force)
             except Exception as e:
-                print(f'{pdf} error {e.args[0]}. Skipping...')
+                try:
+                    print(f'{pdf} error {e.args[0]}. Skipping...')
+                except:
+                    print(f'{pdf} error unknown. Skipping...')
 
     if pdfpath.endswith('.pdf'): 
         _process_pdfpath(fp(pdfpath), mdpath=mdpath, force=force)

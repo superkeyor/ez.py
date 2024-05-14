@@ -6729,7 +6729,11 @@ def pdfannot(pdfpath, mdpath=None, force=1):
                 'producer': f'PyHighlightExtractor; {producer}'
             }
             doc.set_metadata(metadata)
-            doc.save(pdfpath,incremental=True,encryption=fitz.PDF_ENCRYPT_KEEP)
+            try:
+                doc.save(pdfpath,incremental=True,encryption=fitz.PDF_ENCRYPT_KEEP)
+            except:
+                # https://stackoverflow.com/a/70692373/2292993
+                doc.save(pdfpath,incremental=True,encryption=0)
 
         doc.close()
         if md is not None: print(md)

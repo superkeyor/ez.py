@@ -6564,6 +6564,193 @@ def pdf2gif(pdf,out='animation.gif',dpi=300,crop=None,duration=300,loop=0):
                    duration=duration, loop=loop)
     print(f"Output gif: {out}")
 
+def pdfannot(pdfpath, mdpath=None, force=1):
+    """
+    pdfpath: pdfpath_or_pdffolder
+    mdpath:  save output to an md file
+    force:   0/1/2
+             0 skip pdf files that have been processed before
+             1 not skip pdf files
+             2 not skip pdf files and ignore time difference btw modification - creation
+    """
+    def _process_pdfpath(pdfpath, mdpath=None, force=0):
+        import os, datetime
+        modification_time = os.path.getmtime(pdfpath)
+        creation_time = os.path.getctime(pdfpath)
+        modification_time_dt = datetime.datetime.fromtimestamp(modification_time)
+        creation_time_dt = datetime.datetime.fromtimestamp(creation_time)
+        time_difference = (modification_time_dt - creation_time_dt).total_seconds()
+        # if less than 60s, likely it has never been read/highlighted
+        # in the case of syncthing, time_difference < 0 ??
+        # this will make the processing really fast
+        if time_difference < 60 and time_difference > -5 and force < 2: return None
+            # use the function below to make mtime equal to ctime
+            # def make_mtime_ctime(folder):
+            # fs = fls(folder)
+            # for f in fs:
+            #     creation_time = os.path.getctime(f)
+            #     os.utime(f, (creation_time, creation_time))
+
+        import fitz  # PyMuPDF
+        doc = fitz.open(pdfpath)
+        producer = doc.metadata["producer"]
+        # file has been extracted before
+        if ( (force==0) and ('PyHighlightExtractor' in producer) ): return None
+
+        def _get_page_bookmark_name(page_idx):
+            name = ''
+            for bookmark in doc.get_toc():
+                # each bookmark consists of [outline level, title, page number and link destination]
+                if bookmark[2] == page_idx+1:
+                    name = bookmark[1]
+            return name  # No bookmark found for the current page
+
+        def _is_multi_column():
+            try:
+                import math
+                n = math.ceil(doc.page_count/2) - 1  # the page to try (0 based)
+                page = doc[n]
+                xs = [x[0] for x in page.get_text_blocks()]
+                # if the beginning of lines too far away, then likely multi-column
+                return (max(xs) - min(xs)) > (page.mediabox.width/3)
+            except:
+                return False
+
+        # not use: did not work well
+        # # https://stackoverflow.com/a/63686095/2292993
+        # def _parse_highlight(annot: fitz.Annot, wordlist: list) -> str:
+        #     points = annot.vertices
+        #     quad_count = int(len(points) / 4)
+        #     sentences = []
+        #     for i in range(quad_count):
+        #         # where the highlighted part is
+        #         r = fitz.Quad(points[i * 4 : i * 4 + 4]).rect
+        #         words = [w for w in wordlist if fitz.Rect(w[:4]).intersects(r)]
+        #         sentences.append(" ".join(w[4] for w in words))
+        #     sentence = " ".join(sentences)
+        #     return sentence
+
+        # sometimes extract on text (although _threshold_intersection could be adjusted manually)
+        # # https://github.com/pymupdf/PyMuPDF/issues/318
+        # # https://github.com/pastydev/cmdict/blob/88e6f19d1fd5ea4bdd87b0b06a9d3230ce1eac94/src/cmdict/pdf_tools.py#L20
+        # _threshold_intersection = 0.75  # if the intersection is large enough.
+        # def _check_contain(r_word, points):
+        #     """If `r_word` is contained in the rectangular area.
+        #     The area of the intersection should be large enough compared to the
+        #     area of the given word.
+        #     Args:
+        #         r_word (fitz.Rect): rectangular area of a single word.
+        #         points (list): list of points in the rectangular area of the
+        #             given part of a highlight.
+        #     Returns:
+        #         bool: whether `r_word` is contained in the rectangular area.
+        #     """
+        #     # `r` is mutable, so everytime a new `r` should be initiated.
+        #     r = fitz.Quad(points).rect
+        #     r.intersect(r_word)
+        #     if r.get_area() >= r_word.get_area() * _threshold_intersection:
+        #         contain = True
+        #     else:
+        #         contain = False
+        #     return contain
+
+        # def _parse_highlight(annot, words_on_page):
+        #     """Extract words in a given highlight.
+        #     Args:
+        #         annot (fitz.Annot): [description]
+        #         words_on_page (list): [description]
+        #     Returns:
+        #         str: words in the entire highlight.
+        #     """
+        #     quad_points = annot.vertices
+        #     quad_count = int(len(quad_points) / 4)
+        #     sentences = ['' for i in range(quad_count)]
+        #     for i in range(quad_count):
+        #         points = quad_points[i * 4: i * 4 + 4]
+        #         words = [
+        #             w for w in words_on_page if
+        #             _check_contain(fitz.Rect(w[:4]), points)
+        #         ]
+        #         sentences[i] = ' '.join(w[4] for w in words)
+        #     sentence = ' '.join(sentences)
+        #     sentence = sentence.replace('- ','')  # fix (?) hyphen break
+        #     return sentence
+
+        # highlights = []
+        # is_multi_column = _is_multi_column()
+        # for page in doc:
+        #     wordlist = page.get_text("words")  # list of words on page
+        #     annots = list(page.annots())
+        #     # print(annots)
+        #     # remove non-highlights; otherwise vertices may raise subscriptable error
+        #     # 8 means highlight
+        #     annots = [a for a in annots if a.type[0] == 8]
+        #     if is_multi_column: 
+        #         wordlist.sort(key=lambda w: (w[0], w[3]))  # ascending x, then y
+        #         annots.sort(key=lambda w: (w.vertices[0][0], w.vertices[3][0])) # ascending x, then y
+        #     else:
+        #         wordlist.sort(key=lambda w: (w[3], w[0]))  # ascending y, then x
+        #         annots.sort(key=lambda w: (w.vertices[3][0], w.vertices[0][0])) # ascending y, then x
+        #     for annot in annots:
+        #         if annot.type[0] == 8: # 8 means highlight
+        #             highlights.append([page.number+1, _get_page_bookmark_name(page.number), _parse_highlight(annot, wordlist)])
+
+        from pdfannots import process_file
+        highlights = []
+        columns_per_page = 2 if _is_multi_column() else None
+        document = process_file(open(pdfpath, "rb"),columns_per_page=columns_per_page)
+        for page_idx in range(len(document.pages)):
+            annots = document.pages[page_idx].annots
+            bookmark_name = _get_page_bookmark_name(page_idx)
+            for annot in annots:
+                # str(annot.subtype)=='AnnotationType.Highlight'
+                text = "".join(annot.text).strip()
+                text = text.replace("-\n", "").replace("\n", "")
+                highlights.append([page_idx+1, bookmark_name, text])
+
+        md = None
+        if ( len(highlights) > 0 ):
+            modification_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d')
+            md = f'# [{sp(pdfpath)[1]}](<file://{pdfpath}>)\n'
+            md += f'> [!QUOTE] Highlights (out of {doc.page_count} pages @ {modification_date})\n'
+            for h in highlights:
+                tmp = f'{h[0]} {h[1]}'
+                md += f'> {h[2]} (p. {tmp.strip()})\n'
+                md += f'> \n'
+            if str(mdpath).title()!='None':
+                if (not exists(mdpath)):
+                    with open(mdpath, 'w', encoding='utf-8') as modified: modified.write(md)
+                else:
+                    with open(mdpath, 'r', encoding='utf-8') as original: data = original.read()
+                    with open(mdpath, 'w', encoding='utf-8') as modified: modified.write(md + "\n" + data)
+
+        if ( len(highlights) > 0 and ('PyHighlightExtractor' not in producer) ):
+            metadata = {
+                'producer': f'PyHighlightExtractor; {producer}'
+            }
+            doc.set_metadata(metadata)
+            doc.save(pdfpath,incremental=True,encryption=fitz.PDF_ENCRYPT_KEEP)
+
+        doc.close()
+        if md is not None: print(md)
+        return md
+
+    def _process_pdffolder(pdffolder, mdpath=None, force=0):
+        pdfs = fls(pdffolder,regex='\.pdf$')
+        # pdfs = sorted(pdfs,key=lambda p: (sp(p)[0], -os.path.getmtime(p)))  # first path (asc), then modify time (desc)
+        # also sort mtime asc, because newer ones are added to top of md file
+        pdfs = sorted(pdfs,key=lambda p: (sp(p)[0], os.path.getmtime(p)))  # first path (asc), then modify time (asc)
+        for pdf in pdfs:
+            try:
+                _process_pdfpath(pdf, mdpath, force)
+            except Exception as e:
+                print(f'{pdf} error {e.args[0]}. Skipping...')
+
+    if pdfpath.endswith('.pdf'): 
+        _process_pdfpath(fp(pdfpath), mdpath=mdpath, force=force)
+    else: 
+        _process_pdffolder(fp(pdfpath), mdpath=mdpath, force=force)
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # debugging
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

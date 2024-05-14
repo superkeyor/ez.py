@@ -6732,8 +6732,7 @@ def pdfannot(pdfpath, mdpath=None, force=1):
             try:
                 doc.save(pdfpath,incremental=True,encryption=fitz.PDF_ENCRYPT_KEEP)
             except:
-                # https://stackoverflow.com/a/70692373/2292993
-                doc.save(pdfpath,incremental=True,encryption=0)
+                print(f'{pdfpath} could not be saved. Ignoring...')
 
         doc.close()
         if md is not None: print(md)

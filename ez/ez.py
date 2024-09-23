@@ -4775,7 +4775,7 @@ def GetClip():
 getclip=GetClip
 
 def Mail(to, subject=None, body=None, text=None, attachments=None, bcc=None, cc=None, email=None, password=None):
-    """Mail(to, subject, body, attachments=None, bcc=None, cc=None, email=None, password=None)
+    """Mail(to, subject=None, body=None, text=None, attachments=None, bcc=None, cc=None, email=None, password=None)
     to/bcc/cc: ['a@a.com','b@b.com'] or 'a@a.com, b@b.com'
     body: html code or text
     text: specified for weird text that is incompatible with html; when set, body is ignored
@@ -4785,7 +4785,8 @@ def Mail(to, subject=None, body=None, text=None, attachments=None, bcc=None, cc=
     import traceback
     msg = f'{sys.argv[0][:-3]} Error!'
     if subject is None: subject = msg
-    if text is None: text = traceback.format_exc()
+    # if there is an error occuring and text is not provided
+    if text is None and traceback.format_exc()!='NoneType: None\n': text = traceback.format_exc()
 
     from yagmail import SMTP
     import html  # html is a python built-in lib (at least included in anaconda)?

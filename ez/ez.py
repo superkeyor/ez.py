@@ -4121,6 +4121,27 @@ def office_pdf_crop(inputpdfs,parameters=''):
         # To make the cropped size permanent… you need to save the page as am EPS file and redistill it.
         # But Briss works for kindle...
 
+def office_pdf_bookmarkrm(inputpdfs):
+    """
+    inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
+    new file in the same folder suffixed _notoc
+    less effective than acrobat pro's Save Reduced Size
+    """
+    if type(inputpdfs) not in [list]:
+        # hack for filename with space
+        # assume "quoted form of " applescript returns single quote
+        inputpdfs = inputpdfs.split("' '")  
+        # strip "" from both ends that might be present from keyboardmaestro
+        inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
+    import fitz
+    for pdf in inputpdfs:
+        doc = fitz.open(input_path)
+        doc.set_toc([])
+        [path,file,ext]=splitpath(pdf)
+        outputpdf=joinpath(path,file+'_notoc'+ext)
+        doc.save(output_path)
+        doc.close()
+
 def office_pdf_compress(inputpdfs):
     """
     inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'

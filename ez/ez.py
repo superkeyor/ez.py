@@ -4135,11 +4135,11 @@ def office_pdf_bookmarkrm(inputpdfs):
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
     import fitz
     for pdf in inputpdfs:
-        doc = fitz.open(input_path)
+        doc = fitz.open(pdf)
         doc.set_toc([])
         [path,file,ext]=splitpath(pdf)
         outputpdf=joinpath(path,file+'_notoc'+ext)
-        doc.save(output_path)
+        doc.save(outputpdf)
         doc.close()
 
 def office_pdf_compress(inputpdfs):

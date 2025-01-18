@@ -4124,7 +4124,7 @@ def office_pdf_crop(inputpdfs,parameters=''):
 def office_pdf_bookmarkrm(inputpdfs):
     """
     inputpdfs: ['pdf1','pdf2'], or 'pdf1 pdf2', or 'pdf1'
-    new file in the same folder suffixed _notoc
+    new file in the same folder prefixed _notoc
     less effective than acrobat pro's Save Reduced Size
     """
     if type(inputpdfs) not in [list]:
@@ -4138,8 +4138,8 @@ def office_pdf_bookmarkrm(inputpdfs):
         doc = fitz.open(pdf)
         doc.set_toc([])
         [path,file,ext]=splitpath(pdf)
-        outputpdf=joinpath(path,file+'_notoc'+ext)
-        doc.save(outputpdf)
+        outputpdf=joinpath(path,'notoc_'+file+ext)
+        doc.save(outputpdf,garbage=4,clean=True,deflate=True)
         doc.close()
 
 def office_pdf_compress(inputpdfs):

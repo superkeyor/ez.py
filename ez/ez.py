@@ -156,6 +156,7 @@ try:
     import configparser
 except:
     import ConfigParser
+from typing import List, Tuple, Union
 
 _DEBUG_MODE = 0
 def ShellDebug(debugMode=1):
@@ -1173,6 +1174,62 @@ def lns(source, destination):
 
     os.symlink(source, destination)
     print("Symbolic link: " + "->".join([source, destination]))
+
+def gapfile(
+    pattern: str,
+    source: Union[str, List[str]] = "."
+) -> None:
+# ) -> Tuple[List[int], List[str]]:
+    """
+    Finds missing and extra files based on a regex pattern.
+
+    Example:
+        gapfile('(\\d\\d).*')
+    Args:
+        pattern (str): A regex pattern to extract sequence numbers from filenames.
+        source (Union[str, List[str]]): Either a folder path to scan for files or a list of filenames.
+                                        Defaults to the current working directory.
+
+    Returns:
+        Tuple[List[int], List[str]]:
+            - List of missing sequence numbers.
+            - List of extra filenames not following the sequence.
+    """
+    # If the source is a folder, list files in the folder
+    if isinstance(source, str):
+        if not os.path.isdir(source):
+            raise ValueError(f"Provided folder '{source}' does not exist.")
+        file_list = os.listdir(source)
+    elif isinstance(source, list):
+        file_list = source
+    else:
+        raise ValueError("Source must be a folder path or a list of filenames.")
+
+    # Compile the regex pattern
+    regex = re.compile(pattern)
+    sequence_numbers = []
+    extra_files = []
+
+    # Process each file and extract sequence numbers
+    for file in file_list:
+        match = regex.match(file)
+        if match:
+            sequence_numbers.append(int(match.group(1)))
+        else:
+            extra_files.append(file)
+
+    # Find missing numbers
+    if sequence_numbers:
+        sequence_numbers = sorted(sequence_numbers)
+        all_numbers = set(range(sequence_numbers[0], sequence_numbers[-1] + 1))
+        missing_numbers = sorted(all_numbers - set(sequence_numbers))
+    else:
+        missing_numbers = []
+
+    print("Extra files:             ", extra_files)
+    print("Missing sequence numbers:", missing_numbers)
+    # return missing_numbers, extra_files
+    return None
 
 def execute0(cmd, verbose=3, save=None, saveMode='a', redirect=None, redirectMode='a', shell='bash', debugMode=False, *args, **kwargs):
     """Executes a bash command. can capture output

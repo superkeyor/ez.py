@@ -21,7 +21,7 @@ install_requires=['twine>=4', # setup.py upload depreciated -> twine
                  'fake_useragent', 'tldextract', # firefox
                  'pynput', # pynput instead of pyautogui <- problematic dependencies on MacOS
                  'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 
-                 'pandas', 'numpy', 'beautifulsoup4', 'lxml',
+                 'pandas', 'numpy', 'beautifulsoup4', 'lxml', 'ebooklib',
                  'pyarrow', 'Pillow', 'mss',
                  'cachelib', 'flask_ipban', # flask
                  'Duplicate-Finder', # find duplicated files

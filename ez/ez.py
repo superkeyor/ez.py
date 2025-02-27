@@ -6790,7 +6790,7 @@ def pdfannot(pdfpath, mdpath=None, force=1):
         md = None
         if ( len(highlights) > 0 ):
             modification_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d')
-            md = f'# [{sp(pdfpath)[1]}](<file://{pdfpath}>)\n'
+            md = f'### [{sp(pdfpath)[1]}](<file://{pdfpath}>)\n'
             md += f'> [!QUOTE] Highlights (out of {doc.page_count} pages @ {modification_date})\n'
             for h in highlights:
                 tmp = f'{h[0]} {h[1]}'

@@ -15,8 +15,8 @@ packages = find_packages()
 install_requires=['']
 install_requires=['twine>=4', # setup.py upload depreciated -> twine
                  'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'chardet', 'psutil',
-                 'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF', 'pdfCropMargins', 'pdfannots', 'python-docx', 'python-pptx', 'docx2pdf',
-                 'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium>4', 
+                 'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF==1.23', 'pdfCropMargins', 'pdfannots', 'python-docx', 'python-pptx', 'docx2pdf',
+                 'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium==4.9.0', 
                  'noraise', # seems not actually used, might be useful
                  'fake_useragent', 'tldextract', # firefox
                  'pynput', # pynput instead of pyautogui <- problematic dependencies on MacOS

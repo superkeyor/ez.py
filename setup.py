@@ -10,41 +10,77 @@ PACKAGE = 'ez'
 description='easy stuff'
 keywords='shell, cross-platform, easy, wrapper'
 packages = find_packages()
-# packages.append('ez.timezone.pytz')
-# install_requires = ['django-pipeline==1.1.22', 'south>=0.7']
-install_requires=['']
-install_requires=['twine>=4', # setup.py upload depreciated -> twine
-                 'pytz', 'tzlocal', 'Send2Trash', 'keyring', 'pyperclip', 'chardet', 'psutil',
-                 'openpyxl', 'xlsxwriter', 'xlwt', 'xlrd', 'PyMuPDF==1.23', 'pdfCropMargins', 'pdfannots', 'python-docx', 'python-pptx', 'docx2pdf',
-                 'requests>=2.26.0', 'selenium-requests>=1.4.1', 'selenium-wire', 'selenium==4.9.0', 
-                 'noraise', # seems not actually used, might be useful
-                 'fake_useragent', 'tldextract', # firefox
-                 'pynput', # pynput instead of pyautogui <- problematic dependencies on MacOS
-                 'gspread>=3.7.0', 'tenacity', 'fire', 'parse', 
-                 'pandas', 'numpy', 'beautifulsoup4', 'lxml', 'ebooklib',
-                 'pyarrow', 'Pillow', 'mss',
-                 'cachelib', 'flask_ipban', # flask
-                 'Duplicate-Finder', # find duplicated files
-                 'yt-dlp', 'pysubs2', 'gTTS', 'edge-tts', # bash terminal cmd
-                 'raindrop-io-py', # 0.1.7
-                 'dropbox', 'pydrive2', 'yagmail', 'supermail', 'gcsa', 'O365', # cloud stuff, gcsa=gcalendar
-                 ]
-# 'imessage_reader' not available on heroku/linux when installing ez
-import sys
-if sys.version_info < (3,10):
-    install_requires.remove('raindrop-io-py') # raindrop-io-py requires python 3.10+
-import platform
-# see also https://github.com/asweigart/pyautogui/blob/master/setup.py#L30
-# 'python3-Xlib;platform_system=="Linux" and python_version>="3.0"'
-if platform.system()=='Darwin': install_requires.append('imessage_reader')
-if platform.system()=='Linux': 
-    # install_requires.remove('ezgooey') # buggy with ezgooey/wxpython
-    install_requires.remove('psutil')
-    install_requires.remove('pynput')
-    install_requires.remove('docx2pdf') # not tested, but no MS Word for linux
-#                                install_requires.extend(['opencv-python','easyocr']) 
-#                                'opencv-python' for findimg on screen (commented out)
-#                                'easyocr' for ocr (commented out, also requires opencv)
+install_requires=[
+    # Packaging and distribution
+    'twine>=4',  # setup.py upload deprecated -> use twine
+
+    # Date and time utilities
+    'pytz',
+    'tzlocal',
+
+    # File and system utilities
+    'chardet',
+    'pyperclip',
+    'Send2Trash',
+    'keyring',
+    'mss',
+    'psutil; sys_platform != "linux"',  # not required for Linux
+    'pynput; sys_platform != "linux"',  # pynput instead of pyautogui (problematic on macOS)
+    'imessage_reader; sys_platform == "darwin"',
+    'Duplicate-Finder',  # Find duplicated files
+
+    # Office document handling
+    'openpyxl',
+    'xlsxwriter',
+    'xlwt',
+    'xlrd',
+    'python-docx',
+    'python-pptx',
+    'docx2pdf; sys_platform != "linux"',  # Not required for Linux
+
+    # PDF document handling
+    'PyMuPDF==1.23',
+    'pdfCropMargins',
+    'pdfannots',
+
+    # Web and HTTP utilities
+    'requests>=2.26.0',
+    'fake_useragent',
+    'tldextract',
+    'tenacity',
+
+    # HTML/XML parsing and eBook handling
+    'beautifulsoup4',
+    'lxml',
+    'ebooklib',
+
+    # Data manipulation and analysis
+    'pandas',
+    'numpy',
+
+    # Data serialization and image handling
+    'pyarrow',
+    'Pillow',
+
+    # Flask-related utilities
+    'cachelib',
+    'flask_ipban',
+
+    # Media and text-to-speech utilities
+    'yt-dlp',
+    'pysubs2',
+    'gTTS',
+    'edge-tts',  # Bash terminal commands
+
+    # Cloud and email services
+    'dropbox',
+    'pydrive2',
+    'gspread>=3.7.0',
+    'yagmail',
+    'supermail',
+    'gcsa',  # Google Calendar
+    'O365',  # Microsoft Office 365
+]
 ######################################################################################
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -156,8 +192,7 @@ setup(
         # 'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         # 'Programming Language :: Python :: 3',
-        # 'Programming Language :: Python :: 3.2',
-        # 'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
+        # 'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.11',
     ],
 )

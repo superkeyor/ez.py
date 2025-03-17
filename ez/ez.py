@@ -14,8 +14,6 @@ or in python: import sys; print (sys.version)
 Install:
 https://pypi.python.org/pypi/ez
 pip install ez
-dependencies:
-pip install chardet psutil xlsxwriter xlwt xlrd pytz tzlocal pyperclip gmail
 
 Almost all commands support the usage of '~', '..', '.', '?', '*' in path (ls,fls only support regular expression).
 Symbolic link itself is the target of file operations; the actual file should be safe.
@@ -140,7 +138,6 @@ gmail(), mail(), Mail()
     in the site-packages/ez folder, check with ez.where('ez') or os.path.dirname(ez.__file__)
     The functions will no longer need email/password and become like this
     Mail(to, subject, body, attach=None)
-
 """
 # for __all__
 # try for ez.SPSS

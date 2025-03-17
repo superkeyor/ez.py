@@ -62,10 +62,6 @@ install_requires=[
     'pyarrow',
     'Pillow',
 
-    # Flask-related utilities
-    'cachelib',
-    'flask_ipban',
-
     # Media and text-to-speech utilities
     'yt-dlp',
     'pysubs2',

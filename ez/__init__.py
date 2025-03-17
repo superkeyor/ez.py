@@ -1,5 +1,4 @@
 from . ez import *
-from . firefox import *
 
 __all__=[
 'JDict', 'TimeStamp', 'Moment', 'GSheet', 'GCal',

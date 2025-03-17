@@ -12,7 +12,7 @@ keywords='shell, cross-platform, easy, wrapper'
 packages = find_packages()
 install_requires=[
     # Packaging and distribution
-    'twine>=4',  # setup.py upload deprecated -> use twine
+    'twine',  # setup.py upload deprecated -> use twine
 
     # Date and time utilities
     'pytz',
@@ -44,7 +44,7 @@ install_requires=[
     'pdfannots',
 
     # Web and HTTP utilities
-    'requests>=2.26.0',
+    'requests',
     'fake_useragent',
     'tldextract',
     'tenacity',
@@ -71,7 +71,7 @@ install_requires=[
     # Cloud and email services
     'dropbox',
     'pydrive2',
-    'gspread>=3.7.0',
+    'gspread',
     'yagmail',
     'supermail',
     'gcsa',  # Google Calendar

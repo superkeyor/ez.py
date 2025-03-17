@@ -142,7 +142,7 @@ gmail(), mail(), Mail()
 # for __all__
 # try for ez.SPSS
 try:
-    import fire,requests,sqlite3,json,io,os,sys,platform,string,random,re,datetime,tzlocal,pandas as pd,numpy as np,urllib.parse as urlparse;from bs4 import BeautifulSoup
+    import requests,sqlite3,json,io,os,sys,platform,string,random,re,datetime,tzlocal,pandas as pd,numpy as np,urllib.parse as urlparse;from bs4 import BeautifulSoup
 except:
     pass
 

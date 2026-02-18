@@ -645,6 +645,7 @@ def cd(path=None):
     os.chdir(path)
     print("Start working in " + os.getcwd())
 
+# ce do not use, kept in case
 def ce():
     """Changes to working directory in Finder"""
     applescript = '''
@@ -671,43 +672,57 @@ def ce():
     os.chdir(path)
     print("Start working in " + os.getcwd())
 
-# def cf():
-#     """Changes to working directory in Pather Finder"""
-#     applescript = '''
-#     tell app "Path Finder" to return the POSIX path of the target of the front finder window
-#     '''
-#     def myesp(cmdString):
-#         import os, inspect, tempfile, subprocess
-#         caller = inspect.currentframe().f_back
-#         cmd =  cmdString % caller.f_locals
-        
-#         fd, path = tempfile.mkstemp(suffix='.applescript')
-#         res = os.getcwd()
-#         try:
-#             with os.fdopen(fd, 'w') as tmp:
-#                 tmp.write(cmd.replace('"','\"').replace("'","\'")+'\n\n')
-#             # res = subprocess.Popen('osascript ' + path, shell=True, executable="/bin/bash", stdout=subprocess.PIPE)
-#             # res.stdout.read()
-#             # https://stackoverflow.com/questions/41171791
-#             res = subprocess.run('osascript ' + path, shell=True, executable="/bin/bash", capture_output=True, text=True)
-#         finally:
-#             os.remove(path)
-#         return res.stdout.strip("\n")
-#     path = myesp(applescript)
-#     os.chdir(path)
-#     print("Start working in " + os.getcwd())
-
 def cf():
-    """Changes to working directory in QSpace"""
-    cmd = '''
-    item=$(osascript -e 'tell app "QSpace" to return the url of selected items')
-    if [[ "$item" == "" ]]; then item=$(osascript -e 'tell app "QSpace" to return the url of root item'); fi
-    if [[ -f "$item" ]]; then item=$( dirname "${item}" ); fi
-    [[ -d "$item" ]] && echo "${item}"
-    '''
-    path = execute0(cmd,verbose=0)[0]
-    os.chdir(path)
-    print("Start working in " + os.getcwd())
+    """Changes to working directory in Path Finder, QSpace, or Finder (auto-detected)"""
+    import os, subprocess, tempfile
+    def app_is_running(app_name):
+        result = subprocess.run(
+            ['pgrep', '-x', app_name],
+            capture_output=True, text=True
+        )
+        return result.returncode == 0
+    def run_applescript(script):
+        fd, path = tempfile.mkstemp(suffix='.applescript')
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write(script + '\n\n')
+            res = subprocess.run(
+                'osascript ' + path,
+                shell=True, executable="/bin/bash",
+                capture_output=True, text=True
+            )
+        finally:
+            os.remove(path)
+        return res.stdout.strip("\n")
+    def run_shell(cmd):
+        res = subprocess.run(
+            cmd, shell=True, executable="/bin/bash",
+            capture_output=True, text=True
+        )
+        return res.stdout.strip("\n")
+    if app_is_running("Path Finder"):
+        applescript = 'tell app "Path Finder" to return the POSIX path of the target of the front finder window'
+        path = run_applescript(applescript)
+    elif app_is_running("QSpace"):
+        cmd = '''
+        item=$(osascript -e 'tell app "QSpace" to return the url of selected items')
+        if [[ "$item" == "" ]]; then item=$(osascript -e 'tell app "QSpace" to return the url of root item'); fi
+        if [[ -f "$item" ]]; then item=$(dirname "${item}"); fi
+        [[ -d "$item" ]] && echo "${item}"
+        '''
+        path = run_shell(cmd)
+    # Finder should be always running    
+    elif app_is_running("Finder"):
+        applescript = 'tell app "Finder" to return the POSIX path of (target of window 1 as alias)'
+        path = run_applescript(applescript)
+    else:
+        print("No supported file manager is running (Path Finder, QSpace, or Finder).")
+        return
+    if path:
+        os.chdir(path)
+        print("Start working in " + os.getcwd())
+    else:
+        print("Could not determine path from file manager.")
 
 def ls(path="./", regex=".*", full=True, dotfile=False, sort=True, case=True):
     """ls([path[, regex]], full=True, dotfile=False, sort=True)    # Returns a list of all (including hidden) files with their full paths in path, filtered by regular expression.

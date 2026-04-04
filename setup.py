@@ -39,6 +39,7 @@ install_requires=[
     'docx2pdf; sys_platform != "linux"',  # Not required for Linux
 
     # PDF document handling
+    'pdfplumber',
     'PyMuPDF==1.23',
     'pdfCropMargins',
     'pdfannots',
@@ -79,7 +80,7 @@ install_requires=[
 ]
 ######################################################################################
 # Get the long description from the relevant file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 theNameSpace = {}
@@ -158,8 +159,8 @@ setup(
     # https://packaging.python.org/en/latest/development.html#single-sourcing-the-version
     version=version,
 
-    # long_description=long_description,
-    long_description='This module is for easy interaction with linux, Mac OS X, Windows shell.',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
 
     # The project's main homepage.
     url='https://pypi.python.org/pypi/' + PACKAGE,

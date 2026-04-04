@@ -163,10 +163,10 @@ setup(
     long_description_content_type='text/markdown',
 
     # The project's main homepage.
-    url='https://pypi.python.org/pypi/' + PACKAGE,
+    url='https://github.com/superkeyor/' + PACKAGE + '.py',
     license='GPLv3+',
-    author='Jerry Zhu',
-    author_email='jerryzhujian9@gmail.com',
+    author='Keyor',
+    author_email='',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[

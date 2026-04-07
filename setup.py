@@ -39,8 +39,7 @@ install_requires=[
     'docx2pdf; sys_platform != "linux"',  # Not required for Linux
 
     # PDF document handling
-    'pdfplumber',
-    'PyMuPDF==1.23',
+    'PyMuPDF',
     'pdfCropMargins',
     'pdfannots',
 

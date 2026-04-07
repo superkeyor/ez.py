@@ -4202,9 +4202,9 @@ def office_pdf_bookmarkrm(inputpdfs):
         inputpdfs = inputpdfs.split("' '")  
         # strip "" from both ends that might be present from keyboardmaestro
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
-    import fitz
+    import pymupdf
     for pdf in inputpdfs:
-        doc = fitz.open(pdf)
+        doc = pymupdf.open(pdf)
         doc.set_toc([])
         [path,file,ext]=splitpath(pdf)
         outputpdf=joinpath(path,'notoc_'+file+ext)
@@ -4223,9 +4223,9 @@ def office_pdf_compress(inputpdfs):
         inputpdfs = inputpdfs.split("' '")  
         # strip "" from both ends that might be present from keyboardmaestro
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
-    import fitz
+    import pymupdf
     for pdf in inputpdfs:
-        doc=fitz.open(pdf)
+        doc=pymupdf.open(pdf)
         [path,file,ext]=splitpath(pdf)
         outputpdf=joinpath(path,file+'_compressed'+ext)
         doc.save(outputpdf,garbage=4,clean=True,deflate=True)
@@ -4249,7 +4249,7 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
         inputpdfs = inputpdfs.split("' '")  
         # strip "" from both ends that might be present from keyboardmaestro
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
-    import fitz
+    import pymupdf
 
     if mergeorder is not None: 
         mergeorder = mergeorder.strip("'").strip('"').split(' ')
@@ -4258,9 +4258,9 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
             inputpdfs = [inputpdfs[e] for e in mergeorder]
 
     pdf1 = inputpdfs[0]
-    doc1 = fitz.open(pdf1)         # must be a PDF
+    doc1 = pymupdf.open(pdf1)         # must be a PDF
     for pdf2 in inputpdfs[1:]:
-        doc2 = fitz.open(pdf2)                 # must be a PDF
+        doc2 = pymupdf.open(pdf2)                 # must be a PDF
         pages1 = len(doc1)                     # save doc1's page count
         toc1 = doc1.get_toc(simple=False)        # save TOC 1
         toc2 = doc2.get_toc(simple=False)        # save TOC 2
@@ -4277,7 +4277,7 @@ def office_pdf_merge(inputpdfs,mergeorder=None,outputpdf=None,compress=True):
 
     if outputpdf is None: outputpdf=joinpath(splitpath(pdf1)[0],'AllCombined.pdf')
     # create time zone value in PDF format
-    cdate = fitz.get_pdf_now()
+    cdate = pymupdf.get_pdf_now()
     pdf_dict = {"creator": "PDF Joiner",
                "producer": "PyMuPDF",
                "creationDate": cdate,
@@ -4309,10 +4309,10 @@ def office_pdf_autoname(inputpdfs):
         inputpdfs = inputpdfs.split("' '")  
         # strip "" from both ends that might be present from keyboardmaestro
         inputpdfs = [e.strip("'").strip('"') for e in inputpdfs]
-    import fitz
+    import pymupdf
     for pdf in inputpdfs:
         try:
-            doc=fitz.open(pdf)
+            doc=pymupdf.open(pdf)
 
             meta = doc.metadata
             #) year
@@ -6632,8 +6632,8 @@ def pdf2gif(pdf,out='animation.gif',dpi=300,crop=None,duration=300,loop=0):
     pdf = root+'_cropped'+ext
 
     # https://pymupdf.readthedocs.io/en/latest/recipes-images.html#recipesimages
-    import fitz  # import the bindings
-    doc = fitz.open(fullpath(pdf))  # open document
+    import pymupdf  # import the bindings
+    doc = pymupdf.open(fullpath(pdf))  # open document
 
     from PIL import Image
     frames = []
@@ -6682,8 +6682,8 @@ def pdfannot(pdfpath, mdpath=None, force=1):
             #     creation_time = os.path.getctime(f)
             #     os.utime(f, (creation_time, creation_time))
 
-        import fitz  # PyMuPDF
-        doc = fitz.open(pdfpath)
+        import pymupdf  # PyMuPDF
+        doc = pymupdf.open(pdfpath)
         producer = doc.metadata["producer"]
         # file has been extracted before
         if ( (force==0) and ('PyHighlightExtractor' in producer) ): return None
@@ -6709,14 +6709,14 @@ def pdfannot(pdfpath, mdpath=None, force=1):
 
         # not use: did not work well
         # # https://stackoverflow.com/a/63686095/2292993
-        # def _parse_highlight(annot: fitz.Annot, wordlist: list) -> str:
+        # def _parse_highlight(annot: pymupdf.Annot, wordlist: list) -> str:
         #     points = annot.vertices
         #     quad_count = int(len(points) / 4)
         #     sentences = []
         #     for i in range(quad_count):
         #         # where the highlighted part is
-        #         r = fitz.Quad(points[i * 4 : i * 4 + 4]).rect
-        #         words = [w for w in wordlist if fitz.Rect(w[:4]).intersects(r)]
+        #         r = pymupdf.Quad(points[i * 4 : i * 4 + 4]).rect
+        #         words = [w for w in wordlist if pymupdf.Rect(w[:4]).intersects(r)]
         #         sentences.append(" ".join(w[4] for w in words))
         #     sentence = " ".join(sentences)
         #     return sentence
@@ -6730,14 +6730,14 @@ def pdfannot(pdfpath, mdpath=None, force=1):
         #     The area of the intersection should be large enough compared to the
         #     area of the given word.
         #     Args:
-        #         r_word (fitz.Rect): rectangular area of a single word.
+        #         r_word (pymupdf.Rect): rectangular area of a single word.
         #         points (list): list of points in the rectangular area of the
         #             given part of a highlight.
         #     Returns:
         #         bool: whether `r_word` is contained in the rectangular area.
         #     """
         #     # `r` is mutable, so everytime a new `r` should be initiated.
-        #     r = fitz.Quad(points).rect
+        #     r = pymupdf.Quad(points).rect
         #     r.intersect(r_word)
         #     if r.get_area() >= r_word.get_area() * _threshold_intersection:
         #         contain = True
@@ -6748,7 +6748,7 @@ def pdfannot(pdfpath, mdpath=None, force=1):
         # def _parse_highlight(annot, words_on_page):
         #     """Extract words in a given highlight.
         #     Args:
-        #         annot (fitz.Annot): [description]
+        #         annot (pymupdf.Annot): [description]
         #         words_on_page (list): [description]
         #     Returns:
         #         str: words in the entire highlight.
@@ -6760,7 +6760,7 @@ def pdfannot(pdfpath, mdpath=None, force=1):
         #         points = quad_points[i * 4: i * 4 + 4]
         #         words = [
         #             w for w in words_on_page if
-        #             _check_contain(fitz.Rect(w[:4]), points)
+        #             _check_contain(pymupdf.Rect(w[:4]), points)
         #         ]
         #         sentences[i] = ' '.join(w[4] for w in words)
         #     sentence = ' '.join(sentences)
@@ -6821,7 +6821,7 @@ def pdfannot(pdfpath, mdpath=None, force=1):
             }
             doc.set_metadata(metadata)
             try:
-                doc.save(pdfpath,incremental=True,encryption=fitz.PDF_ENCRYPT_KEEP)
+                doc.save(pdfpath,incremental=True,encryption=pymupdf.PDF_ENCRYPT_KEEP)
             except:
                 print(f'{pdfpath} could not be saved. Ignoring...')
 

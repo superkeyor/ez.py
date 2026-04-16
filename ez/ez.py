@@ -5182,99 +5182,110 @@ def onedrive_readx(xlsx,sheet=1,id=None,secret=None):
     ws = onedrive_excel(xlsx=xlsx,sheet=sheet,id=id,secret=secret)
     return ws.get_used_range().values
     
-def getpasswordbw(item,what='usrpwd',sync=False,verbose=0,debug=False):
+def getpasswordbw(item, what='usrpwd', sync=False, debug=False):
     """
     item: search string (not case sensitive, better be unique), or item id
-    https://bitwarden.com/help/article/cli/#get
+    https://bitwarden.com/help/cli/#get
     get one at a time: item|username|password|uri|totp|exposed|attachment|folder|collection|organization|org-collection|template|fingerprint
     special customized what='usrpwd'
 
-    in case not working, try native bitwarden commands:
-    bw status
-    bw login
-    bw unlock
-    bw sync
-    bw get 
+    in case not working, use the custom Bitwarden CLI commands defined in .bash_profile to assist with setup
     """
-    # todo: implement bw on linux
-    oldwhat=what
-    if what=='usrpwd': what='item'
+    import os
+    import json
+    import subprocess
+    import platform
 
-    # local var could be the same name as global var
-    # but if change var, better use local var
-    # if change global var, define: global var
+    oldwhat = what
+    if what == 'usrpwd': 
+        what = 'item'
+
+    # Fetch global credentials
     try:
         _EMAIL = EMAIL
         _PASSWORD = PASSWORD + '+'
-    except:
-        _EMAIL = ''; _PASSWORD=''
+    except NameError:
+        _EMAIL = os.environ.get('BW_EMAIL', '')
+        _PASSWORD = os.environ.get('BW_PASSWORD', '')
 
-    machine = getos()
-    debug_msg = ''
-    if machine=='Darwin':
-        bw = '/usr/local/bin/bw'
-        sync = '' if sync else '# ' # comment out
-        out = execute0(f'{bw} status',verbose=verbose)
-        status = re.search('"status":"(\w+)"',out[0]).group(1)
-        if status == 'unauthenticated':
-            cmd = f"""
-            export BW_USER={_EMAIL}
-            export BW_PASSWORD={_PASSWORD}
-            {bw} config server https://vault.zhupsy.com
-            {bw} login $BW_USER $BW_PASSWORD
-            """
-            debug_msg+=cmd
-            execute(cmd,verbose=verbose)
-            status = 'locked' # login first
-        if status == 'locked' or status == 'unlocked':  # always unlock to get session id
-            cmd = f"""
-            export BW_PASSWORD={_PASSWORD}
-            export BW_SESSION=$({bw} unlock --passwordenv BW_PASSWORD --raw)
-            {sync}{bw} sync --quiet
-            {bw} get {what} {item}
-            {bw} lock --quiet
-            """
-            debug_msg+=cmd
-            out = execute0(cmd,verbose=verbose)
-            if what=='item':
-                import json
-                out = json.loads(out[-1])
-            else:
-                out = out[-1]
-    elif machine=='Windows':
-        bw = '%WINAPPS%/bw.exe'
-        sync = '' if sync else 'rem ' # comment out
-        out = execute0(f'{bw} status',verbose=verbose)
-        status = re.search('"status":"(\w+)"',out[0]).group(1)
-        if status == 'unauthenticated':
-            cmd = f"""
-            set BW_USER={_EMAIL}
-            set BW_PASSWORD={_PASSWORD}
-            {bw} login %BW_USER% %BW_PASSWORD%
-            """
-            debug_msg+=cmd
-            execute(cmd,verbose=verbose)
-            status = 'locked' # login first
-        if status == 'locked' or status == 'unlocked':  # always unlock to get session id
-            cmd = f"""
-            set BW_PASSWORD={_PASSWORD}
-            FOR /F "tokens=*" %%g IN ('{bw} unlock --passwordenv BW_PASSWORD --raw') do (set BW_SESSION=%%g)
-            {sync}{bw} sync --quiet
-            {bw} get {what} {item}
-            {bw} lock --quiet
-            """
-            debug_msg+=cmd
-            out = execute0(cmd,verbose=verbose)
-            if what=='item':
-                import json
-                out = json.loads(out[-1])
-            else:
-                out = out[-1]
-    
-    if debug: print(debug_msg); print(out)
-    if oldwhat=='usrpwd':
-        (usr,pwd)=(out['login']['username'],out['login']['password'])
-        return (usr,pwd)
+    machine = platform.system()
+        
+    # Standardize executable paths
+    if machine in ('Darwin', 'Linux'):
+        bw = '/usr/local/bin/bw' if os.path.exists('/usr/local/bin/bw') else 'bw'
+    elif machine == 'Windows':
+        winapps = os.environ.get('WINAPPS', '')
+        bw = f'{winapps}/bw.exe' if winapps else 'bw.exe'
+    else:
+        bw = 'bw'
+
+    # RE-ADDED: Isolate environment variables to pass safely to subprocess
+    env = os.environ.copy()
+    if _PASSWORD:
+        env['BW_PASSWORD'] = _PASSWORD
+
+    # Helper function to execute CLI commands securely
+    def _run_cmd(args, capture=True):
+        if debug: 
+            print(f"CMD: {' '.join(args)}")
+        
+        # RE-ADDED: env=env is crucial here so bw CLI gets the BW_SESSION key
+        res = subprocess.run(args, env=env, capture_output=capture, text=True)
+        
+        if debug and res.stderr: 
+            print(f"ERR: {res.stderr.strip()}")
+        return res.stdout.strip() if capture else None
+
+    # 1. Check Vault Status
+    status_out = _run_cmd([bw, 'status'])
+    try:
+        status = json.loads(status_out).get('status', 'unauthenticated')
+    except json.JSONDecodeError:
+        status = 'unauthenticated'
+
+    # 2. Authenticate if required
+    if status == 'unauthenticated':
+        _run_cmd([bw, 'login', _EMAIL, _PASSWORD], capture=False)
+        status = 'locked'
+
+    # 3. Unlock to generate a valid session token
+    out_raw = ""
+    if status in ('locked', 'unlocked'):
+        # RE-ADDED: Secure password handling via environment variables
+        session_key = _run_cmd([bw, 'unlock', '--passwordenv', 'BW_PASSWORD', '--raw'])
+        
+        # Inject the session key into our environment dictionary
+        env['BW_SESSION'] = session_key
+
+        if sync:
+            _run_cmd([bw, 'sync', '--quiet'])
+
+        # Fetch the requested item (This works now because env has BW_SESSION)
+        out_raw = _run_cmd([bw, 'get', what, item])
+        
+        # Lock Vault immediately after to clean up session
+        _run_cmd([bw, 'lock', '--quiet'])
+
+    # 4. Parse the output
+    if what == 'item' and out_raw:
+        try:
+            out = json.loads(out_raw)
+        except json.JSONDecodeError:
+            out = out_raw
+    else:
+        out = out_raw
+
+    if debug: 
+        print(f"OUT: {out}")
+
+    # 5. Return Data based on `what` parameter
+    if oldwhat == 'usrpwd':
+        try:
+            usr = out['login']['username']
+            pwd = out['login']['password']
+            return (usr, pwd)
+        except (KeyError, TypeError):
+            return ("", "")
     else:
         return out
 

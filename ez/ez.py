@@ -6040,6 +6040,29 @@ def gupload(localfile,id=None):
     gfile.Upload()
     return (cloudfile,gfile['id'])
 
+def gdelete(file_id=None, file_name=None, folderid=None):
+    """
+    Permanently delete a Drive file by its ID or name.
+    file_id:   Google Drive file ID (string); takes priority if both given
+    file_name: file name to search for; resolved to ID via gfileid
+    folderid:  optional folder to search in (default: root); only used with file_name
+    """
+    if file_id is None and file_name is None:
+        raise ValueError("Either file_id or file_name must be provided")
+
+    if file_id is None:
+        # Warn if multiple files share the same name
+        matches = [fid for title, fid in gls(folderid) if title == file_name]
+        if not matches:
+            raise FileNotFoundError(f'{file_name!r} not found in folder {folderid!r}')
+        if len(matches) > 1:
+            print(f"Warning: {len(matches)} files named {file_name!r} found; deleting the first one.")
+        file_id = matches[0]
+
+    gdrive = gauth()
+    gfile = gdrive.CreateFile({'id': file_id})
+    gfile.Delete()
+
 def gcopy(id,filetitle,folderid=None):
     """
     make a copy of file in gdrive
@@ -6101,6 +6124,16 @@ def gls(folderid=None):
         res.append((file['title'], file['id']))
     
     return res
+
+def gfileid(filename, folderid=None):
+    """
+    Return the Drive file ID for the first file matching filename in folderid.
+    Raises FileNotFoundError if not found.
+    """
+    for title, fid in gls(folderid):
+        if title == filename:
+            return fid
+    raise FileNotFoundError(f'{filename!r} not found in folder {folderid!r}')
 
 ####************************************************************************************************
                                      ####*OrderedSet*####

@@ -73,8 +73,7 @@ install_requires=[
     'pydrive2',
     'gspread',
     'yagmail',
-    # 'supermail',  # too thin, replace with imap-tools
-    'imap-tools',
+    'imap-tools', # replacing 'supermail', too thin a wrapper
     'gcsa',  # Google Calendar
     'O365',  # Microsoft Office 365
 ]

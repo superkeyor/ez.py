@@ -4903,27 +4903,61 @@ def Mail(to, subject=None, body=None, text=None, attachments=None, bcc=None, cc=
 mail = Mail
 gmail = Mail
 
-def gmailget(email,password,unread=True,attachments=True):
+def gmailget(email, password, unread=True, attachments=True, days=None,
+             sender=None, subject=None, folder='INBOX', mark_seen=True):
     """
-    unread: retrieve all or only unread emails
-    attachments: download attachments (to working dir with overriding) or not
-    returns a list of dict {'subject','message','sender','date','size','attachments'}
-            attachments is [] if no attachments or parameter attachments=False
+    Retrieve emails via IMAP using imap-tools.
+
+    Parameters
+    ----------
+    email       : Gmail address
+    password    : App password
+    unread      : if True (default), fetch only unread; if False, fetch all
+    attachments : if True (default), save attachments to working dir
+    days        : if set, only fetch emails from the last N days (e.g. days=60)
+    sender      : if set, filter by sender address (e.g. 'boss@example.com')
+    subject     : if set, filter by subject keyword
+    folder      : mailbox folder to read (default: 'INBOX')
+    mark_seen   : if True (default), mark fetched emails as read
+                  (imap-tools fetch() also defaults to True)
+
+    Returns
+    -------
+    list of dict with keys:
+        subject, message, sender, date, size, attachments
+        (attachments is [] if none exist or attachments=False)
     """
-    # https://github.com/dros1986/EmailClient
-    # https://pypi.org/project/supermail/
-    # this library also supports email sending, but buggy as of v1.3 (e.g., cc does not work)
-    # retrieving seems fine
-    from supermail import EmailClient
-    gmail = EmailClient(email,password)
-    filter = ['UNSEEN'] if unread else ['ALL']
-    messages = gmail.read(filter=filter)
+    from imap_tools import MailBox, AND
+    from datetime import datetime, timedelta
+
+    # Build server-side search criteria
+    criteria = {}
+    if unread:
+        criteria['seen'] = False
+    if days is not None:
+        criteria['date_gte'] = (datetime.now() - timedelta(days=days)).date()
+    if sender is not None:
+        criteria['from_'] = sender
+    if subject is not None:
+        criteria['subject'] = subject
+
     res = []
-    for msg in messages:
-        # returns a list of filenames saved in specified dir
-        files = msg.attachments(save_dir='.') if attachments else []
-        res.append({'subject':msg.subject(),'message':msg.message(),'sender':msg.sender(),'date':msg.date(),'size':msg.size(),'attachments':files})
-        msg.set_as_read()  # seems unnecessary, because auto set as read after retrieving 
+    with MailBox('imap.gmail.com').login(email, password, initial_folder=folder) as mb:
+        for msg in mb.fetch(AND(**criteria) if criteria else 'ALL', mark_seen=mark_seen):
+            files = []
+            if attachments:
+                for att in msg.attachments:
+                    with open(att.filename, 'wb') as f:
+                        f.write(att.payload)
+                    files.append(att.filename)
+            res.append({
+                'subject'     : msg.subject,
+                'message'     : msg.text or msg.html,
+                'sender'      : msg.from_,
+                'date'        : msg.date,
+                'size'        : msg.size,
+                'attachments' : files,
+            })
     return res
 
 def o365auth(id=None, secret=None):

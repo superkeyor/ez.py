@@ -45,6 +45,7 @@ install_requires=[
 
     # Web and HTTP utilities
     'requests',
+    'webdavclient3',
     'fake_useragent',
     'tldextract',
     'tenacity',

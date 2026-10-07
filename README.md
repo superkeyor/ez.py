@@ -107,6 +107,139 @@ savex('output.xlsx', data, header=['Name', 'Age'])
 | `readx(path, sheet=0, r=[1,], c=None)` | Read a `.xlsx`, `.xls`, or `.csv` file into a list. |
 | `savex(path, data, header=None, delimiter=",", sheet_name='Sheet1')` | Write a list of lists to a `.xlsx`, `.xls`, or `.csv` file. |
 
+### Documents to Markdown
+
+```python
+import ez
+
+markdown = ez.pptx2md('talk.pptx')  # prints to stdout and returns the Markdown
+markdown = ez.pptx2md(
+    'talk.pptx', note=True, slides='1-3,5', markers=False,
+    images=True, output='talk.md', overwrite=True,
+)
+```
+
+All four converters return the Markdown string and print it when `output=None`.
+With `output='file.md'`, they write UTF-8 instead of printing. Existing output files
+raise `FileExistsError` unless `overwrite=True`; replacing the input document is
+always rejected, including symlink/hard-link aliases.
+
+#### PowerPoint
+
+| Argument (default) | CLI flag | Effect |
+|---|---|---|
+| `note=False` | `-n`, `--note` | Include speaker notes. |
+| `slides=None` | `-s`, `--slides` | Select 1-based slides, e.g. `1-3,5`; default is all slides. |
+| `markers=True` | `--no-markers` | Remove `<!-- Slide number: N -->` comments and separate slides with `---`. |
+| `images=False` | `--images` | Embed images as base64 data URIs instead of filename references. |
+| `output=None` | `-o`, `--output` | Write UTF-8 Markdown to a file instead of stdout. |
+| `overwrite=False` | `-f`, `--force` | Allow replacing an existing output file. |
+
+Selections retain presentation order, ignore duplicates, and preserve original
+slide numbers. Invalid or out-of-range selections raise `ValueError`. Existing
+output files raise `FileExistsError` unless overwriting is enabled. The input
+presentation is never overwritten. Filename image references do **not** extract
+image files; use `images=True` for self-contained Markdown.
+
+```bash
+pptx2md talk.pptx -n -s 1-3,5 --images -o talk.md
+pptx2md --help
+```
+
+#### Word
+
+```python
+markdown = ez.docx2md('report.docx', images=True, output='report.md')
+```
+
+`images=False` is the default. Use `--images` to preserve complete base64 image
+URIs; otherwise MarkItDown abbreviates them into unusable image references.
+Supported headings, lists, tables, and links are converted, not exact page layout.
+
+```bash
+docx2md report.docx --images -o report.md
+```
+
+#### Excel
+
+```python
+markdown = ez.xlsx2md(
+    'data.xlsx', sheets=['Annual Sales', 'Summary'], formulas=False,
+    headers=True, output='data.md',
+)
+```
+
+| Argument (default) | CLI flag | Effect |
+|---|---|---|
+| `sheets=None` | `-s`, `--sheets NAME [NAME ...]` | Select exact worksheet names; default is all worksheets, including hidden ones. |
+| `formulas=False` | `--formulas` | Emit formula strings instead of cached values. |
+| `headers=True` | `--no-headers` | Generate column-letter headers and include the first row as data. |
+
+Selections retain workbook order and ignore duplicates; unknown names raise
+`ValueError`. Each worksheet has a heading and a Markdown table; empty worksheets
+have only a heading. Trailing empty rows/columns are omitted. Images, charts,
+styles, and macros are not extracted; merged cells are not expanded.
+
+Formulas are **not evaluated**. Missing cached formula values produce a warning
+and empty cells. Calculate and save the workbook in Excel/LibreOffice first, or
+use `formulas=True` to emit the formulas themselves.
+
+```bash
+xlsx2md data.xlsx --sheets "Annual Sales" Summary -o data.md
+xlsx2md data.xlsx --formulas --no-headers
+```
+
+#### PDF
+
+```python
+markdown = ez.pdf2md('paper.pdf', pages='1-3,5', markers=False, output='paper.md')
+```
+
+| Argument (default) | CLI flag | Effect |
+|---|---|---|
+| `pages=None` | `-p`, `--pages` | Select 1-based page ranges; default is all pages. |
+| `markers=True` | `--no-markers` | Remove `<!-- Page number: N -->` comments and separate pages with `---`. |
+
+Selections retain document order and original page numbers. This is text-based
+extraction, **not OCR**: scanned/blank pages can have no text. Images are not
+extracted; exact layout/table reconstruction is not guaranteed. Decrypt PDFs
+requiring a password before conversion.
+
+```bash
+pdf2md paper.pdf -p 1-3,5 -o paper.md
+```
+
+#### Installed commands and future CLI tools
+
+Install this version of the package to generate all four commands:
+
+```bash
+python -m pip install .
+# Or, for local development:
+python -m pip install -e .
+```
+
+Activate the Python environment containing `ez`, or put its executable directory
+on `PATH`. All commands support `-o`/`--output`, `-f`/`--force`, and `-h`/`--help`.
+Running any converter command without arguments shows help and exits successfully.
+Importing or directly running `ez/ez.py` does not launch a converter CLI.
+
+`_CLI_COMMANDS` in `ez/ez.py` is the single registry of exported tools. To expose
+another tool, add its function and a registry entry with `function`, `description`,
+`arguments`, `notes`, and `examples`; optional `groups` reuse argument groups.
+Each argument is a pair of flag/name strings and an argparse-options dictionary.
+Use the strings `"str"`, `"int"`, or `"float"` for typed arguments. Unspecified
+options are omitted from the function call, preserving the function's defaults.
+Command names may differ from function names; registered targets must accept the
+parsed arguments as keywords. The dispatcher ignores normal return values and
+exits successfully after a successful call.
+
+`setup.py` reads the literal registry without importing runtime dependencies and
+generates console entry points targeting the general `_cli` dispatcher. Reinstall
+the package after adding a command. No new wrapper files or shell functions are
+needed. Converter dependencies (MarkItDown, openpyxl, PyMuPDF, and python-pptx)
+are already declared in the package.
+
 ### Regular Expressions
 
 | Function | Description |

@@ -4,12 +4,24 @@
 from setuptools import setup, find_packages
 from codecs import open  # To use a consistent encoding
 from os import path
+import ast
 here = path.abspath(path.dirname(__file__))
 ######################################################################################
 PACKAGE = 'ez'
 description='easy stuff'
 keywords='shell, cross-platform, easy, wrapper'
 packages = find_packages()
+with open(path.join(here, PACKAGE, 'ez.py'), encoding='utf-8') as f:
+    source = ast.parse(f.read())
+command_registries = [
+    node.value for node in source.body
+    if isinstance(node, ast.Assign)
+    and any(isinstance(target, ast.Name) and target.id == '_CLI_COMMANDS'
+            for target in node.targets)
+]
+if len(command_registries) != 1:
+    raise ValueError('Expected one literal _CLI_COMMANDS registry in ez/ez.py.')
+cli_commands = ast.literal_eval(command_registries[0])
 install_requires=[
     # Packaging and distribution
     'twine',  # setup.py upload deprecated -> use twine
@@ -30,6 +42,7 @@ install_requires=[
     'Duplicate-Finder',  # Find duplicated files
 
     # Office document handling
+    'markitdown[pdf,docx,pptx]',
     'openpyxl',
     'xlsxwriter',
     'xlwt',
@@ -149,6 +162,12 @@ setup(
     #         'sample=sample:main',
     #     ],
     # },
+
+    entry_points={
+        'console_scripts': [
+            f'{command}=ez.ez:_cli' for command in cli_commands
+        ],
+    },
 
     name=PACKAGE,
     description=description,

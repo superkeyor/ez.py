@@ -4021,6 +4021,416 @@ def office_pptx_replace(pptx_path: str, replacedict: dict, save_path=None):
     if save_path is None: save_path=pptx_path
     prs.save(save_path)
 
+def _md_paths(input_path, output, overwrite):
+    input_path = os.path.abspath(os.path.expanduser(os.fspath(input_path)))
+    if output is not None:
+        output = os.path.abspath(os.path.expanduser(os.fspath(output)))
+        if (os.path.realpath(output) == os.path.realpath(input_path)
+                or (os.path.exists(output) and os.path.samefile(input_path, output))):
+            raise ValueError("Output must not replace the input document.")
+        if not overwrite and os.path.lexists(output):
+            raise FileExistsError(f"Output already exists: {output}")
+    return input_path, output
+
+def _md_write(markdown, output, overwrite):
+    if markdown:
+        markdown += "\n"
+    if output is None:
+        sys.stdout.write(markdown)
+    else:
+        with open(output, "w" if overwrite else "x", encoding="utf-8") as target:
+            target.write(markdown)
+    return markdown
+
+def _md_ranges(selection, count, label):
+    if selection is None:
+        return list(range(1, count + 1))
+    if not isinstance(selection, str) or not selection.strip():
+        raise ValueError(f'{label} must be a nonempty string such as "1-3,5".')
+    selected = set()
+    for item in selection.split(","):
+        match = re.fullmatch(r"\s*([0-9]+)\s*(?:-\s*([0-9]+)\s*)?", item)
+        if match is None:
+            raise ValueError(f"Invalid {label} selection: {item!r}")
+        first = int(match.group(1))
+        last = int(match.group(2)) if match.group(2) is not None else first
+        if not 1 <= first <= last <= count:
+            raise ValueError(
+                f"{label} range {item.strip()!r} must be within 1-{count} "
+                "and in ascending order."
+            )
+        selected.update(range(first, last + 1))
+    return sorted(selected)
+
+def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
+            output=None, overwrite=False):
+    """
+    Convert a PowerPoint presentation to Markdown using MarkItDown.
+
+    pptx_path: input .pptx path (supports ~ and pathlib.Path).
+    note: include speaker notes; omitted by default.
+    slides: None for all slides, or 1-based ranges such as "1-3,5".
+            Duplicates are ignored; slides stay in presentation order.
+    markers: include <!-- Slide number: N --> with original slide numbers.
+             If False, separate slides with Markdown horizontal rules.
+    images: embed pictures as base64 data URIs instead of filename references.
+            Filename references do not extract image files.
+    output: write UTF-8 Markdown here, or print to stdout when None.
+    overwrite: allow replacing an existing output file (never the input).
+
+    Returns the Markdown string, including a final newline when nonempty.
+    Raises ValueError for invalid selections and FileExistsError if output
+    already exists without overwrite=True. Requires markitdown[pptx].
+    Installed CLI: pptx2md --help
+    """
+    from io import BytesIO
+    from markitdown import MarkItDown, StreamInfo
+    from pptx import Presentation
+
+    pptx_path, output = _md_paths(pptx_path, output, overwrite)
+    with open(pptx_path, "rb") as source:
+        presentation = Presentation(source)
+    slide_count = len(presentation.slides)
+    original_numbers = _md_ranges(slides, slide_count, "slides")
+    selected = set(original_numbers)
+    for number, slide in enumerate(presentation.slides, 1):
+        if number in selected and not note and slide.has_notes_slide:
+            notes_frame = slide.notes_slide.notes_text_frame
+            if notes_frame is not None:
+                notes_frame.text = ""
+
+    # python-pptx has no public API to remove slides; retain their related parts.
+    slide_ids = presentation.slides._sldIdLst
+    for number, slide_id in enumerate(list(slide_ids), 1):
+        if number not in selected:
+            slide_ids.remove(slide_id)
+
+    with BytesIO() as stream:
+        presentation.save(stream)
+        stream.seek(0)
+        converted = MarkItDown().convert(
+            stream, stream_info=StreamInfo(extension=".pptx"),
+            keep_data_uris=images,
+        ).text_content
+
+    slide_marker = re.compile(r"^<!-- Slide number: ([0-9]+) -->[ \t]*$", re.MULTILINE)
+    matches = list(slide_marker.finditer(converted))
+    if [int(match.group(1)) for match in matches] != list(range(1, len(selected) + 1)):
+        raise ValueError("Unexpected slide markers in converted Markdown.")
+    sections = []
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(converted)
+        content = converted[match.end():end].strip()
+        if markers:
+            content = f"<!-- Slide number: {original_numbers[index]} -->\n{content}"
+        sections.append(content.rstrip())
+    markdown = ("\n\n" if markers else "\n\n---\n\n").join(sections)
+    return _md_write(markdown, output, overwrite)
+
+def docx2md(docx_path, images=False, output=None, overwrite=False):
+    """
+    Convert a Word .docx document to Markdown using MarkItDown.
+
+    images: retain complete base64 data URIs for embedded images. By default,
+            MarkItDown abbreviates data URIs; these are not usable image links.
+    output: write UTF-8 to this path, or print to stdout when None.
+    overwrite: allow replacing an output file, but never the input document.
+
+    Returns the Markdown string, with a final newline when nonempty. Preserves
+    supported headings, lists, tables, and links, not exact Word page layout.
+    Requires markitdown[docx]. Installed CLI: docx2md --help
+    """
+    from markitdown import MarkItDown, StreamInfo
+
+    docx_path, output = _md_paths(docx_path, output, overwrite)
+    with open(docx_path, "rb") as source:
+        markdown = MarkItDown().convert(
+            source, stream_info=StreamInfo(extension=".docx"),
+            keep_data_uris=images,
+        ).text_content
+    return _md_write(markdown.rstrip("\r\n"), output, overwrite)
+
+def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
+            output=None, overwrite=False):
+    """
+    Convert Excel .xlsx worksheets to Markdown tables using openpyxl.
+
+    sheets: None for all worksheets, or a list/tuple of exact worksheet names.
+            Duplicates are ignored; workbook order is preserved.
+    formulas: emit formula strings instead of cached values. No formulas are
+              calculated. Missing cached formula values produce a warning
+              and empty cells; calculate and save in Excel/LibreOffice first.
+    headers: use the first row as headers; if False, generate column letters
+             and include the first row as data.
+    output: write UTF-8 to this path, or print to stdout when None.
+    overwrite: allow replacing an output file, but never the input workbook.
+
+    Returns the Markdown string, with a final newline. Each sheet has a heading;
+    empty sheets have only a heading. Hidden worksheets are included by default.
+    Trailing empty rows/columns are omitted; merged cells are not expanded.
+    Images, charts, formatting, and macros are not extracted.
+    Installed CLI: xlsx2md --help
+    """
+    import warnings
+    from contextlib import ExitStack
+    from datetime import date, datetime
+    from openpyxl import load_workbook
+    from openpyxl.utils import get_column_letter
+
+    xlsx_path, output = _md_paths(xlsx_path, output, overwrite)
+    if sheets is not None and (
+            not isinstance(sheets, (list, tuple)) or not sheets
+            or any(not isinstance(name, str) or not name for name in sheets)):
+        raise ValueError("sheets must be a nonempty list/tuple of exact worksheet names.")
+
+    def cell_text(value):
+        if value is None:
+            return ""
+        text = value.isoformat() if isinstance(value, (date, datetime)) else str(value)
+        return (text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace("\\", "\\\\").replace("|", "&#124;")
+                .replace("\r\n", "\n").replace("\r", "\n").replace("\n", "<br>"))
+
+    sections = []
+    with ExitStack() as resources:
+        source = load_workbook(xlsx_path, read_only=True, data_only=False)
+        resources.callback(source.close)
+        values = source
+        if not formulas:
+            values = load_workbook(xlsx_path, read_only=True, data_only=True)
+            resources.callback(values.close)
+        available = [sheet.title for sheet in source.worksheets]
+        if sheets is not None:
+            missing = [name for name in sheets if name not in available]
+            if missing:
+                raise ValueError(f"Unknown worksheets: {', '.join(repr(name) for name in missing)}")
+        selected = available if sheets is None else [name for name in available if name in sheets]
+        for name in selected:
+            rows = []
+            width = 0
+            last_row = 0
+            uncached = []
+            for row_number, (source_row, value_row) in enumerate(zip(
+                    source[name].iter_rows(), values[name].iter_rows()), 1):
+                rows.append([cell.value for cell in value_row])
+                for column, cell in enumerate(source_row, 1):
+                    if cell.value is not None:
+                        width = max(width, column)
+                        last_row = row_number
+                    if not formulas and cell.data_type == "f" and value_row[column - 1].value is None:
+                        uncached.append(cell.coordinate)
+            if uncached:
+                warnings.warn(
+                    f"Worksheet {name!r}: {len(uncached)} formula cell(s) have no cached "
+                    f"value ({', '.join(uncached[:5])}). Emitting empty cells; use "
+                    "formulas=True or calculate and save the workbook first.",
+                    UserWarning, stacklevel=2,
+                )
+            section = f"## {cell_text(name)}"
+            if width:
+                rows = [[cell_text(value) for value in row[:width]] for row in rows[:last_row]]
+                columns = rows.pop(0) if headers else [
+                    get_column_letter(column) for column in range(1, width + 1)
+                ]
+                table = ["| " + " | ".join(columns) + " |",
+                         "| " + " | ".join(["---"] * width) + " |"]
+                table.extend("| " + " | ".join(row) + " |" for row in rows)
+                section += "\n\n" + "\n".join(table)
+            sections.append(section)
+    return _md_write("\n\n".join(sections), output, overwrite)
+
+def pdf2md(pdf_path, pages=None, markers=True, output=None, overwrite=False):
+    """
+    Convert text-based PDF pages to Markdown using PyMuPDF and MarkItDown.
+
+    pages: None for all pages, or 1-based ranges such as "1-3,5". Duplicates
+           are ignored; original document order is preserved.
+    markers: include <!-- Page number: N --> with original page numbers.
+             If False, separate pages with Markdown horizontal rules.
+    output: write UTF-8 to this path, or print to stdout when None.
+    overwrite: allow replacing an output file, but never the input PDF.
+
+    Returns the Markdown string, with a final newline when nonempty.
+    No OCR or image extraction; scanned/blank pages can have no text.
+    Exact layout and table reconstruction are not guaranteed.
+    Password-protected PDFs requiring authentication are rejected.
+    Requires markitdown[pdf] and PyMuPDF. Installed CLI: pdf2md --help
+    """
+    from io import BytesIO
+    import pymupdf
+    from markitdown import MarkItDown, StreamInfo
+
+    pdf_path, output = _md_paths(pdf_path, output, overwrite)
+    sections = []
+    converter = MarkItDown()
+    with pymupdf.open(pdf_path) as document:
+        if document.needs_pass:
+            raise PermissionError("PDF requires a password; decrypt it before conversion.")
+        for number in _md_ranges(pages, len(document), "pages"):
+            with pymupdf.open() as page_document:
+                page_document.insert_pdf(document, from_page=number - 1, to_page=number - 1)
+                with BytesIO(page_document.tobytes()) as stream:
+                    content = converter.convert(
+                        stream, stream_info=StreamInfo(extension=".pdf"),
+                    ).text_content.strip()
+            if markers:
+                content = f"<!-- Page number: {number} -->\n{content}"
+            sections.append(content.rstrip())
+    separator = "\n\n" if markers else "\n\n---\n\n"
+    return _md_write(separator.join(sections), output, overwrite)
+
+_CLI_ARGUMENT_GROUPS = {
+    "output": [
+        (["-o", "--output"], {"metavar": "FILE", "help": "Write UTF-8 to FILE instead of stdout."}),
+        (["-f", "--force"], {"dest": "overwrite", "action": "store_true",
+                            "help": "Allow replacing an existing output file."}),
+    ],
+}
+
+# Literal metadata lets setup.py discover commands without importing this module.
+_CLI_COMMANDS = {
+    "pptx2md": {
+        "function": "pptx2md",
+        "description": "Convert a PowerPoint presentation to Markdown.",
+        "arguments": [
+            (["pptx_path"], {"metavar": "INPUT", "help": "Input .pptx presentation."}),
+            (["-n", "--note"], {"action": "store_true", "help": "Include speaker notes."}),
+            (["-s", "--slides"], {"metavar": "RANGES", "help": 'Select slides, e.g. "1-3,5".'}),
+            (["--no-markers"], {"dest": "markers", "action": "store_false",
+                               "help": "Replace slide comments with --- separators."}),
+            (["--images"], {"action": "store_true", "help": "Embed images as base64 data URIs."}),
+        ],
+        "groups": ["output"],
+        "notes": [
+            "Slides are 1-based; selections retain original order and numbering.",
+            "Without --images, filename references do not extract image files.",
+            "The input is never overwritten. Output defaults to stdout.",
+        ],
+        "examples": ['pptx2md talk.pptx -n -s 1-3,5 --images -o talk.md'],
+    },
+    "docx2md": {
+        "function": "docx2md",
+        "description": "Convert a Word document to Markdown.",
+        "arguments": [
+            (["docx_path"], {"metavar": "INPUT", "help": "Input .docx document."}),
+            (["--images"], {"action": "store_true", "help": "Embed images as base64 data URIs."}),
+        ],
+        "groups": ["output"],
+        "notes": [
+            "Supported headings, lists, tables, and links are converted, not exact page layout.",
+            "Without --images, embedded-image data URIs are abbreviated and unusable.",
+            "The input is never overwritten. Output defaults to stdout.",
+        ],
+        "examples": ["docx2md report.docx --images -o report.md"],
+    },
+    "xlsx2md": {
+        "function": "xlsx2md",
+        "description": "Convert Excel worksheets to Markdown tables.",
+        "arguments": [
+            (["xlsx_path"], {"metavar": "INPUT", "help": "Input .xlsx workbook."}),
+            (["-s", "--sheets"], {"metavar": "NAME", "nargs": "+",
+                                "help": "Select exact worksheet names (quote spaces)."}),
+            (["--formulas"], {"action": "store_true", "help": "Emit formulas instead of cached values."}),
+            (["--no-headers"], {"dest": "headers", "action": "store_false",
+                               "help": "Generate column labels; keep the first row as data."}),
+        ],
+        "groups": ["output"],
+        "notes": [
+            "All worksheets, including hidden ones, are included unless selected; workbook order is retained.",
+            "The first row supplies headers by default. Empty sheets have only a heading.",
+            "Formulas are not evaluated. Missing cached values warn and produce empty cells.",
+            "Images/charts are not extracted. The input is never overwritten.",
+        ],
+        "examples": ['xlsx2md data.xlsx --sheets "Annual Sales" Summary -o data.md',
+                     "xlsx2md data.xlsx --formulas --no-headers"],
+    },
+    "pdf2md": {
+        "function": "pdf2md",
+        "description": "Convert text-based PDF pages to Markdown.",
+        "arguments": [
+            (["pdf_path"], {"metavar": "INPUT", "help": "Input PDF document."}),
+            (["-p", "--pages"], {"metavar": "RANGES", "help": 'Select pages, e.g. "1-3,5".'}),
+            (["--no-markers"], {"dest": "markers", "action": "store_false",
+                               "help": "Replace page comments with --- separators."}),
+        ],
+        "groups": ["output"],
+        "notes": [
+            "Pages are 1-based; selections retain original order and numbering.",
+            "No OCR or image extraction. Scanned/blank pages can have no text.",
+            "Exact layout/table reconstruction is not guaranteed; decrypt protected PDFs first.",
+            "The input is never overwritten. Output defaults to stdout.",
+        ],
+        "examples": ["pdf2md paper.pdf -p 1-3,5 -o paper.md"],
+    },
+}
+
+def _cli(argv=None, command=None):
+    """Run an explicitly registered CLI tool; return an integer exit status."""
+    import argparse
+
+    command = command if command is not None else os.path.basename(sys.argv[0])
+    command = re.sub(r"(?i)(?:-script\.pyw?|\.exe)$", "", command)
+    if command not in _CLI_COMMANDS:
+        sys.stderr.write(f"Unknown CLI command: {command!r}\n")
+        return 2
+    spec = _CLI_COMMANDS[command]
+
+    class CommandParser(argparse.ArgumentParser):
+        def format_help(self):
+            formatter = self._get_formatter()
+            labels = [formatter._format_action_invocation(action) for action in self._actions]
+            width = max(map(len, labels), default=0)
+            arguments = "\n".join(
+                f"    {label:<{width}}    {action.help}"
+                for label, action in zip(labels, self._actions)
+            )
+            notes = "\n".join(
+                f"    {number}. {note}" for number, note in enumerate(spec["notes"], 1)
+            )
+            examples = "\n".join(f"    {example}" for example in spec["examples"])
+            siblings = [name for name in _CLI_COMMANDS if name != command]
+            see_also = "\n\nSee also:\n    " + ", ".join(siblings) if siblings else ""
+            return """{description}
+
+Usage:
+    {usage}
+
+{arguments}
+
+Notes:
+{notes}
+
+Example:
+{examples}{see_also}
+""".format(
+                description=spec["description"],
+                usage=self.prog + " " + formatter._format_actions_usage(self._actions, []),
+                arguments=arguments, notes=notes, examples=examples, see_also=see_also,
+            )
+
+    parser = CommandParser(prog=command, add_help=False, argument_default=argparse.SUPPRESS)
+    arguments = list(spec["arguments"])
+    for group in spec.get("groups", []):
+        arguments.extend(_CLI_ARGUMENT_GROUPS[group])
+    types = {"str": str, "int": int, "float": float}
+    for flags, options in arguments:
+        options = dict(options)
+        if "type" in options:
+            options["type"] = types[options["type"]]
+        parser.add_argument(*flags, **options)
+    parser.add_argument("-h", "--help", action="help", help="Show this help and exit.")
+    argv = sys.argv[1:] if argv is None else argv
+    required = any(action.required for action in parser._actions)
+    if not argv and required:
+        parser.print_help()
+        return 0
+    args = parser.parse_args(argv)
+    try:
+        globals()[spec["function"]](**vars(args))
+    except (OSError, ValueError, ImportError) as exc:
+        parser.exit(1, f"{parser.prog}: error: {exc}\n")
+    return 0
+
 def office_docx_replace(docx_path, replacedict, save_path=None):
     """
     replacedict: {'src':'replace','src2':'replace2'} auto translated to regex

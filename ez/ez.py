@@ -4062,6 +4062,12 @@ def _md_ranges(selection, count, label):
         selected.update(range(first, last + 1))
     return sorted(selected)
 
+def _md_load_office(loader, *args, **kwargs):
+    try:
+        return loader(*args, **kwargs)
+    except KeyError as exc:
+        raise ValueError(f"Invalid Office document: missing package member {exc}") from exc
+
 def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
             output=None, overwrite=False):
     """
@@ -4089,7 +4095,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
 
     pptx_path, output = _md_paths(pptx_path, output, overwrite)
     with open(pptx_path, "rb") as source:
-        presentation = Presentation(source)
+        presentation = _md_load_office(Presentation, source)
     slide_count = len(presentation.slides)
     original_numbers = _md_ranges(slides, slide_count, "slides")
     selected = set(original_numbers)
@@ -4140,12 +4146,13 @@ def docx2md(docx_path, images=False, output=None, overwrite=False):
     supported headings, lists, tables, and links, not exact Word page layout.
     Requires markitdown[docx]. Installed CLI: docx2md --help
     """
-    from markitdown import MarkItDown, StreamInfo
+    from markitdown import StreamInfo
+    from markitdown.converters import DocxConverter
 
     docx_path, output = _md_paths(docx_path, output, overwrite)
     with open(docx_path, "rb") as source:
-        markdown = MarkItDown().convert(
-            source, stream_info=StreamInfo(extension=".docx"),
+        markdown = _md_load_office(
+            DocxConverter().convert, source, StreamInfo(extension=".docx"),
             keep_data_uris=images,
         ).text_content
     return _md_write(markdown.rstrip("\r\n"), output, overwrite)
@@ -4193,11 +4200,11 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
 
     sections = []
     with ExitStack() as resources:
-        source = load_workbook(xlsx_path, read_only=True, data_only=False)
+        source = _md_load_office(load_workbook, xlsx_path, read_only=True, data_only=False)
         resources.callback(source.close)
         values = source
         if not formulas:
-            values = load_workbook(xlsx_path, read_only=True, data_only=True)
+            values = _md_load_office(load_workbook, xlsx_path, read_only=True, data_only=True)
             resources.callback(values.close)
         available = [sheet.title for sheet in source.worksheets]
         if sheets is not None:
@@ -4285,6 +4292,12 @@ _CLI_ARGUMENT_GROUPS = {
         (["-f", "--force"], {"dest": "overwrite", "action": "store_true",
                             "help": "Allow replacing an existing output file."}),
     ],
+    "batch": [
+        (["--output-dir"], {"metavar": "DIR",
+                            "help": "Write one .md per input, preserving subfolders."}),
+        (["--recursive"], {"action": "store_true",
+                           "help": "Scan nested folders and enable ** wildcard patterns."}),
+    ],
 }
 
 # Literal metadata lets setup.py discover commands without importing this module.
@@ -4293,48 +4306,74 @@ _CLI_COMMANDS = {
         "function": "pptx2md",
         "description": "Convert a PowerPoint presentation to Markdown.",
         "arguments": [
-            (["pptx_path"], {"metavar": "INPUT", "help": "Input .pptx presentation."}),
+            (["pptx_path"], {"metavar": "INPUT", "nargs": "+",
+                            "help": "Input .pptx files, folders, or wildcard patterns."}),
             (["-n", "--note"], {"action": "store_true", "help": "Include speaker notes."}),
             (["-s", "--slides"], {"metavar": "RANGES", "help": 'Select slides, e.g. "1-3,5".'}),
             (["--no-markers"], {"dest": "markers", "action": "store_false",
                                "help": "Replace slide comments with --- separators."}),
             (["--images"], {"action": "store_true", "help": "Embed images as base64 data URIs."}),
         ],
-        "groups": ["output"],
+        "groups": ["output", "batch"],
+        "batch": {
+            "input": "pptx_path", "extension": ".pptx",
+            "errors": [("pptx.exc", "PythonPptxError"), ("lxml.etree", "XMLSyntaxError"),
+                       ("markitdown", "FileConversionException"),
+                       ("markitdown", "UnsupportedFormatException"),
+                       ("markitdown", "MissingDependencyException")],
+        },
         "notes": [
             "Slides are 1-based; selections retain original order and numbering.",
             "Without --images, filename references do not extract image files.",
             "The input is never overwritten. Output defaults to stdout.",
         ],
-        "examples": ['pptx2md talk.pptx -n -s 1-3,5 --images -o talk.md'],
+        "examples": ['pptx2md talk.pptx -n -s 1-3,5 --images -o talk.md',
+                     "pptx2md *.pptx --output-dir markdown --images"],
     },
     "docx2md": {
         "function": "docx2md",
         "description": "Convert a Word document to Markdown.",
         "arguments": [
-            (["docx_path"], {"metavar": "INPUT", "help": "Input .docx document."}),
+            (["docx_path"], {"metavar": "INPUT", "nargs": "+",
+                            "help": "Input .docx files, folders, or wildcard patterns."}),
             (["--images"], {"action": "store_true", "help": "Embed images as base64 data URIs."}),
         ],
-        "groups": ["output"],
+        "groups": ["output", "batch"],
+        "batch": {
+            "input": "docx_path", "extension": ".docx",
+            "errors": [("lxml.etree", "XMLSyntaxError"),
+                       ("xml.parsers.expat", "ExpatError"),
+                       ("markitdown", "FileConversionException"),
+                       ("markitdown", "UnsupportedFormatException"),
+                       ("markitdown", "MissingDependencyException")],
+        },
         "notes": [
             "Supported headings, lists, tables, and links are converted, not exact page layout.",
             "Without --images, embedded-image data URIs are abbreviated and unusable.",
             "The input is never overwritten. Output defaults to stdout.",
         ],
-        "examples": ["docx2md report.docx --images -o report.md"],
+        "examples": ["docx2md report.docx --images -o report.md",
+                     "docx2md reports --recursive --output-dir markdown"],
     },
     "xlsx2md": {
         "function": "xlsx2md",
         "description": "Convert Excel worksheets to Markdown tables.",
         "arguments": [
-            (["xlsx_path"], {"metavar": "INPUT", "help": "Input .xlsx workbook."}),
+            (["xlsx_path"], {"metavar": "INPUT", "nargs": "+",
+                            "help": "Input .xlsx files, folders, or wildcard patterns."}),
             (["-s", "--sheets"], {"metavar": "NAME", "nargs": "+",
                                 "help": "Select exact worksheet names (quote spaces)."}),
             (["--formulas"], {"action": "store_true", "help": "Emit formulas instead of cached values."}),
             (["--no-headers"], {"dest": "headers", "action": "store_false",
                                "help": "Generate column labels; keep the first row as data."}),
         ],
-        "groups": ["output"],
+        "groups": ["output", "batch"],
+        "batch": {
+            "input": "xlsx_path", "extension": ".xlsx",
+            "errors": [("openpyxl.utils.exceptions", "InvalidFileException"),
+                       ("lxml.etree", "XMLSyntaxError"),
+                       ("xml.etree.ElementTree", "ParseError")],
+        },
         "notes": [
             "All worksheets, including hidden ones, are included unless selected; workbook order is retained.",
             "The first row supplies headers by default. Empty sheets have only a heading.",
@@ -4342,27 +4381,224 @@ _CLI_COMMANDS = {
             "Images/charts are not extracted. The input is never overwritten.",
         ],
         "examples": ['xlsx2md data.xlsx --sheets "Annual Sales" Summary -o data.md',
-                     "xlsx2md data.xlsx --formulas --no-headers"],
+                     "xlsx2md data.xlsx --formulas --no-headers",
+                     "xlsx2md *.xlsx --output-dir markdown"],
     },
     "pdf2md": {
         "function": "pdf2md",
         "description": "Convert text-based PDF pages to Markdown.",
         "arguments": [
-            (["pdf_path"], {"metavar": "INPUT", "help": "Input PDF document."}),
+            (["pdf_path"], {"metavar": "INPUT", "nargs": "+",
+                           "help": "Input PDF files, folders, or wildcard patterns."}),
             (["-p", "--pages"], {"metavar": "RANGES", "help": 'Select pages, e.g. "1-3,5".'}),
             (["--no-markers"], {"dest": "markers", "action": "store_false",
                                "help": "Replace page comments with --- separators."}),
         ],
-        "groups": ["output"],
+        "groups": ["output", "batch"],
+        "batch": {
+            "input": "pdf_path", "extension": ".pdf",
+            "errors": [("pymupdf", "FileDataError"), ("pymupdf", "EmptyFileError"),
+                       ("markitdown", "FileConversionException"),
+                       ("markitdown", "UnsupportedFormatException"),
+                       ("markitdown", "MissingDependencyException")],
+        },
         "notes": [
             "Pages are 1-based; selections retain original order and numbering.",
             "No OCR or image extraction. Scanned/blank pages can have no text.",
             "Exact layout/table reconstruction is not guaranteed; decrypt protected PDFs first.",
             "The input is never overwritten. Output defaults to stdout.",
         ],
-        "examples": ["pdf2md paper.pdf -p 1-3,5 -o paper.md"],
+        "examples": ["pdf2md paper.pdf -p 1-3,5 -o paper.md",
+                     'pdf2md "reports/**/*.pdf" --recursive --output-dir markdown'],
     },
 }
+
+
+def _cli_input_files(inputs, extension, recursive):
+    from pathlib import Path
+
+    files, errors, seen = [], [], {}
+
+    def add_file(path, root):
+        try:
+            stat = os.stat(path)
+            if not os.path.isfile(path):
+                raise ValueError("Input is not a regular file.")
+            identity = (stat.st_dev, stat.st_ino)
+            if identity not in seen:
+                seen[identity] = len(files)
+                files.append((path, root, identity))
+            else:
+                index = seen[identity]
+                previous_path, previous_root, _ = files[index]
+                if os.path.commonpath([previous_path, root]) == root:
+                    files[index] = (previous_path, os.path.commonpath([previous_root, root]), identity)
+        except (OSError, ValueError) as exc:
+            errors.append((path, str(exc)))
+
+    def scan_folder(folder, root):
+        error_count = len(errors)
+        found = False
+        try:
+            if recursive:
+                def onerror(exc):
+                    errors.append((exc.filename or folder, str(exc)))
+                for current, directories, names in os.walk(folder, onerror=onerror):
+                    directories[:] = sorted(
+                        name for name in directories
+                        if not os.path.islink(os.path.join(current, name))
+                    )
+                    for name in sorted(names):
+                        if os.path.splitext(name)[1].lower() == extension:
+                            found = True
+                            add_file(os.path.join(current, name), root)
+            else:
+                with os.scandir(folder) as entries:
+                    paths = sorted(entry.path for entry in entries
+                                   if entry.is_file() and os.path.splitext(entry.name)[1].lower() == extension)
+                for path in paths:
+                    found = True
+                    add_file(path, root)
+        except OSError as exc:
+            errors.append((folder, str(exc)))
+        if not found and len(errors) == error_count:
+            errors.append((folder, f"No {extension} files found."))
+
+    for item in inputs:
+        path = os.path.abspath(os.path.expanduser(item))
+        if os.path.isdir(path):
+            scan_folder(path, path)
+        elif os.path.isfile(path) or not glob.has_magic(path):
+            if os.path.splitext(path)[1].lower() != extension:
+                errors.append((item, f"Expected a {extension} input file."))
+            else:
+                add_file(path, os.path.dirname(path))
+        else:
+            if "**" in path and not recursive:
+                errors.append((item, "Patterns containing ** require --recursive."))
+                continue
+            root = path
+            while glob.has_magic(root):
+                root = os.path.dirname(root)
+            # Path.glob does not follow directory symlinks when expanding **.
+            try:
+                matches = sorted(str(match) for match in Path(root).glob(os.path.relpath(path, root)))
+            except (OSError, ValueError) as exc:
+                errors.append((item, str(exc)))
+                continue
+            eligible = [match for match in matches if os.path.isdir(match)
+                        or os.path.splitext(match)[1].lower() == extension]
+            if not eligible:
+                errors.append((item, f"Pattern matched no {extension} inputs."))
+            for match in eligible:
+                if os.path.isdir(match):
+                    if os.path.islink(match):
+                        errors.append((match, "Directory symlinks are not scanned through wildcard patterns."))
+                    else:
+                        scan_folder(match, root)
+                else:
+                    add_file(match, root)
+    return files, errors
+
+
+def _cli_output_files(files, output_dir):
+    import tempfile
+
+    root = os.path.commonpath([parent for _, parent, _ in files])
+    output_dir = os.path.abspath(os.path.expanduser(output_dir))
+    os.makedirs(output_dir, exist_ok=True)
+    resolved_dir = os.path.realpath(output_dir)
+    with tempfile.NamedTemporaryFile(prefix=".ez-CaSe-", dir=output_dir) as probe:
+        case_insensitive = os.path.exists(
+            os.path.join(output_dir, os.path.basename(probe.name).swapcase())
+        )
+    inputs = {identity for _, _, identity in files}
+    jobs, errors, destinations = [], [], {}
+    for path, _, _ in files:
+        output = os.path.join(output_dir, os.path.splitext(os.path.relpath(path, root))[0] + ".md")
+        try:
+            resolved = os.path.realpath(output)
+            if os.path.commonpath([resolved_dir, resolved]) != resolved_dir:
+                raise ValueError(f"Output escapes --output-dir: {output}")
+            key = os.path.normcase(resolved)
+            if case_insensitive:
+                key = key.casefold()
+            keys = [("path", key)]
+            if os.path.exists(output):
+                stat = os.stat(output)
+                identity = stat.st_dev, stat.st_ino
+                if identity in inputs:
+                    raise ValueError(f"Output must not replace any batch input: {output}")
+                keys.append(("file", identity))
+            index = len(jobs)
+            jobs.append((path, output))
+            for key in keys:
+                destinations.setdefault(key, []).append(index)
+        except (OSError, ValueError) as exc:
+            errors.append((path, str(exc)))
+    conflicts = {index for indices in destinations.values() if len(indices) > 1 for index in indices}
+    for index in sorted(conflicts):
+        path, output = jobs[index]
+        errors.append((path, f"Output collision: {output}"))
+    return [job for index, job in enumerate(jobs) if index not in conflicts], errors
+
+
+def _cli_batch(parser, spec, kwargs):
+    from importlib import import_module
+    from zipfile import BadZipFile
+
+    batch = spec["batch"]
+    inputs = kwargs.pop(batch["input"])
+    output_dir = kwargs.pop("output_dir", None)
+    recursive = kwargs.pop("recursive", False)
+    if output_dir is not None and "output" in kwargs:
+        parser.error("-o/--output and --output-dir are mutually exclusive.")
+    files, errors = _cli_input_files(inputs, batch["extension"], recursive)
+    if len(files) > 1 and output_dir is None:
+        parser.error("Multiple inputs require --output-dir; -o/--output is for one file.")
+    is_batch = output_dir is not None or len(inputs) > 1 or bool(errors)
+    jobs = [(path, kwargs.get("output")) for path, _, _ in files]
+    if files and output_dir is not None:
+        try:
+            jobs, output_errors = _cli_output_files(files, output_dir)
+            errors.extend(output_errors)
+        except (OSError, ValueError) as exc:
+            errors.extend((path, str(exc)) for path, _, _ in files)
+            jobs = []
+    if jobs:
+        try:
+            expected_errors = (OSError, ValueError, ImportError, BadZipFile) + tuple(
+                getattr(import_module(module), name) for module, name in batch.get("errors", [])
+            )
+        except ImportError as exc:
+            errors.extend((path, str(exc)) for path, _ in jobs)
+            jobs = []
+    succeeded = 0
+    for path, output in jobs:
+        try:
+            if output_dir is not None:
+                os.makedirs(os.path.dirname(output), exist_ok=True)
+                resolved_dir = os.path.realpath(os.path.abspath(os.path.expanduser(output_dir)))
+                if os.path.commonpath([resolved_dir, os.path.realpath(output)]) != resolved_dir:
+                    raise ValueError(f"Output escapes --output-dir: {output}")
+                if os.path.exists(output) and any(os.path.samefile(output, source) for source, _, _ in files):
+                    raise ValueError(f"Output must not replace any batch input: {output}")
+            options = dict(kwargs)
+            options[batch["input"]] = path
+            if output is not None:
+                options["output"] = output
+            globals()[spec["function"]](**options)
+            succeeded += 1
+        except expected_errors as exc:
+            errors.append((path, str(exc)))
+    for path, message in errors:
+        sys.stderr.write(f"{parser.prog}: error: {path}: {message}\n")
+    if is_batch:
+        sys.stderr.write(f"{parser.prog}: {succeeded} succeeded, {len(errors)} failed.\n")
+    if errors:
+        parser.exit(1)
+    return 0
+
 
 def _cli(argv=None, command=None):
     """Run an explicitly registered CLI tool; return an integer exit status."""
@@ -4384,8 +4620,16 @@ def _cli(argv=None, command=None):
                 f"    {label:<{width}}    {action.help}"
                 for label, action in zip(labels, self._actions)
             )
+            command_notes = list(spec["notes"])
+            if "batch" in spec:
+                command_notes.extend([
+                    "Multiple files require --output-dir; -o/--output is only for one file.",
+                    "Output subfolders are relative to the common input root; duplicate files are ignored.",
+                    "Failures are reported to stderr; other files continue. Any failure exits nonzero.",
+                    "--force replaces existing outputs, never inputs or colliding batch outputs.",
+                ])
             notes = "\n".join(
-                f"    {number}. {note}" for number, note in enumerate(spec["notes"], 1)
+                f"    {number}. {note}" for number, note in enumerate(command_notes, 1)
             )
             examples = "\n".join(f"    {example}" for example in spec["examples"])
             siblings = [name for name in _CLI_COMMANDS if name != command]
@@ -4425,6 +4669,8 @@ Example:
         parser.print_help()
         return 0
     args = parser.parse_args(argv)
+    if "batch" in spec:
+        return _cli_batch(parser, spec, vars(args))
     try:
         globals()[spec["function"]](**vars(args))
     except (OSError, ValueError, ImportError) as exc:

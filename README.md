@@ -209,6 +209,42 @@ requiring a password before conversion.
 pdf2md paper.pdf -p 1-3,5 -o paper.md
 ```
 
+#### Batch conversion
+
+The installed commands accept multiple files, folders, and wildcard patterns.
+Each Python converter still processes one file per call.
+
+```bash
+pptx2md *.pptx --output-dir markdown --images
+docx2md first.docx second.docx --output-dir markdown
+pdf2md reports --recursive --output-dir markdown
+pdf2md "reports/**/*.pdf" --recursive --output-dir markdown
+xlsx2md workbooks --output-dir markdown --sheets Summary
+```
+
+- More than one distinct input requires `--output-dir DIR`; `-o FILE` is only
+  for one input and cannot be combined with `--output-dir`.
+- A single input without `--output-dir` retains the original stdout/`-o` behavior.
+- Folders are scanned for the command's file extension, case-insensitively.
+  Use `--recursive` for nested folders or quoted `**` patterns. Recursive
+  discovery does not follow directory symlinks.
+- Output folders are created as needed. Structure is preserved relative to the
+  common ancestor of input roots: a folder's root is itself, an explicit file's
+  root is its parent, and a wildcard's root is its non-wildcard directory prefix.
+  For example, `pdf2md reports --recursive --output-dir markdown` maps
+  `reports/a/report.pdf` to `markdown/a/report.md`. Explicit inputs
+  `a/report.pdf b/report.pdf` map to `markdown/a/report.md` and
+  `markdown/b/report.md`, rather than overwriting one another.
+- Repeated files and file aliases are converted once. Outputs colliding with
+  another destination or any source document are rejected, even with `--force`.
+- All conversion options apply to every input. Discovery/conversion/output
+  failures are reported to stderr while other files continue. A final summary
+  reports succeeded/failed counts; any failure produces a nonzero exit status.
+  Unmatched patterns and folders with no matching files are errors, not silent
+  successes. Unexpected programming errors remain visible.
+- `--force` allows replacing existing output files; otherwise they are reported
+  as failures. Batch Markdown goes to files, not stdout.
+
 #### Installed commands and future CLI tools
 
 Install this version of the package to generate all four commands:
@@ -233,6 +269,11 @@ options are omitted from the function call, preserving the function's defaults.
 Command names may differ from function names; registered targets must accept the
 parsed arguments as keywords. The dispatcher ignores normal return values and
 exits successfully after a successful call.
+
+Batch support is opt-in: the converter entries also specify `batch` metadata
+(`input` parameter, supported `extension`, and expected document `errors`) and
+use the shared `batch` argument group. Tools without this metadata retain normal
+single-call dispatch.
 
 `setup.py` reads the literal registry without importing runtime dependencies and
 generates console entry points targeting the general `_cli` dispatcher. Reinstall

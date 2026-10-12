@@ -77,7 +77,7 @@ install_requires=[
     'Pillow',
 
     # Media and text-to-speech utilities
-    'yt-dlp',
+    'yt-dlp[default,curl-cffi]',
     'pysubs2',
     'gTTS',
     'edge-tts',  # Bash terminal commands

@@ -5559,14 +5559,72 @@ def Mail(to, subject=None, body=None, text=None, attachments=None, bcc=None, cc=
 mail = Mail
 gmail = Mail
 
-def gmailget(email, password, unread=True, attachments=True, days=None,
-             sender=None, subject=None, folder='INBOX', mark_seen=True):
+# def gmailget(email, password, unread=True, attachments=True, days=None,
+#              sender=None, subject=None, folder='INBOX', mark_seen=True):
+#     """
+#     Retrieve emails via IMAP using imap-tools.
+
+#     Parameters
+#     ----------
+#     email       : Gmail address
+#     password    : App password
+#     unread      : if True (default), fetch only unread; if False, fetch all
+#     attachments : if True (default), save attachments to working dir
+#     days        : if set, only fetch emails from the last N days (e.g. days=60)
+#     sender      : if set, filter by sender address (e.g. 'boss@example.com')
+#     subject     : if set, filter by subject keyword
+#     folder      : mailbox folder to read (default: 'INBOX')
+#     mark_seen   : if True (default), mark fetched emails as read
+#                   (imap-tools fetch() also defaults to True)
+
+#     Returns
+#     -------
+#     list of dict with keys:
+#         subject, message, sender, date, size, attachments
+#         (attachments is [] if none exist or attachments=False)
+#     """
+#     from imap_tools import MailBox, AND
+#     from datetime import datetime, timedelta
+
+#     # Build server-side search criteria
+#     criteria = {}
+#     if unread:
+#         criteria['seen'] = False
+#     if days is not None:
+#         criteria['date_gte'] = (datetime.now() - timedelta(days=days)).date()
+#     if sender is not None:
+#         criteria['from_'] = sender
+#     if subject is not None:
+#         criteria['subject'] = subject
+
+#     res = []
+#     with MailBox('imap.gmail.com').login(email, password, initial_folder=folder) as mb:
+#         for msg in mb.fetch(AND(**criteria) if criteria else 'ALL', mark_seen=mark_seen):
+#             files = []
+#             if attachments:
+#                 for att in msg.attachments:
+#                     with open(att.filename, 'wb') as f:
+#                         f.write(att.payload)
+#                     files.append(att.filename)
+#             res.append({
+#                 'subject'     : msg.subject,
+#                 'message'     : msg.text or msg.html,
+#                 'sender'      : msg.from_,
+#                 'date'        : msg.date,
+#                 'size'        : msg.size,
+#                 'attachments' : files,
+#             })
+#     return res
+
+def imapget(host, email, password, unread=True, attachments=True, days=None,
+            sender=None, subject=None, folder='INBOX', mark_seen=True):
     """
     Retrieve emails via IMAP using imap-tools.
 
     Parameters
     ----------
-    email       : Gmail address
+    host        : IMAP server (gmailget/ymailget set this for you)
+    email       : account address
     password    : App password
     unread      : if True (default), fetch only unread; if False, fetch all
     attachments : if True (default), save attachments to working dir
@@ -5575,7 +5633,6 @@ def gmailget(email, password, unread=True, attachments=True, days=None,
     subject     : if set, filter by subject keyword
     folder      : mailbox folder to read (default: 'INBOX')
     mark_seen   : if True (default), mark fetched emails as read
-                  (imap-tools fetch() also defaults to True)
 
     Returns
     -------
@@ -5598,7 +5655,7 @@ def gmailget(email, password, unread=True, attachments=True, days=None,
         criteria['subject'] = subject
 
     res = []
-    with MailBox('imap.gmail.com').login(email, password, initial_folder=folder) as mb:
+    with MailBox(host).login(email, password, initial_folder=folder) as mb:
         for msg in mb.fetch(AND(**criteria) if criteria else 'ALL', mark_seen=mark_seen):
             files = []
             if attachments:
@@ -5615,6 +5672,20 @@ def gmailget(email, password, unread=True, attachments=True, days=None,
                 'attachments' : files,
             })
     return res
+
+
+def gmailget(email, password, unread=True, attachments=True, days=None,
+             sender=None, subject=None, folder='INBOX', mark_seen=True):
+    return imapget('imap.gmail.com', email, password, unread, attachments,
+                   days, sender, subject, folder, mark_seen)
+gmailget.__doc__ = imapget.__doc__
+
+
+def ymailget(email, password, unread=True, attachments=True, days=None,
+             sender=None, subject=None, folder='INBOX', mark_seen=True):
+    return imapget('imap.mail.yahoo.com', email, password, unread, attachments,
+                   days, sender, subject, folder, mark_seen)
+ymailget.__doc__ = imapget.__doc__
 
 def o365auth(id=None, secret=None):
     try:

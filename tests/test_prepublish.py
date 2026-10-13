@@ -30,6 +30,10 @@ shortcut = useful
 #endregion useful
 #endregion Helpers
 '''
+README = (
+    "# Example\n\n" + prepublish.README_START + "\nOld list.\n"
+    + prepublish.README_END + "\n\n## Usage\nKeep this example.\n"
+)
 
 
 def module_doc(source):
@@ -40,6 +44,41 @@ def module_doc(source):
 
 
 class CatalogTests(unittest.TestCase):
+    def test_readme_names_aliases_and_summary_match_doc(self):
+        updated = prepublish.generate_readme(SOURCE, README)
+        self.assertIn("### Helpers", updated)
+        self.assertIn(
+            "| <code>useful</code> | <code>shortcut</code> | Return the supplied value. |",
+            updated,
+        )
+        self.assertNotIn("Old list.", updated)
+        self.assertIn("useful (aliases: shortcut) - Return the supplied value.",
+                      module_doc(prepublish.generate_doc(SOURCE)))
+
+    def test_readme_preserves_surrounding_content_and_is_idempotent(self):
+        updated = prepublish.generate_readme(SOURCE, README)
+        self.assertEqual(README.split(prepublish.README_START)[0],
+                         updated.split(prepublish.README_START)[0])
+        self.assertEqual(README.split(prepublish.README_END)[1],
+                         updated.split(prepublish.README_END)[1])
+        self.assertEqual(updated, prepublish.generate_readme(SOURCE, updated))
+
+    def test_readme_escapes_table_delimiters_and_html(self):
+        source = SOURCE.replace("Return the supplied value.", "Use a | b and <tag> & text.")
+        updated = prepublish.generate_readme(source, README)
+        self.assertIn("Use a &#124; b and &lt;tag&gt; &amp; text.", updated)
+
+    def test_readme_invalid_markers_are_errors(self):
+        for readme in (
+            README.replace(prepublish.README_START, ""),
+            README.replace(prepublish.README_END, ""),
+            README + prepublish.README_START,
+            README + prepublish.README_END,
+            prepublish.README_END + prepublish.README_START,
+        ):
+            with self.subTest(readme=readme), self.assertRaises(ValueError):
+                prepublish.generate_readme(SOURCE, readme)
+
     def test_generated_names_aliases_and_summary(self):
         updated = prepublish.generate_doc(SOURCE)
         doc = module_doc(updated)
@@ -174,10 +213,12 @@ class CatalogTests(unittest.TestCase):
 
     def test_live_catalog_and_region_layout(self):
         source = (ROOT / "ez/ez.py").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", SyntaxWarning)
             warnings.simplefilter("ignore", DeprecationWarning)
             self.assertEqual(source, prepublish.generate_doc(source))
+            self.assertEqual(readme, prepublish.generate_readme(source, readme))
             tree = ast.parse(source)
         regions = prepublish._regions(source)
         lines = source.splitlines()
@@ -205,10 +246,13 @@ class PrepublishTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix="ez prepublish tests ")
         self.addCleanup(self.directory.cleanup)
-        self.root = Path(self.directory.name)
+        self.root = Path(self.directory.name) / "ez"
+        self.root.mkdir()
         self.source = self.root / "ez.py"
         self.version = self.root / "version.py"
         self.source.write_text(SOURCE, encoding="utf-8")
+        self.readme = self.root.parent / "README.md"
+        self.readme.write_text(README, encoding="utf-8")
         self.original_version = "__version__ = '11.7.4'"
         self.version.write_text(self.original_version, encoding="utf-8")
 
@@ -223,10 +267,12 @@ class PrepublishTests(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertIn("stale", error)
         self.assertEqual(self.source.read_text(), SOURCE)
+        self.assertEqual(self.readme.read_text(), README)
         self.assertEqual(self.version.read_text(), self.original_version)
 
     def test_docs_only_does_not_increment(self):
         self.assertEqual(self.invoke(["--docs-only"])[0], 0)
+        self.assertEqual(self.readme.read_text(), prepublish.generate_readme(SOURCE, README))
         self.assertEqual(self.version.read_text(), self.original_version)
         self.assertEqual(self.invoke(["--check-docs"])[0], 0)
 
@@ -235,11 +281,34 @@ class PrepublishTests(unittest.TestCase):
 
         def checked_bump(path):
             self.assertTrue(prepublish.update_doc(self.source, check=True))
+            self.assertTrue(prepublish.update_catalogs(self.source, self.readme, check=True))
             return original_bump(path)
 
         with patch.object(prepublish, "bump_version", side_effect=checked_bump):
             self.assertEqual(self.invoke([])[0], 0)
         self.assertEqual(self.version.read_text(), "__version__ = '11.7.5'")
+
+    def test_stale_readme_alone_fails_read_only_check(self):
+        self.assertEqual(self.invoke(["--docs-only"])[0], 0)
+        source = self.source.read_text()
+        self.readme.write_text(README, encoding="utf-8")
+        status, _, error = self.invoke(["--check-docs"])
+        self.assertEqual(status, 1)
+        self.assertIn("stale", error)
+        self.assertEqual(self.source.read_text(), source)
+        self.assertEqual(self.readme.read_text(), README)
+        self.assertEqual(self.version.read_text(), self.original_version)
+
+    def test_bad_readme_does_not_update_module_or_increment(self):
+        for args in ([], ["--docs-only"], ["--check-docs"]):
+            with self.subTest(args=args):
+                self.readme.write_text("No catalog markers.", encoding="utf-8")
+                status, _, error = self.invoke(args)
+                self.assertEqual(status, 1)
+                self.assertIn("markers", error)
+                self.assertEqual(self.source.read_text(), SOURCE)
+                self.assertEqual(self.readme.read_text(), "No catalog markers.")
+                self.assertEqual(self.version.read_text(), self.original_version)
 
     def test_bad_docs_do_not_increment(self):
         self.source.write_text(SOURCE.replace("#endregion Helpers\n", ""), encoding="utf-8")
@@ -248,6 +317,7 @@ class PrepublishTests(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertIn("Unclosed region", error)
         self.assertEqual(self.source.read_text(), before)
+        self.assertEqual(self.readme.read_text(), README)
         self.assertEqual(self.version.read_text(), self.original_version)
 
     def test_version_rollover_preserves_numbering_scheme(self):
@@ -267,6 +337,7 @@ class PrepublishTests(unittest.TestCase):
             self.invoke(["--help"])
         self.assertEqual(result.exception.code, 0)
         self.assertEqual(self.source.read_text(), SOURCE)
+        self.assertEqual(self.readme.read_text(), README)
         self.assertEqual(self.version.read_text(), self.original_version)
 
     def test_cli_resolves_paths_from_hook_and_import_is_safe(self):
@@ -288,6 +359,7 @@ class PrepublishTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(prepublish.update_doc(self.source, check=True))
+        self.assertTrue(prepublish.update_catalogs(self.source, self.readme, check=True))
         self.assertEqual(self.version.read_text(), self.original_version)
 
 

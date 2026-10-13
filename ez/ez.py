@@ -82,6 +82,7 @@ Console, System and Logging:
     doc (aliases: help) - Print the docstring of a named module, class, or function.
     getos - Return the operating system name.
     ver (aliases: version) - Print the installed version of Python or a package.
+    require - Ensure a package is installed at the latest or a specified version via pip or Conda.
     evaluate - Evaluate a Python expression or execute a statement in the caller's scope.
     who (aliases: whos) - List imported names in the requested scope.
     _setlog - Enable or disable redirecting stdout to both a file and the terminal.
@@ -2697,6 +2698,172 @@ def ver(package_name='python'):
             print(theNameSpace[package_name].VERSION) # e.g., fake-useragent
 version = ver
 #endregion ver
+
+#region require
+def require(pkg, version="latest", confirm=True, channel="pip"):
+    """Ensure a package is installed at the latest or a specified version via pip or Conda.
+
+    pkg: Package name, optionally with pip extras, e.g. "httpx[http2]".
+        Pass version pins through version, not through pkg.
+    version: "latest", None, or "" selects the latest version; otherwise a
+        version such as "2.31.0". Pip checks PyPI, falling back to an upgrade
+        if PyPI is unavailable. Conda selects the latest compatible version.
+    confirm: Ask "[Y/n]" before installing or updating; Enter means yes.
+        False installs or updates automatically in the current interpreter.
+    channel: "pip" (default) or "pypi" uses pip; "conda" uses Conda's configured
+        repository channels. Conda requires the current interpreter to be in
+        a Conda environment and uses sys.prefix, not a different active
+        environment. Its executable comes from CONDA_EXE or PATH. Pip extras
+        are not supported by Conda.
+
+    Return True after a successful install/update and version verification,
+    or if already at the requested pin. Latest Conda updates are resolved by
+    Conda, then checked for package presence using its records, including for
+    non-Python packages. Declining returns True only if the package was already
+    installed; this does not guarantee its version or requested extras.
+    Failures print a diagnostic and return False. Invalid arguments raise
+    ValueError.
+
+    Examples:
+        require("requests")
+        require("httpx[http2]", "0.28.1", confirm=False)
+        require("ffmpeg", confirm=False, channel="conda")
+
+    Already-installed packages may need a process restart to use updated code.
+    """
+    import importlib
+    import importlib.metadata as md
+    import json
+    import os
+    import shutil
+    import urllib.error
+    import urllib.request
+
+    if not isinstance(channel, str) or channel.lower() not in ("pip", "pypi", "conda"):
+        raise ValueError("channel must be 'pip', 'pypi', or 'conda'.")
+    manager = "conda" if channel.lower() == "conda" else "pip"
+    if not isinstance(pkg, str):
+        raise ValueError("pkg must be a distribution name, optionally with extras.")
+    pkg = pkg.strip()
+    match = re.fullmatch(
+        r"([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)"
+        r"(\[[A-Za-z0-9._-]+(?:\s*,\s*[A-Za-z0-9._-]+)*\])?",
+        pkg,
+    )
+    if match is None:
+        raise ValueError("pkg must be a name or name[extras]; pass pins through version.")
+    if version is not None and not isinstance(version, str):
+        raise ValueError("version must be a version string, 'latest', or None.")
+    pinned = bool(version) and version.lower() != "latest"
+    if pinned and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.!+_-]*", version) is None:
+        raise ValueError("version must be a single version, not a pip requirement.")
+    name, extras = match.groups()
+    if manager == "conda" and extras:
+        raise ValueError("Conda packages do not support pip extras.")
+
+    conda = None
+    if manager == "conda":
+        if not os.path.isdir(os.path.join(sys.prefix, "conda-meta")):
+            print("[require] current interpreter is not in a Conda environment")
+            return False
+        conda = os.environ.get("CONDA_EXE") or shutil.which("conda")
+        if not conda:
+            print("[require] Conda executable not found; set CONDA_EXE or add conda to PATH")
+            return False
+        name = pkg = name.lower()
+
+    def installed_version():
+        """Read the selected manager's installed package version."""
+        if manager == "pip":
+            try:
+                return md.version(name)
+            except md.PackageNotFoundError:
+                return None
+        result = subprocess.run(
+            [conda, "list", "--prefix", sys.prefix, "--json", "--no-pip"],
+            capture_output=True, text=True, check=True,
+        )
+        records = json.loads(result.stdout)
+        if not isinstance(records, list) or any(
+            not isinstance(record, dict)
+            or not isinstance(record.get("name"), str)
+            or not isinstance(record.get("version"), str)
+            or not record["version"]
+            for record in records
+        ):
+            raise ValueError("Conda returned invalid package records.")
+        return next((record["version"] for record in records if record["name"] == name), None)
+
+    try:
+        installed = installed_version()
+    except (OSError, subprocess.CalledProcessError, ValueError) as exc:
+        print(f"[require] couldn't read installed {manager} packages: {exc}")
+        return False
+
+    target = version if pinned else None
+    if manager == "pip" and not pinned:
+        try:
+            with urllib.request.urlopen(
+                f"https://pypi.org/pypi/{name}/json", timeout=10
+            ) as response:
+                target = json.load(response)["info"]["version"]
+            if not isinstance(target, str) or not target:
+                raise ValueError("PyPI did not return a version string.")
+        except (urllib.error.URLError, OSError, ValueError, KeyError, TypeError) as exc:
+            print(f"[require] couldn't check latest for {name} ({exc}); asking pip to upgrade")
+            target = None
+
+    if installed is not None and installed == target and not extras:
+        return True
+
+    spec = f"{pkg}=={target}" if target else pkg
+    action = (
+        f"Install {spec}" if installed is None
+        else f"{'Change' if pinned else 'Update'} {name} {installed} -> {target or 'latest'}"
+    )
+    if extras:
+        action += f" (ensure extras {extras})"
+    if manager == "conda":
+        action += " via Conda"
+    if confirm:
+        try:
+            answer = input(f"{action}? [Y/n] ").strip().lower()
+        except EOFError:
+            answer = "n"
+        if answer not in ("", "y", "yes"):
+            print(f"[require] declined: {action}")
+            return installed is not None
+    else:
+        print(f"[require] {action}")
+
+    if manager == "conda":
+        operation = "update" if installed is not None and not pinned else "install"
+        command = [conda, operation, "--yes", "--prefix", sys.prefix, spec]
+    else:
+        command = [sys.executable, "-m", "pip", "install", "--upgrade", spec]
+    try:
+        status = subprocess.call(command)
+    except OSError as exc:
+        print(f"[require] couldn't run {manager} for {spec}: {exc}")
+        return False
+    if status != 0:
+        print(f"[require] {manager} failed for {spec} (exit {status})")
+        return False
+
+    importlib.invalidate_caches()
+    try:
+        installed = installed_version()
+    except (OSError, subprocess.CalledProcessError, ValueError) as exc:
+        print(f"[require] couldn't verify installed {manager} packages: {exc}")
+        return False
+    if installed is None:
+        print(f"[require] {name} is still not installed after {manager} completed")
+        return False
+    if target is not None and installed != target:
+        print(f"[require] expected {name}=={target}, but found {installed}")
+        return False
+    return True
+#endregion require
 
 #region evaluate
 def evaluate(exp):

@@ -1,4 +1,5 @@
 from . ez import *
+from .ez import __doc__ as __doc__
 
 __all__=[
 'JDict', 'TimeStamp', 'Moment', 'GSheet', 'GCal',

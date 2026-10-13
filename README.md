@@ -2,7 +2,7 @@
 
 [![PyPI Version](https://img.shields.io/pypi/v/ez.svg)](https://pypi.org/project/ez/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/ez.svg)](https://pypi.org/project/ez/)
-[![License: GPLv3+](https://img.shields.io/pypi/l/ez.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![License: AGPLv3+](https://img.shields.io/badge/License-AGPL%20v3%2B-blue.svg)](https://www.gnu.org/licenses/agpl-3.0.html)
 
 A cross-platform Python utility library for easy shell interaction and common programming tasks on Linux, macOS, and Windows.
 
@@ -378,6 +378,44 @@ ez.pipe | (range, -1) | reversed | ez.pipetools.foreach('{0}...') | ' '.join | '
 
 ---
 
+## Maintaining the Function Catalog
+
+The topic regions and function docstrings in [`ez/ez.py`](ez/ez.py) are the source
+of truth for its generated `__doc__` catalog. Each module-level function belongs
+to a topic region and a nested region named after the function. Keep a concise
+description on the first line of its docstring; existing parameter details and
+examples follow it. Keep function aliases inside the same topic. Imported
+convenience functions inside topic regions are listed with their source module.
+Class methods and nested functions are not cataloged.
+
+[`ez/prepublish.py`](ez/prepublish.py) reads this structure using only the Python
+standard library, without importing `ez` or its optional runtime dependencies.
+
+```bash
+python ez/prepublish.py --docs-only   # regenerate the catalog; do not bump the version
+python ez/prepublish.py --check-docs  # exit nonzero if the catalog is stale or invalid
+python ez/prepublish.py --help
+```
+
+Running the hook **without flags** regenerates the catalog, then increments the
+release version using the existing numbering scheme. A catalog-generation failure
+prevents that increment. The paths are resolved relative to the hook, not the
+current working directory.
+
+Both [`publish.sh`](publish.sh) and [`Publish.app`](Publish.app) retain their
+existing workflows and prepublish invocation. They are unchanged: their existing
+package-path assumptions and lack of fail-fast handling still apply. Use the
+direct check command above to validate documentation independently; do not run a
+publisher merely to regenerate documentation.
+
+Run the focused maintenance tests with:
+
+```bash
+python -m unittest discover -s tests
+```
+
+---
+
 ## License
 
-[GNU General Public License v3 or later (GPLv3+)](https://www.gnu.org/licenses/gpl-3.0.html)
+[GNU Affero General Public License v3 or later (AGPLv3+)](https://www.gnu.org/licenses/agpl-3.0.html)

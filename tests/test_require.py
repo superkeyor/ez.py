@@ -288,6 +288,84 @@ class RequireTests(unittest.TestCase):
         self.assertFalse(self.require("ffmpeg", confirm=False, channel="conda"))
         self.assertIn("couldn't verify installed conda packages", self.output.getvalue())
 
+    def test_quiet_pip_suppresses_success_output_and_helper_message(self):
+        self.conda_list.side_effect = None
+        self.conda_list.return_value = subprocess.CompletedProcess(
+            [], 0, stdout="Requirement already satisfied: demo\n",
+        )
+        self.assertTrue(self.require("demo", confirm=False, quiet=True))
+        self.conda_list.assert_called_once_with(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "demo"],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        )
+        self.assertEqual(self.output.getvalue(), "")
+        self.pip.assert_not_called()
+        self.prompt.assert_not_called()
+
+    def test_quiet_pip_failure_shows_captured_output(self):
+        self.conda_list.side_effect = None
+        self.conda_list.return_value = subprocess.CompletedProcess(
+            [], 1, stdout="ERROR: No matching distribution found",
+        )
+        self.assertFalse(self.require("demo", confirm=False, quiet=True))
+        self.assertIn("ERROR: No matching distribution found\n", self.output.getvalue())
+        self.assertIn("pip failed", self.output.getvalue())
+        self.invalidate.assert_not_called()
+
+    def test_quiet_preserves_confirmation_prompt(self):
+        self.conda_list.side_effect = None
+        self.conda_list.return_value = subprocess.CompletedProcess([], 0, stdout="Installed\n")
+        self.assertTrue(self.require("demo", quiet=True))
+        self.prompt.assert_called_once_with("Install demo? [Y/n] ")
+        self.assertEqual(self.output.getvalue(), "")
+
+    def test_quiet_decline_hides_message_without_installing(self):
+        self.prompt.return_value = "n"
+        self.assertFalse(self.require("demo", quiet=True))
+        self.assertEqual(self.output.getvalue(), "")
+        self.pip.assert_not_called()
+        self.conda_list.assert_not_called()
+
+    def test_quiet_conda_captures_install_and_verifies_records(self):
+        self.conda_list.side_effect = [
+            subprocess.CompletedProcess([], 0, stdout="[]"),
+            subprocess.CompletedProcess([], 0, stdout="Preparing transaction\nDone\n"),
+            self.conda_record("2.0"),
+        ]
+        self.assertTrue(self.require("ffmpeg", confirm=False, channel="conda", quiet=True))
+        self.assertEqual(
+            self.conda_list.call_args_list[1].args[0],
+            ["/mock/conda", "install", "--yes", "--prefix", sys.prefix, "ffmpeg"],
+        )
+        self.assertEqual(
+            self.conda_list.call_args_list[1].kwargs,
+            {"stdout": subprocess.PIPE, "stderr": subprocess.STDOUT, "text": True},
+        )
+        self.assertEqual(self.output.getvalue(), "")
+        self.pip.assert_not_called()
+
+    def test_quiet_conda_failure_shows_captured_output(self):
+        self.conda_list.side_effect = [
+            subprocess.CompletedProcess([], 0, stdout="[]"),
+            subprocess.CompletedProcess([], 1, stdout="PackagesNotFoundError\n"),
+        ]
+        self.assertFalse(self.require("ffmpeg", confirm=False, channel="conda", quiet=True))
+        self.assertIn("PackagesNotFoundError", self.output.getvalue())
+        self.assertIn("conda failed", self.output.getvalue())
+        self.assertEqual(self.conda_list.call_count, 2)
+
+    def test_quiet_launch_failure_is_visible(self):
+        self.conda_list.side_effect = OSError("cannot launch")
+        self.assertFalse(self.require("demo", confirm=False, quiet=True))
+        self.assertIn("couldn't run pip", self.output.getvalue())
+
+    def test_quiet_verification_failure_is_visible(self):
+        self.conda_list.side_effect = None
+        self.conda_list.return_value = subprocess.CompletedProcess([], 0, stdout="Installed\n")
+        self.metadata.side_effect = [md.PackageNotFoundError(), md.PackageNotFoundError()]
+        self.assertFalse(self.require("demo", confirm=False, quiet=True))
+        self.assertIn("still not installed", self.output.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

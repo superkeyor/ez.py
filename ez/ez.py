@@ -2700,7 +2700,7 @@ version = ver
 #endregion ver
 
 #region require
-def require(pkg, version="latest", confirm=True, channel="pip"):
+def require(pkg, version="latest", confirm=True, channel="pip", quiet=True):
     """Ensure a package is installed at the latest compatible or a specified version via pip or Conda.
 
     pkg: Package name, optionally with pip extras, e.g. "httpx[http2]".
@@ -2716,6 +2716,9 @@ def require(pkg, version="latest", confirm=True, channel="pip"):
         a Conda environment and uses sys.prefix, not a different active
         environment. Its executable comes from CONDA_EXE or PATH. Pip extras
         are not supported by Conda.
+    quiet: True hides routine helper messages and installer stdout/stderr.
+        Confirmation prompts and errors remain visible. Installer output is
+        captured and shown if installation fails. False preserves live output.
 
     Return True after a successful install/update and version verification,
     or if already at the requested pin. Latest requests always invoke the
@@ -2731,6 +2734,7 @@ def require(pkg, version="latest", confirm=True, channel="pip"):
         require("requests")
         require("httpx[http2]", "0.28.1", confirm=False)
         require("ffmpeg", confirm=False, channel="conda")
+        require("gTTS", confirm=False, quiet=True)
 
     Already-installed packages may need a process restart to use updated code.
     """
@@ -2820,9 +2824,10 @@ def require(pkg, version="latest", confirm=True, channel="pip"):
         except EOFError:
             answer = "n"
         if answer not in ("", "y", "yes"):
-            print(f"[require] declined: {action}")
+            if not quiet:
+                print(f"[require] declined: {action}")
             return installed is not None
-    else:
+    elif not quiet:
         print(f"[require] {action}")
 
     if manager == "conda":
@@ -2831,7 +2836,15 @@ def require(pkg, version="latest", confirm=True, channel="pip"):
     else:
         command = [sys.executable, "-m", "pip", "install", "--upgrade", spec]
     try:
-        status = subprocess.call(command)
+        if quiet:
+            result = subprocess.run(
+                command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            )
+            status = result.returncode
+            if status != 0 and result.stdout:
+                print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
+        else:
+            status = subprocess.call(command)
     except OSError as exc:
         print(f"[require] couldn't run {manager} for {spec}: {exc}")
         return False

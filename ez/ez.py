@@ -82,7 +82,7 @@ Console, System and Logging:
     doc (aliases: help) - Print the docstring of a named module, class, or function.
     getos - Return the operating system name.
     ver (aliases: version) - Print the installed version of Python or a package.
-    require - Ensure a package is installed at the latest or a specified version via pip or Conda.
+    require - Ensure a package is installed at the latest compatible or a specified version via pip or Conda.
     evaluate - Evaluate a Python expression or execute a statement in the caller's scope.
     who (aliases: whos) - List imported names in the requested scope.
     _setlog - Enable or disable redirecting stdout to both a file and the terminal.
@@ -2701,13 +2701,14 @@ version = ver
 
 #region require
 def require(pkg, version="latest", confirm=True, channel="pip"):
-    """Ensure a package is installed at the latest or a specified version via pip or Conda.
+    """Ensure a package is installed at the latest compatible or a specified version via pip or Conda.
 
     pkg: Package name, optionally with pip extras, e.g. "httpx[http2]".
         Pass version pins through version, not through pkg.
-    version: "latest", None, or "" selects the latest version; otherwise a
-        version such as "2.31.0". Pip checks PyPI, falling back to an upgrade
-        if PyPI is unavailable. Conda selects the latest compatible version.
+    version: "latest", None, or "" lets pip or Conda select the latest
+        compatible version; otherwise a version such as "2.31.0".
+        Pip respects Python/platform compatibility and its configured index.
+        Explicit pins are never silently replaced by a compatible fallback.
     confirm: Ask "[Y/n]" before installing or updating; Enter means yes.
         False installs or updates automatically in the current interpreter.
     channel: "pip" (default) or "pypi" uses pip; "conda" uses Conda's configured
@@ -2717,9 +2718,11 @@ def require(pkg, version="latest", confirm=True, channel="pip"):
         are not supported by Conda.
 
     Return True after a successful install/update and version verification,
-    or if already at the requested pin. Latest Conda updates are resolved by
-    Conda, then checked for package presence using its records, including for
-    non-Python packages. Declining returns True only if the package was already
+    or if already at the requested pin. Latest requests always invoke the
+    selected manager after confirmation, even if the package is current; its
+    resolver chooses the compatible version, then package presence is checked.
+    Conda records also support non-Python packages.
+    Declining returns True only if the package was already
     installed; this does not guarantee its version or requested extras.
     Failures print a diagnostic and return False. Invalid arguments raise
     ValueError.
@@ -2736,8 +2739,6 @@ def require(pkg, version="latest", confirm=True, channel="pip"):
     import json
     import os
     import shutil
-    import urllib.error
-    import urllib.request
 
     if not isinstance(channel, str) or channel.lower() not in ("pip", "pypi", "conda"):
         raise ValueError("channel must be 'pip', 'pypi', or 'conda'.")
@@ -2801,18 +2802,6 @@ def require(pkg, version="latest", confirm=True, channel="pip"):
         return False
 
     target = version if pinned else None
-    if manager == "pip" and not pinned:
-        try:
-            with urllib.request.urlopen(
-                f"https://pypi.org/pypi/{name}/json", timeout=10
-            ) as response:
-                target = json.load(response)["info"]["version"]
-            if not isinstance(target, str) or not target:
-                raise ValueError("PyPI did not return a version string.")
-        except (urllib.error.URLError, OSError, ValueError, KeyError, TypeError) as exc:
-            print(f"[require] couldn't check latest for {name} ({exc}); asking pip to upgrade")
-            target = None
-
     if installed is not None and installed == target and not extras:
         return True
 

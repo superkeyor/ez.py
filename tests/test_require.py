@@ -9,7 +9,6 @@ import subprocess
 import sys
 import unittest
 from unittest.mock import patch
-import urllib.error
 import warnings
 
 
@@ -36,7 +35,6 @@ class RequireTests(unittest.TestCase):
         self.metadata = self.stack.enter_context(patch("importlib.metadata.version"))
         self.metadata.side_effect = [md.PackageNotFoundError(), "2.0"]
         self.network = self.stack.enter_context(patch("urllib.request.urlopen"))
-        self.network.return_value = io.BytesIO(json.dumps({"info": {"version": "2.0"}}).encode())
         self.pip = self.stack.enter_context(patch("subprocess.call", return_value=0))
         self.prompt = self.stack.enter_context(patch("builtins.input", return_value=""))
         self.invalidate = self.stack.enter_context(patch("importlib.invalidate_caches"))
@@ -57,18 +55,20 @@ class RequireTests(unittest.TestCase):
     def test_missing_latest_installs_and_verifies(self):
         self.assertTrue(self.require("demo"))
         self.pip.assert_called_once_with(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "demo==2.0"]
+            [sys.executable, "-m", "pip", "install", "--upgrade", "demo"]
         )
         self.assertEqual(self.metadata.call_count, 2)
         self.invalidate.assert_called_once()
-        self.network.assert_called_once_with("https://pypi.org/pypi/demo/json", timeout=10)
+        self.network.assert_not_called()
 
-    def test_already_current_skips_pip_and_prompt(self):
+    def test_latest_already_current_lets_pip_resolve(self):
         self.metadata.side_effect = None
         self.metadata.return_value = "2.0"
         self.assertTrue(self.require("demo"))
-        self.pip.assert_not_called()
-        self.prompt.assert_not_called()
+        self.pip.assert_called_once_with(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "demo"]
+        )
+        self.prompt.assert_called_once()
 
     def test_pinned_version_changes_without_network(self):
         self.metadata.side_effect = ["3.0", "1.0"]
@@ -106,23 +106,28 @@ class RequireTests(unittest.TestCase):
         self.assertFalse(self.require("demo", "2.0"))
         self.pip.assert_not_called()
 
-    def test_offline_installed_attempts_upgrade_not_false_success(self):
-        self.network.side_effect = urllib.error.URLError("offline")
-        self.metadata.side_effect = ["1.0", "1.0"]
-        self.assertTrue(self.require("demo", confirm=False))
-        self.assertEqual(self.pip.call_args.args[0][-1], "demo")
-        self.assertIn("couldn't check latest", self.output.getvalue())
+    def test_latest_python_311_keeps_compatible_pysubs2_without_pin(self):
+        self.metadata.side_effect = ["1.8.1", "1.8.1"]
+        with patch.object(sys, "version_info", (3, 11, 0)):
+            self.assertTrue(self.require("pysubs2", confirm=False))
+        self.pip.assert_called_once_with(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "pysubs2"]
+        )
+        self.network.assert_not_called()
+        self.assertNotIn("1.9.0", self.output.getvalue())
 
-    def test_offline_missing_attempts_install(self):
-        self.network.side_effect = urllib.error.URLError("offline")
-        self.assertTrue(self.require("demo", confirm=False))
-        self.assertEqual(self.pip.call_args.args[0][-1], "demo")
+    def test_latest_accepts_new_compatible_resolved_version(self):
+        self.metadata.side_effect = ["1.8.1", "1.9.0"]
+        self.assertTrue(self.require("pysubs2", confirm=False))
+        self.assertEqual(self.pip.call_args.args[0][-1], "pysubs2")
 
-    def test_bad_pypi_response_attempts_pip_upgrade(self):
-        self.network.return_value = io.BytesIO(b'{"info": {}}')
-        self.assertTrue(self.require("demo", confirm=False))
-        self.assertEqual(self.pip.call_args.args[0][-1], "demo")
-        self.assertIn("couldn't check latest", self.output.getvalue())
+    def test_incompatible_explicit_pin_fails_without_fallback(self):
+        self.metadata.side_effect = ["1.8.1"]
+        self.pip.return_value = 1
+        self.assertFalse(self.require("pysubs2", "1.9.0", confirm=False))
+        self.pip.assert_called_once_with(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "pysubs2==1.9.0"]
+        )
 
     def test_pip_failure_returns_false(self):
         self.pip.return_value = 1
@@ -161,8 +166,8 @@ class RequireTests(unittest.TestCase):
         for version in (None, ""):
             with self.subTest(version=version):
                 self.metadata.side_effect = [md.PackageNotFoundError(), "2.0"]
-                self.network.return_value = io.BytesIO(b'{"info": {"version": "2.0"}}')
                 self.assertTrue(self.require("demo", version, confirm=False))
+                self.assertEqual(self.pip.call_args.args[0][-1], "demo")
 
     def test_pypi_alias_preserves_pip_behavior(self):
         self.assertTrue(self.require("demo", "2.0", confirm=False, channel="pypi"))

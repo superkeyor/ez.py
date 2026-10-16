@@ -625,6 +625,15 @@ Both credential filenames are excluded from built source archives and wheels.
 The helper requests full Drive access for its read/write/delete
 operations. The package directory must be writable for credential caching.
 
+Existing Web application OAuth clients can be reused without creating a new client.
+Browser login selects the first supported entry in the client's `redirect_uris`:
+`http://localhost:PORT/` or `http://127.0.0.1:PORT/` (also supported without the
+trailing slash). The host, port, and trailing slash are preserved exactly.
+The selected port must be free. If no supported entry exists, add one such as
+`http://localhost:8080/` to the **same client's** authorized redirect URIs in
+Google Cloud Console, then update `GDRIVE_KEY` or `gdrive_secrets.json` to include
+it. Desktop clients continue to use an automatically selected local port.
+
 ### Classes
 
 `JDict()` is a custom ordered dictionary with convenient attribute access and

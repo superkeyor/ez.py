@@ -7835,8 +7835,44 @@ def _gdrive_authenticate(client_config: dict, directory):
                 raise ValueError("Cached Google Drive credentials lack Drive access; remove the token to reauthorize.")
 
     if credentials is None:
+        server_options = {"port": 0}
+        if "installed" not in client_config:
+            from urllib.parse import urlsplit
+
+            redirect_uris = settings.get("redirect_uris", [])
+            if not isinstance(redirect_uris, list):
+                raise ValueError("OAuth web client redirect_uris must be a list.")
+            for uri in redirect_uris:
+                if not isinstance(uri, str):
+                    continue
+                try:
+                    callback = urlsplit(uri)
+                    port = callback.port
+                except ValueError:
+                    continue
+                if (
+                    callback.scheme == "http"
+                    and callback.hostname in ("localhost", "127.0.0.1")
+                    and port is not None and port > 0
+                    and callback.path in ("", "/")
+                    and uri == f"http://{callback.hostname}:{port}{callback.path}"
+                ):
+                    server_options = {
+                        "host": callback.hostname, "port": port,
+                        "redirect_uri_trailing_slash": callback.path == "/",
+                    }
+                    break
+            else:
+                raise ValueError(
+                    "OAuth web client needs a registered local redirect URI such as "
+                    "http://localhost:8080/. Add it to the existing client's authorized "
+                    "redirect URIs in Google Cloud Console and update redirect_uris in "
+                    "GDRIVE_KEY or gdrive_secrets.json. No new OAuth client is needed."
+                )
         flow = InstalledAppFlow.from_client_config(client_config, scopes)
-        credentials = flow.run_local_server(port=0, access_type="offline", prompt="consent")
+        credentials = flow.run_local_server(
+            **server_options, access_type="offline", prompt="consent",
+        )
         _gdrive_save_private(token_path, credentials.to_json())
     elif not credentials.valid:
         if not credentials.expired or not credentials.refresh_token:
@@ -7891,6 +7927,10 @@ def gauth():
     gdrive_token.json beside gdrive_secrets.json. Reuse and refresh that token
     on subsequent calls. Legacy credential formats require one-time browser
     reauthorization. The returned service uses files().get/list/etc.
+
+    Web clients use the first supported registered redirect_uris entry: HTTP
+    localhost or 127.0.0.1 with an explicit port and no path other than "/".
+    Desktop clients use an available local port.
     """
     import json
     from pathlib import Path

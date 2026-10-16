@@ -98,6 +98,68 @@ class AuthenticationTests(unittest.TestCase):
         self.credentials.refresh.assert_not_called()
         self.assertEqual(self.token.read_text(), '{"refresh_token": "test-placeholder"}')
 
+    def test_web_client_uses_exact_registered_callback(self):
+        settings = self.config.pop("installed")
+        self.config["web"] = settings
+        for host, port, path in (
+            ("localhost", 8080, "/"), ("127.0.0.1", 8090, ""),
+        ):
+            with self.subTest(host=host, path=path):
+                self.token.unlink(missing_ok=True)
+                self.flow.reset_mock()
+                settings["redirect_uris"] = [
+                    "https://example.com/callback", f"http://{host}:{port}{path}",
+                ]
+                self.authenticate()
+                self.flow.from_client_config.return_value.run_local_server.assert_called_once_with(
+                    host=host, port=port, redirect_uri_trailing_slash=path == "/",
+                    access_type="offline", prompt="consent",
+                )
+                self.assertEqual(self.token.read_text(), self.credentials.to_json())
+
+    def test_web_client_without_supported_callback_fails_before_browser(self):
+        settings = self.config.pop("installed")
+        self.config["web"] = settings
+        for uris in (
+            [], ["https://example.com/callback"], ["http://localhost"],
+            ["http://localhost:8080/callback"], ["http://localhost:0/"],
+            ["http://localhost:8080/?query=1"], ["http://localhost:8080/#fragment"],
+            ["http://user@localhost:8080/"], ["http://localhost:invalid/"],
+            ["http://localhost:65536/"], [None],
+        ):
+            with self.subTest(uris=uris):
+                settings["redirect_uris"] = uris
+                with self.assertRaisesRegex(ValueError, "No new OAuth client"):
+                    self.authenticate()
+        self.flow.from_client_config.assert_not_called()
+        self.assertFalse(self.token.exists())
+
+    def test_web_client_rejects_invalid_redirect_list(self):
+        settings = self.config.pop("installed")
+        self.config["web"] = settings
+        settings["redirect_uris"] = "http://localhost:8080/"
+        with self.assertRaisesRegex(ValueError, "must be a list"):
+            self.authenticate()
+        self.flow.from_client_config.assert_not_called()
+
+    def test_web_client_reuses_cached_token_without_local_callback(self):
+        self.config["web"] = self.config.pop("installed")
+        self.token.write_text("{}")
+        self.authenticate()
+        self.flow.from_client_config.assert_not_called()
+
+    def test_fixed_callback_port_failure_preserves_legacy_token(self):
+        self.config["web"] = self.config.pop("installed")
+        self.config["web"]["redirect_uris"] = ["http://localhost:8080/"]
+        original = '{"_class": "OAuth2Credentials"}'
+        self.token.write_text(original)
+        self.flow.from_client_config.return_value.run_local_server.side_effect = OSError(
+            "Address already in use",
+        )
+        with self.assertWarns(UserWarning), self.assertRaisesRegex(OSError, "Address already"):
+            self.authenticate()
+        self.assertEqual(self.token.read_text(), original)
+
     def test_gauth_reuses_saved_secrets_and_token_without_configured_key(self):
         (self.root / "gdrive_secrets.json").write_text(json.dumps(self.config))
         self.token.write_text('{"refresh_token": "test-placeholder"}')

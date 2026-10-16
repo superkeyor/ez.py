@@ -718,8 +718,10 @@ existing `ezupdate` command/function/alias before preparing a release. It then:
    and major when both minor and patch are 9 (`11.9.9 → 12.0.0`). Minor and patch
    must remain single digits. uv updates the version without locking or syncing.
 4. Builds both artifacts in a fresh temporary directory, retains them in `dist/`,
-   and publishes **only those files** with `uv publish`. Historical artifacts
-   are not deleted or uploaded. Existing files for the new version are not overwritten.
+   then deletes older `ez` source archives and wheels so only the latest release's
+   two artifacts remain. Cleanup occurs only after a successful build and copy;
+   unrelated files and directories are not removed. It publishes **only the new
+   files** with `uv publish`. Existing files for the new version are not overwritten.
 5. Stages **all checkout changes**, commits, pushes to `origin master`, then runs
    `ezupdate` three times, preserving the existing post-release workflow.
 6. Prints the distribution version and files in `dist/`, followed by the locally

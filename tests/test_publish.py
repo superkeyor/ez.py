@@ -172,11 +172,13 @@ class PublisherTests(unittest.TestCase):
     def commands(self):
         return [json.loads(line) for line in self.log.read_text().splitlines()] if self.log.exists() else []
 
-    def test_complete_release_uses_only_fresh_artifacts_and_keeps_history(self):
+    def test_complete_release_keeps_only_current_release_artifacts(self):
         dist = self.root / "dist"
         dist.mkdir()
         stale = dist / "ez-0.0.1.tar.gz"
         stale.write_bytes(b"historical")
+        old_wheel = dist / "ez-0.0.1-py3-none-any.whl"
+        old_wheel.write_bytes(b"historical wheel")
         result = self.invoke()
         self.assertEqual(result.returncode, 0, result.stderr)
         commands = self.commands()
@@ -191,7 +193,12 @@ class PublisherTests(unittest.TestCase):
             str(dist / f"ez-{self.project_version()}.tar.gz"),
             str(dist / f"ez-{self.project_version()}-py3-none-any.whl"),
         ])
-        self.assertEqual(stale.read_bytes(), b"historical")
+        self.assertFalse(stale.exists())
+        self.assertFalse(old_wheel.exists())
+        self.assertEqual(
+            {path.name for path in dist.iterdir()},
+            {f"ez-{self.project_version()}.tar.gz", f"ez-{self.project_version()}-py3-none-any.whl"},
+        )
         self.assertNotEqual(self.original_version, self.project_version())
         self.assertNotIn("do-not-print", self.log.read_text())
         self.assertIn("--frozen", commands[1]["args"])
@@ -208,6 +215,31 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.commands()[-1]["stage"], "pip-show")
         self.assertIn("Version: 0.0.7", result.stdout)
+
+    def test_failed_build_preserves_previous_release_artifacts(self):
+        dist = self.root / "dist"
+        dist.mkdir()
+        previous = dist / "ez-0.0.1.tar.gz"
+        previous.write_bytes(b"preserve on build failure")
+        self.environment["EZ_FAIL_STAGE"] = "build"
+        result = self.invoke()
+        self.assertEqual(result.returncode, 7, result.stderr)
+        self.assertEqual(previous.read_bytes(), b"preserve on build failure")
+
+    def test_cleanup_does_not_remove_unrelated_files_or_directories(self):
+        dist = self.root / "dist"
+        dist.mkdir()
+        unrelated = dist / "notes.txt"
+        unrelated.write_text("preserve")
+        other_package = dist / "other-1.0.0.tar.gz"
+        other_package.write_bytes(b"other package")
+        directory = dist / "ez-0.0.1.tar.gz"
+        directory.mkdir()
+        result = self.invoke()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(unrelated.read_text(), "preserve")
+        self.assertEqual(other_package.read_bytes(), b"other package")
+        self.assertTrue(directory.is_dir())
 
     def test_bundled_shell_script_matches_current_external_script(self):
         self.assertEqual(

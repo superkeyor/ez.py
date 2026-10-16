@@ -75,6 +75,14 @@ def release():
         for artifact, target in zip(artifacts, targets):
             shutil.copy2(artifact, target)
             retained.append(str(target))
+        for previous in dist.iterdir():
+            if (
+                previous not in targets
+                and previous.is_file()
+                and previous.name.startswith("ez-")
+                and previous.name.endswith((".tar.gz", ".whl"))
+            ):
+                previous.unlink()
         environment = os.environ.copy()
         environment["UV_PUBLISH_TOKEN"] = token
         subprocess.run(

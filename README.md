@@ -569,9 +569,10 @@ Batch support is opt-in: the converter entries also specify `batch` metadata
 use the shared `batch` argument group. Tools without this metadata retain normal
 single-call dispatch.
 
-`setup.py` reads the literal registry without importing runtime dependencies and
-generates console entry points targeting the general `_cli` dispatcher. Reinstall
-the package after adding a command. No new wrapper files or shell functions are
+[`ez/prepublish.py`](ez/prepublish.py) reads the literal registry without importing
+runtime dependencies and generates the marked `[project.scripts]` table in
+[`pyproject.toml`](pyproject.toml), targeting the general `_cli` dispatcher. Run
+the hook and reinstall the package after adding a command. No new wrapper files or shell functions are
 needed. Converter dependencies (MarkItDown, openpyxl, PyMuPDF, and python-pptx)
 are already declared in the package.
 
@@ -627,22 +628,107 @@ python ez/prepublish.py --check-docs  # exit nonzero if either catalog is stale 
 python ez/prepublish.py --help
 ```
 
-Running the hook **without flags** regenerates both catalogs, then increments the
-release version using the existing numbering scheme. A catalog-generation failure
-prevents that increment. The paths are resolved relative to the hook, not the
+Running the hook **without flags**, or with `--docs-only`, regenerates both catalogs
+and the marked CLI entry points in [`pyproject.toml`](pyproject.toml). `--check-docs`
+checks all three generated outputs without writing. All outputs are validated
+before any are written. The hook no longer increments the version; version changes
+belong to the publishing workflow below. Paths are relative to the hook, not the
 current working directory.
-
-Both [`publish.sh`](publish.sh) and [`Publish.app`](Publish.app) retain their
-existing workflows and prepublish invocation. They are unchanged: their existing
-package-path assumptions and lack of fail-fast handling still apply. Use the
-direct check command above to validate documentation independently; do not run a
-publisher merely to regenerate documentation.
 
 Run the focused maintenance tests with:
 
 ```bash
 python -m unittest discover -s tests
 ```
+
+## Building and Publishing
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) for release
+work. The project uses the native `uv_build` backend; setuptools and Twine are no
+longer needed. Package identity, dependencies, and the authoritative release
+version live in [`pyproject.toml`](pyproject.toml). [`ez/version.py`](ez/version.py)
+reads that version in a source checkout or uses installed distribution metadata.
+
+To regenerate metadata and build **without publishing or bumping the version**:
+
+```bash
+uv run --no-project --python '>=3.11' ez/prepublish.py --docs-only
+uv build
+```
+
+The build produces an sdist (`.tar.gz`) and a `py3-none-any.whl` wheel. The wheel
+contains pure Python and works with supported Python versions on Windows, Linux,
+Intel Macs, and ARM Macs, regardless of the build machine. Dependencies still need
+compatible releases for the target platform, and OS-specific features retain
+their existing limitations and dependency markers.
+
+### PyPI authentication
+
+The publishers prefer `UV_PUBLISH_TOKEN`. Otherwise they automatically read
+`~/.pypirc`, using **only** its `[pypi]` section:
+
+```ini
+[pypi]
+username = __token__
+password = YOUR_PYPI_API_TOKEN
+repository = https://upload.pypi.org/legacy/
+```
+
+Reuse an existing PyPI API token, preferably scoped to the `ez` project, or create
+one in your [PyPI account settings](https://pypi.org/manage/account/token/).
+`repository` is optional but must point to the standard PyPI upload URL if set.
+Protect the file with `chmod 600 ~/.pypirc`; never commit it or the token.
+Missing, malformed, or non-token credentials stop the release before preparation.
+The token is passed to uv through its process environment, not command-line
+arguments or release logs.
+
+This `.pypirc` support is implemented by the shared
+[`scripts/publish.py`](scripts/publish.py) helper, **not by uv itself**. Standalone
+`uv publish` needs uv-native credentials, such as `UV_PUBLISH_TOKEN`.
+A Finder-launched app normally does not inherit terminal exports; the `.pypirc`
+fallback lets both entry points use the same existing credentials.
+
+### Full release
+
+From a terminal, run:
+
+```bash
+bash publish.sh
+bash publish.sh --help
+```
+
+The shell script can also be run directly as `./publish.sh`.
+
+Alternatively, open [`Publish.app`](Publish.app) in the checkout. Its
+[`resource script`](Publish.app/Contents/Resources/script) contains a separate,
+manually maintained copy of [`publish.sh`](publish.sh), matching the original app
+arrangement. It does not invoke or require the external shell script, but still
+requires the checkout's publishing helper, prepublish hook, and package files.
+When changing either shell script, update the other copy too; a regression test
+checks their current parity. Both resolve the checkout from their own locations,
+including paths with spaces.
+
+The publisher loads `~/.bash_profile` if present and checks for `uv`, Git, and your
+existing `ezupdate` command/function/alias before preparing a release. It then:
+
+1. Validates credentials and the version format.
+2. Runs prepublish to update catalogs and CLI entry points.
+3. Uses `uv version --bump COMPONENT --frozen`, preserving the existing numbering:
+   patch normally (`11.8.8 → 11.8.9`), minor when patch is 9 (`11.8.9 → 11.9.0`),
+   and major when both minor and patch are 9 (`11.9.9 → 12.0.0`). Minor and patch
+   must remain single digits. uv updates the version without locking or syncing.
+4. Builds both artifacts in a fresh temporary directory, retains them in `dist/`,
+   and publishes **only those files** with `uv publish`. Historical artifacts
+   are not deleted or uploaded. Existing files for the new version are not overwritten.
+5. Stages **all checkout changes**, commits, pushes to `origin master`, then runs
+   `ezupdate` three times, preserving the existing post-release workflow.
+
+Errors stop subsequent steps. A failed build/upload may leave the version bumped
+and artifacts in `dist/`; inspect the state before retrying. A partial upload or a
+later Git/upgrade failure does **not** undo files already published to PyPI.
+To retry an upload, use the exact retained artifacts and provide uv-native
+authentication; do not blindly rerun the full publisher, which bumps again.
+Use prepublish's check/docs-only modes, not the publisher, for documentation work.
 
 ---
 

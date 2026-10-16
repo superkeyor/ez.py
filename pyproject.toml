@@ -1,0 +1,106 @@
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14"]
+build-backend = "uv_build"
+
+[project]
+name = "ez"
+version = "11.8.3"
+description = "easy stuff"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "AGPL-3.0-or-later"
+authors = [{name = "Keyor"}]
+keywords = ["shell", "cross-platform", "easy", "wrapper"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    # Dates and time zones
+    "pytz",
+    "tzlocal",
+    
+    # Files and system
+    "Send2Trash",
+    "Duplicate-Finder",
+    'psutil; sys_platform != "linux"',
+
+    # Desktop, clipboard and credentials
+    "pyperclip",
+    "keyring",
+    "mss",
+    'pynput; sys_platform != "linux"',
+    'imessage_reader; sys_platform == "darwin"',
+
+    # Office documents and Markdown conversion
+    "markitdown[pdf,docx,pptx]",
+    "openpyxl",
+    "xlsxwriter",
+    "xlwt",
+    "xlrd",
+    "python-docx",
+    "python-pptx",
+    'docx2pdf; sys_platform != "linux"',
+
+    # PDF processing
+    "PyMuPDF",
+    "pdfCropMargins",
+    "pdfannots",
+
+    # HTTP and web
+    "requests",
+    "webdavclient3",
+    "fake_useragent",
+    "tldextract",
+    "tenacity",
+
+    # Text encoding, HTML/XML and eBooks
+    "chardet",
+    "beautifulsoup4",
+    "lxml",
+    "ebooklib",
+
+    # Data analysis and storage
+    "pandas",
+    "numpy",
+    "pyarrow",
+
+    # Images, media downloads and subtitles
+    "Pillow",
+    "pysubs2",
+
+    # Text to speech
+    "gTTS",
+    "edge-tts",
+
+    # Cloud storage, spreadsheets and calendars
+    "dropbox",
+    "pydrive2",
+    "gspread",
+    "gcsa",
+
+    # Email and Microsoft 365
+    "yagmail",
+    "imap-tools",
+    "O365",
+]
+
+[project.urls]
+Homepage = "https://github.com/superkeyor/ez.py"
+
+# BEGIN GENERATED CLI SCRIPTS
+[project.scripts]
+pptx2md = "ez.ez:_cli"
+docx2md = "ez.ez:_cli"
+xlsx2md = "ez.ez:_cli"
+pdf2md = "ez.ez:_cli"
+# END GENERATED CLI SCRIPTS
+
+[tool.uv.build-backend]
+module-root = ""
+module-name = "ez"
+source-include = ["tests/**", "scripts/publish.py", "publish.sh", "Publish.app/Contents/Resources/script"]
+source-exclude = [".DS_Store"]

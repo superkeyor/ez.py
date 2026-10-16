@@ -29,6 +29,15 @@ def useful(value=1):
 shortcut = useful
 #endregion useful
 #endregion Helpers
+_CLI_COMMANDS = {"useful": {}}
+'''
+PROJECT = '''[project]
+name = "ez"
+version = "11.7.4"
+# BEGIN GENERATED CLI SCRIPTS
+[project.scripts]
+old = "ez.ez:_cli"
+# END GENERATED CLI SCRIPTS
 '''
 README = (
     "# Example\n\n" + prepublish.README_START + "\nOld list.\n"
@@ -255,6 +264,8 @@ class PrepublishTests(unittest.TestCase):
         self.readme.write_text(README, encoding="utf-8")
         self.original_version = "__version__ = '11.7.4'"
         self.version.write_text(self.original_version, encoding="utf-8")
+        self.project = self.root.parent / "pyproject.toml"
+        self.project.write_text(PROJECT, encoding="utf-8")
 
     def invoke(self, args):
         stdout, stderr = io.StringIO(), io.StringIO()
@@ -276,17 +287,13 @@ class PrepublishTests(unittest.TestCase):
         self.assertEqual(self.version.read_text(), self.original_version)
         self.assertEqual(self.invoke(["--check-docs"])[0], 0)
 
-    def test_no_argument_flow_updates_docs_before_increment(self):
-        original_bump = prepublish.bump_version
-
-        def checked_bump(path):
-            self.assertTrue(prepublish.update_doc(self.source, check=True))
-            self.assertTrue(prepublish.update_catalogs(self.source, self.readme, check=True))
-            return original_bump(path)
-
-        with patch.object(prepublish, "bump_version", side_effect=checked_bump):
-            self.assertEqual(self.invoke([])[0], 0)
-        self.assertEqual(self.version.read_text(), "__version__ = '11.7.5'")
+    def test_no_argument_flow_updates_generated_outputs_without_increment(self):
+        self.assertEqual(self.invoke([])[0], 0)
+        self.assertTrue(prepublish.update_catalogs(
+            self.source, self.readme, check=True, project_path=self.project,
+        ))
+        self.assertEqual(self.version.read_text(), self.original_version)
+        self.assertEqual(self.invoke(["--check-docs"])[0], 0)
 
     def test_stale_readme_alone_fails_read_only_check(self):
         self.assertEqual(self.invoke(["--docs-only"])[0], 0)
@@ -320,17 +327,43 @@ class PrepublishTests(unittest.TestCase):
         self.assertEqual(self.readme.read_text(), README)
         self.assertEqual(self.version.read_text(), self.original_version)
 
-    def test_version_rollover_preserves_numbering_scheme(self):
-        for old, new in (("11.7.9", "11.8.0"), ("11.9.9", "12.0.0")):
-            with self.subTest(old=old):
-                self.version.write_text(f"__version__ = '{old}'")
-                self.assertEqual(prepublish.bump_version(self.version), new)
+    def test_cli_metadata_generation_is_idempotent(self):
+        import tomllib
 
-    def test_invalid_version_does_not_overwrite_it(self):
-        self.version.write_text("__version__ = 'broken'")
-        with self.assertRaises(ValueError):
-            prepublish.bump_version(self.version)
-        self.assertEqual(self.version.read_text(), "__version__ = 'broken'")
+        updated = prepublish.generate_scripts(SOURCE, PROJECT)
+        self.assertEqual(tomllib.loads(updated)["project"]["scripts"], {"useful": "ez.ez:_cli"})
+        self.assertEqual(updated, prepublish.generate_scripts(SOURCE, updated))
+        self.assertIn('version = "11.7.4"', updated)
+
+    def test_stale_cli_metadata_fails_read_only_check(self):
+        self.assertEqual(self.invoke(["--docs-only"])[0], 0)
+        self.project.write_text(PROJECT, encoding="utf-8")
+        status, _, error = self.invoke(["--check-docs"])
+        self.assertEqual(status, 1)
+        self.assertIn("stale", error)
+        self.assertEqual(self.project.read_text(), PROJECT)
+        self.assertEqual(self.version.read_text(), self.original_version)
+
+    def test_invalid_cli_configuration_does_not_write_any_output(self):
+        for project in (
+            PROJECT.replace(prepublish.SCRIPTS_START, ""),
+            PROJECT.replace(prepublish.SCRIPTS_END, ""),
+            PROJECT + "\n[invalid",
+            PROJECT.replace("[project.scripts]", "[other]"),
+        ):
+            with self.subTest(project=project):
+                self.project.write_text(project, encoding="utf-8")
+                self.assertEqual(self.invoke([])[0], 1)
+                self.assertEqual(self.source.read_text(), SOURCE)
+                self.assertEqual(self.readme.read_text(), README)
+                self.assertEqual(self.version.read_text(), self.original_version)
+
+    def test_invalid_cli_registries_are_errors(self):
+        for registry in ("{}", "[]", '{"invalid/name": {}}', '{"": {}}'):
+            with self.subTest(registry=registry), self.assertRaises(ValueError):
+                prepublish.generate_scripts(
+                    SOURCE.replace('{"useful": {}}', registry), PROJECT,
+                )
 
     def test_help_has_no_side_effects(self):
         with self.assertRaises(SystemExit) as result:

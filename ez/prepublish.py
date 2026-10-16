@@ -1,4 +1,4 @@
-"""Generate module and README function catalogs before incrementing the release version."""
+"""Generate function catalogs and packaging CLI metadata without changing the version."""
 
 import argparse
 import ast
@@ -8,11 +8,14 @@ from pathlib import Path
 import re
 import sys
 import tokenize
+import tomllib
 
 
 HERE = Path(__file__).resolve().parent
 README_START = "<!-- BEGIN GENERATED FUNCTION CATALOG -->"
 README_END = "<!-- END GENERATED FUNCTION CATALOG -->"
+SCRIPTS_START = "# BEGIN GENERATED CLI SCRIPTS"
+SCRIPTS_END = "# END GENERATED CLI SCRIPTS"
 INTRODUCTION = (
     "Cross-platform utilities for shell interaction, paths, files, data, and automation.\n"
     "See each function's docstring for parameters and examples."
@@ -174,18 +177,50 @@ def generate_readme(source, readme):
     return readme[:start] + "".join(catalog) + "\n" + readme[end:]
 
 
-def update_catalogs(path, readme_path, check=False):
+def generate_scripts(source, project):
+    """Synchronize the marked TOML scripts table from the literal CLI registry."""
+    commands = ast.literal_eval(_literal_assignment(ast.parse(source), "_CLI_COMMANDS"))
+    if not isinstance(commands, dict) or not commands or any(
+        not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", name)
+        for name in commands
+    ):
+        raise ValueError("Expected a nonempty CLI registry with valid command names.")
+    tomllib.loads(project)
+    if project.count(SCRIPTS_START) != 1 or project.count(SCRIPTS_END) != 1:
+        raise ValueError("Expected one pair of generated CLI scripts markers.")
+    start = project.index(SCRIPTS_START) + len(SCRIPTS_START)
+    end = project.index(SCRIPTS_END)
+    if end < start:
+        raise ValueError("CLI scripts markers are out of order.")
+    section = project[start:end].strip().splitlines()
+    if not section or section[0] != "[project.scripts]" or any(
+        line.lstrip().startswith("[") for line in section[1:]
+    ):
+        raise ValueError("CLI scripts markers must contain only the [project.scripts] table.")
+    lines = ["\n[project.scripts]\n"]
+    lines.extend(f'{name} = "ez.ez:_cli"\n' for name in commands)
+    updated = project[:start] + "".join(lines) + project[end:]
+    parsed = tomllib.loads(updated)
+    if parsed["project"]["scripts"] != {name: "ez.ez:_cli" for name in commands}:
+        raise ValueError("CLI scripts must be contained in the generated section.")
+    return updated
+
+
+def update_catalogs(path, readme_path, check=False, project_path=None):
     """Validate both catalogs before writing, or check both without changing files."""
     source = path.read_text(encoding="utf-8")
     readme = readme_path.read_text(encoding="utf-8")
     updated_source = generate_doc(source)
     updated_readme = generate_readme(source, readme)
+    outputs = [(path, source, updated_source), (readme_path, readme, updated_readme)]
+    if project_path is not None:
+        project = project_path.read_text(encoding="utf-8")
+        outputs.append((project_path, project, generate_scripts(source, project)))
     if check:
-        return updated_source == source and updated_readme == readme
-    if updated_source != source:
-        path.write_text(updated_source, encoding="utf-8")
-    if updated_readme != readme:
-        readme_path.write_text(updated_readme, encoding="utf-8")
+        return all(updated == original for _, original, updated in outputs)
+    for target, original, updated in outputs:
+        if updated != original:
+            target.write_text(updated, encoding="utf-8")
     return True
 
 
@@ -200,29 +235,15 @@ def update_doc(path, check=False):
     return True
 
 
-def bump_version(path):
-    """Apply the existing release-version increment to a literal version file."""
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    version = ast.literal_eval(_literal_assignment(tree, "__version__"))
-    if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+\.\d+", version):
-        raise ValueError("Expected a numeric three-part version string.")
-    digits = str(int(version.replace(".", "")) + 1)
-    if len(digits) < 3:
-        raise ValueError("Version increment requires at least three digits.")
-    version = ".".join([digits[:-2], digits[-2], digits[-1]])
-    path.write_text(f"__version__ = '{version}'", encoding="utf-8")
-    return version
-
-
 def main(argv=None):
-    """Generate documentation, then increment the version unless in docs-only mode."""
+    """Generate documentation and CLI metadata, or check them without writing."""
     parser = argparse.ArgumentParser(
-        description="Generate module and README function catalogs and prepare a release version.",
+        description="Generate function catalogs and pyproject.toml CLI metadata.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Notes:\n"
-            "    1. No flags: update __doc__ and README, then increment the version.\n"
-            "    2. Docs-only/check modes never increment the version or publish.\n\n"
+            "    1. No flags or --docs-only: update catalogs and CLI metadata.\n"
+            "    2. No mode increments the version or publishes; publish.sh handles releases.\n\n"
             "Example:\n"
             "    python ez/prepublish.py --docs-only\n"
             "    python ez/prepublish.py --check-docs"
@@ -230,19 +251,19 @@ def main(argv=None):
         add_help=False,
     )
     modes = parser.add_mutually_exclusive_group()
-    modes.add_argument("--docs-only", action="store_true", help="Update __doc__ and README without changing the version.")
-    modes.add_argument("--check-docs", action="store_true", help="Check __doc__ and README without changing any files.")
+    modes.add_argument("--docs-only", action="store_true", help="Update catalogs and CLI metadata without changing the version.")
+    modes.add_argument("--check-docs", action="store_true", help="Check catalogs and CLI metadata without changing any files.")
     parser.add_argument("-h", "--help", action="help", help="Show this help and exit.")
     args = parser.parse_args(argv)
     try:
-        if not update_catalogs(HERE / "ez.py", HERE.parent / "README.md", check=args.check_docs):
-            print("Function catalogs are stale; run ez/prepublish.py --docs-only.", file=sys.stderr)
+        if not update_catalogs(
+            HERE / "ez.py", HERE.parent / "README.md", check=args.check_docs,
+            project_path=HERE.parent / "pyproject.toml",
+        ):
+            print("Function catalogs or CLI metadata are stale; run ez/prepublish.py --docs-only.", file=sys.stderr)
             return 1
-        if not args.docs_only and not args.check_docs:
-            version = bump_version(HERE / "version.py")
-            print(f"Function catalogs updated; release version: {version}")
-        else:
-            print("Function catalogs are current." if args.check_docs else "Function catalogs updated.")
+        print("Catalogs and CLI metadata are current." if args.check_docs
+              else "Catalogs and CLI metadata updated; version unchanged.")
     except (OSError, ValueError, SyntaxError, tokenize.TokenError) as exc:
         print(f"Prepublish failed: {exc}", file=sys.stderr)
         return 1

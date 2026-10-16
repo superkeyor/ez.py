@@ -2682,9 +2682,7 @@ def ver(package_name='python'):
     if package_name == 'python' or package_name == 'ez':
         print((sys.version))
         HERE = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(HERE,'version.py'),'r') as f:
-            ezv=f.readline()
-        ezv = ezv.split(" = ")[1].strip("'").strip('"')
+        from .version import __version__ as ezv
         print(f'\nLib: {HERE}')
         print(f'ez: {ezv}')
     else:
@@ -5011,7 +5009,7 @@ _CLI_ARGUMENT_GROUPS = {
     ],
 }
 
-# Literal metadata lets setup.py discover commands without importing this module.
+# Literal metadata lets prepublish discover commands without importing this module.
 _CLI_COMMANDS = {
     "pptx2md": {
         "function": "pptx2md",

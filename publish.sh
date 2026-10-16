@@ -56,7 +56,7 @@ fi
 shopt -s expand_aliases
 export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin"
 
-set -e
+set -e -o pipefail
 stage="checking prerequisites"
 trap 'status=$?; printf "Release failed while %s (exit %s). Any completed PyPI upload remains published.\n" "$stage" "$status" >&2; exit "$status"' ERR
 for required in uv git ezupdate; do
@@ -80,4 +80,12 @@ stage="upgrading the local installation (PyPI upload already completed)"
 for _ in 1 2 3; do
     ezupdate
 done
+stage="reporting distribution and installed versions (PyPI upload already completed)"
+printf '\nDistribution version: '
+uv version --short
+printf '\nDistribution files:\n'
+ls "$csd/dist"
+printf '\nLocally installed package (uv-selected Python environment):\n'
+installed_package="$(uv pip show ez)"
+printf '%s\n' "$installed_package" | grep -E '^(Name|Version|Location):'
 printf 'Release published, committed, pushed, and local upgrades completed.\n'

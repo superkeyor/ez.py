@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "ez"
-version = "11.8.3"
+version = "11.8.4"
 description = "easy stuff"
 readme = "README.md"
 requires-python = ">=3.11"

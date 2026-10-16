@@ -83,11 +83,19 @@ name = Path(sys.argv[0]).name
 stage = args[0] if name == "uv" else name
 if name == "git":
     stage = "git-" + args[0]
+if name == "uv" and args == ["version", "--short"]:
+    stage = "version-report"
+if name == "uv" and args[:2] == ["pip", "show"]:
+    stage = "pip-show"
 with open(os.environ["EZ_COMMAND_LOG"], "a") as stream:
     stream.write(json.dumps({{"stage": stage, "args": args,
                              "has_token": bool(os.environ.get("UV_PUBLISH_TOKEN"))}}) + "\\n")
 if stage == os.environ.get("EZ_FAIL_STAGE"):
     sys.exit(7)
+if stage == "version-report":
+    print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])
+if stage == "pip-show":
+    print("Name: ez\\nVersion: 0.0.7\\nLocation: /test/local/site-packages")
 if stage == "run":
     sys.exit(subprocess.call([sys.executable, args[-1]]))
 if stage == "version":
@@ -158,6 +166,7 @@ class PublisherTests(unittest.TestCase):
             cwd=self.home, env=self.environment, capture_output=True, text=True,
         )
         self.assertNotIn("do-not-print", result.stdout + result.stderr)
+        self.assertNotIn("SyntaxWarning", result.stderr)
         return result
 
     def commands(self):
@@ -174,7 +183,7 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(
             [item["stage"] for item in commands],
             ["run", "version", "build", "publish", "git-add", "git-commit",
-             "git-push", "upgrade", "upgrade", "upgrade"],
+             "git-push", "upgrade", "upgrade", "upgrade", "version-report", "pip-show"],
         )
         upload = next(item for item in commands if item["stage"] == "publish")
         self.assertTrue(upload["has_token"])
@@ -186,12 +195,19 @@ class PublisherTests(unittest.TestCase):
         self.assertNotEqual(self.original_version, self.project_version())
         self.assertNotIn("do-not-print", self.log.read_text())
         self.assertIn("--frozen", commands[1]["args"])
+        self.assertIn(f"Distribution version: {self.project_version()}", result.stdout)
+        self.assertIn("Distribution files:", result.stdout)
+        self.assertIn(f"ez-{self.project_version()}-py3-none-any.whl", result.stdout)
+        self.assertIn("Locally installed package", result.stdout)
+        self.assertIn("Version: 0.0.7", result.stdout)
+        self.assertIn("Location: /test/local/site-packages", result.stdout)
 
     def test_app_runs_without_external_shell_script_from_an_unrelated_directory(self):
         (self.root / "publish.sh").unlink()
         result = self.invoke("Publish.app/Contents/Resources/script")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.commands()[-1]["stage"], "upgrade")
+        self.assertEqual(self.commands()[-1]["stage"], "pip-show")
+        self.assertIn("Version: 0.0.7", result.stdout)
 
     def test_bundled_shell_script_matches_current_external_script(self):
         self.assertEqual(
@@ -228,7 +244,10 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(self.project_version(), self.original_version)
 
     def test_each_command_failure_stops_later_stages(self):
-        stages = ["version", "build", "publish", "git-add", "git-commit", "git-push", "upgrade"]
+        stages = [
+            "version", "build", "publish", "git-add", "git-commit", "git-push",
+            "upgrade", "version-report", "pip-show",
+        ]
         for stage in stages:
             with self.subTest(stage=stage):
                 self.environment["EZ_FAIL_STAGE"] = stage
@@ -237,6 +256,7 @@ class PublisherTests(unittest.TestCase):
                 result = self.invoke()
                 self.assertEqual(result.returncode, 7, result.stderr)
                 self.assertEqual(self.commands()[-1]["stage"], stage)
+                self.assertNotIn("local upgrades completed.", result.stdout)
 
     def test_missing_upgrade_helper_fails_before_upload(self):
         (self.home / ".bash_profile").write_text("")

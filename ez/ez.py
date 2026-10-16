@@ -457,7 +457,7 @@ def stepfolder(step=-1):
         folder = folder[0]
         folder = joinpath(projFolder,folder)
     elif isinstance(step,int):
-        steps = lsd(projFolder,'^\d\d')  # a list of all folders like 01Original, 06Set
+        steps = lsd(projFolder,'^\\d\\d')  # a list of all folders like 01Original, 06Set
         currentStep = splitpath(theCSD)[1]
         try:
             currentStepNum = steps.index(currentStep)
@@ -620,7 +620,7 @@ def cleanpath(path,allow_unicode=False):
     
     # (?u) switch on unicode
     fname = re.sub(r'(?u)[^\w]|_', '-', fname)  # \s space, \w means letters, digit, underscore 
-    expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\s|_|\-','\s|_|\-','\s|_|\-','\s|_|\-')
+    expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\\s|_|\\-','\\s|_|\\-','\\s|_|\\-','\\s|_|\\-')
     fname = re.sub(expression, "", fname, count=0)
     if fname in {'', '.', '..'}:
         raise Exception(f"Could not clean path '{path}'")
@@ -645,7 +645,7 @@ Merge multiple spaces to single space in the middle, and remove trailing/leading
                    3=left and right; 
                    4 (default)=left and right and merge middle
         chars: if not given (default), space, horizontal tab, line feed, carriage return
-               if given and not None, remove characters in chars instead. e.g. \s|_|\-
+               if given and not None, remove characters in chars instead. e.g. \\s|_|\\-
     eg, "Hi        buddy        what's up    Bro"  --> "Hi buddy what's up bro"
         trim(s,4,'\nx')
         " Hi        buddy        what's up    Bro\nx" --> " Hi        buddy        what's up    Bro"
@@ -657,7 +657,7 @@ Merge multiple spaces to single space in the middle, and remove trailing/leading
     elif (how==3):
         s = str.strip(s,chars)
     elif (how==4):
-        if chars is None: chars='\s|\t|\r|\n|\r\n'
+        if chars is None: chars='\\s|\t|\r|\n|\r\n'
         expression = '(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % (chars,chars,chars,chars)
         # http://stackoverflow.com/a/25734388/2292993
         s = re.sub(expression, "", s, count=0)
@@ -772,7 +772,7 @@ def sprintf(formatString, *args, **kwargs):
     # here I hack it to support the bash style, so that cmd can be directly used by both python and bash
     # but won't support $number:03d (ie, skipped) for consistency with bash
     # $0 ${0} $() ${0} {} {0,1..3} {1..$(2)} $number:03d ${number:03d} {number:03d} etc
-    # other than [a-zA-Z_]+\w*? will all be skipped
+    # other than [a-zA-Z_]+\\w*? will all be skipped
     s = sprintf('$language has $number quote types.', theDict)
     s = sprintf('$language has $number quote types.')
     s = sprintf('${language}_ has $number quote types.')
@@ -814,7 +814,7 @@ def sprintf(formatString, *args, **kwargs):
             return formatString % tuple(*args)
         elif type(args[0]) in [dict]:
             # syntax %()
-            if re.search('%\(', formatString):
+            if re.search('%\\(', formatString):
                 return formatString % args[0]
             else:
                 # kwargs is empty {} if not specified
@@ -828,24 +828,24 @@ def sprintf(formatString, *args, **kwargs):
                     # ${number}, ${language}_ to {number}, {language}_
                     # but skip ${number:03d}
                     # but not replace ${PATH}
-                    rs = re.findall('\$\{([a-zA-Z_]+\w*?)\}', formatString)
+                    rs = re.findall('\\$\\{([a-zA-Z_]+\\w*?)\\}', formatString)
                     for r in rs:
                         if r not in os.environ:
-                            formatString = re.sub('\$\{('+r+')\}', r'{\1}', formatString)
+                            formatString = re.sub('\\$\\{('+r+')\\}', r'{\1}', formatString)
                         else:
                             # trick the later .format() function ${PATH}   ->   |___|PATH|__|
-                            formatString = re.sub('\$\{('+r+')\}', r'|___|\1|__|', formatString)
+                            formatString = re.sub('\\$\\{('+r+')\\}', r'|___|\1|__|', formatString)
 
                     # now $var -> {var}
-                    rs = re.findall('\$([a-zA-Z_]+\w*?)', formatString)
+                    rs = re.findall('\\$([a-zA-Z_]+\\w*?)', formatString)
                     for r in rs:
                         if r not in os.environ:
-                            formatString = re.sub('\$('+r+')', r'{\1}', formatString)
+                            formatString = re.sub('\\$('+r+')', r'{\1}', formatString)
 
                     # anything other than {[a-zA-Z_]+\w*?}--will be skipped
                     # do not know how to construct regex for invalid names, so...
-                    allrs = re.findall('\{(.*?)\}', formatString)
-                    validrs = re.findall('\{([a-zA-Z_]+\w*?)\}', formatString)
+                    allrs = re.findall('\\{(.*?)\\}', formatString)
+                    validrs = re.findall('\\{([a-zA-Z_]+\\w*?)\\}', formatString)
                     for r in allrs:
                         if r not in validrs:
                             # r may contain irregular char (eg, dot .) in this case, therefore re.sub may not work well
@@ -855,7 +855,7 @@ def sprintf(formatString, *args, **kwargs):
                     # replace back {invalid ...}
                     formatString = re.sub('@__@(.*?)@___@', r'{\1}', formatString)
                     # replace back env variable |___|PATH|__|  -->  ${PATH}
-                    formatString = re.sub('\|___\|([a-zA-Z_]+\w*?)\|__\|', r'${\1}', formatString)
+                    formatString = re.sub('\\|___\\|([a-zA-Z_]+\\w*?)\\|__\\|', r'${\1}', formatString)
 
                     return formatString
                 elif kwargs['skipdollar']==1:
@@ -878,23 +878,23 @@ regexp(string, pattern, method='find'), returns starting/ending indices in two l
     if not find, returns [[],[]]
 
     method='split'
-    ('Words, words, words.','\W+') --> ['Words', 'words', 'words', '']
+    ('Words, words, words.','\\W+') --> ['Words', 'words', 'words', '']
     if not split, returns original string
 
     method='match'
     text = "He was carefully disguised but captured quickly by police."
-    (text, '\w+ly') --> ['carefully', 'quickly']
+    (text, '\\w+ly') --> ['carefully', 'quickly']
     if not match, returns []
 
     seems like always a good idea to use r'' with regular expression, eg,
-    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
+    newValue=ez.regexprep(oldValue,r'^(\\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
     1) special trick:
-    matching string not starting with my:     ^(?!my)\w+$
+    matching string not starting with my:     ^(?!my)\\w+$
 
-    group back reference \ 1 \ 2. (Perl is $1 $2)
-    >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
+    group back reference \\ 1 \\ 2. (Perl is $1 $2)
+    >>> re.sub(r'(\\w+) (\\w+)',r'\2 \1','Joe Bob')
         'Bob Joe'
 
     either or
@@ -912,11 +912,11 @@ regexp(string, pattern, method='find'), returns starting/ending indices in two l
     {n} exact n
     {m,n} m to n
     {n,} n or more
-    \d  \D = [^0-9]
-    \w [a-zA-Z0-9_]  \W = [^a-zA-Z0-9_]
-    \s white space, tab etc
+    \\d  \\D = [^0-9]
+    \\w [a-zA-Z0-9_]  \\W = [^a-zA-Z0-9_]
+    \\s white space, tab etc
     letters only [a-zA-Z]
-    \ t \ r \ n
+    \\ t \\ r \\ n
     """
     # re.match() checks for a match only at the beginning of the string,
     # while re.search() checks for a match anywhere in the string
@@ -944,23 +944,23 @@ ignore cases
     if not find, returns [[],[]]
 
     method='split'
-    ('Words, words, words.','\W+') --> ['Words', 'words', 'words', '']
+    ('Words, words, words.','\\W+') --> ['Words', 'words', 'words', '']
     if not split, returns original string
 
     method='match'
     text = "He was carefully disguised but captured quickly by police."
-    (text, '\w+ly') --> ['carefully', 'quickly']
+    (text, '\\w+ly') --> ['carefully', 'quickly']
     if not match, returns []
 
     seems like always a good idea to use r'' with regular expression, eg,
-    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
+    newValue=ez.regexprep(oldValue,r'^(\\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
     1) special trick:
-    matching string not starting with my:     ^(?!my)\w+$
+    matching string not starting with my:     ^(?!my)\\w+$
 
     group back reference \1 \2. (Perl is $1 $2)
-    >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
+    >>> re.sub(r'(\\w+) (\\w+)',r'\2 \1','Joe Bob')
         'Bob Joe'
 
     either or
@@ -978,11 +978,11 @@ ignore cases
     {n} exact n
     {m,n} m to n
     {n,} n or more
-    \d  \D = [^0-9]
-    \w [a-zA-Z0-9_]  \W = [^a-zA-Z0-9_]
-    \s white space, tab etc
+    \\d  \\D = [^0-9]
+    \\w [a-zA-Z0-9_]  \\W = [^a-zA-Z0-9_]
+    \\s white space, tab etc
     letters only [a-zA-Z]
-    \ t \ r \ n
+    \\ t \\ r \\ n
     """
     # re.match() checks for a match only at the beginning of the string,
     # while re.search() checks for a match anywhere in the string
@@ -1005,20 +1005,20 @@ def regexprep(string, pattern, replace, count=0):
     """Replace regular expression matches in a string.
 
 (string, pattern, replace, count=0)
-    ('Baked Beans And Spam', '\sAnd\s', ' & ') --> 'Baked Beans & Spam'
+    ('Baked Beans And Spam', '\\sAnd\\s', ' & ') --> 'Baked Beans & Spam'
 
     count: maximum number of pattern occurrences to be replaced; count must be a non-negative integer.
     If omitted or zero, all occurrences will be replaced
 
     seems like always a good idea to use r'' with regular expression, eg,
-    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
+    newValue=ez.regexprep(oldValue,r'^(\\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
     1) special trick:
-    matching string not starting with my:     ^(?!my)\w+$
+    matching string not starting with my:     ^(?!my)\\w+$
 
     group back reference \1 \2. (Perl is $1 $2)
-    >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
+    >>> re.sub(r'(\\w+) (\\w+)',r'\2 \1','Joe Bob')
         'Bob Joe'
 
     either or
@@ -1036,11 +1036,11 @@ def regexprep(string, pattern, replace, count=0):
     {n} exact n
     {m,n} m to n
     {n,} n or more
-    \d  \D = [^0-9]
-    \w [a-zA-Z0-9_]  \W = [^a-zA-Z0-9_]
-    \s white space, tab etc
+    \\d  \\D = [^0-9]
+    \\w [a-zA-Z0-9_]  \\W = [^a-zA-Z0-9_]
+    \\s white space, tab etc
     letters only [a-zA-Z]
-    \ t \ r \ n
+    \\ t \\ r \\ n
     """
     return re.sub(pattern, replace, string, count=count)
 #endregion regexprep
@@ -1051,20 +1051,20 @@ def regexprepi(string, pattern, replace, count=0):
 
 case-insensitive
     (string, pattern, replace, count=0)
-    ('Baked Beans And Spam', '\sAND\s', ' & ') --> 'Baked Beans & Spam'
+    ('Baked Beans And Spam', '\\sAND\\s', ' & ') --> 'Baked Beans & Spam'
 
     count: maximum number of pattern occurrences to be replaced; count must be a non-negative integer.
     If omitted or zero, all occurrences will be replaced
 
     seems like always a good idea to use r'' with regular expression, eg,
-    newValue=ez.regexprep(oldValue,r'^(\d{1,2})(,|.)',r'\1|',1)
+    newValue=ez.regexprep(oldValue,r'^(\\d{1,2})(,|.)',r'\1|',1)
 
     python regular expression notes:
     1) special trick:
-    matching string not starting with my:     ^(?!my)\w+$
+    matching string not starting with my:     ^(?!my)\\w+$
 
     group back reference \1 \2. (Perl is $1 $2)
-    >>> re.sub(r'(\w+) (\w+)',r'\2 \1','Joe Bob')
+    >>> re.sub(r'(\\w+) (\\w+)',r'\2 \1','Joe Bob')
         'Bob Joe'
 
     either or
@@ -1082,11 +1082,11 @@ case-insensitive
     {n} exact n
     {m,n} m to n
     {n,} n or more
-    \d  \D = [^0-9]
-    \w [a-zA-Z0-9_]  \W = [^a-zA-Z0-9_]
-    \s white space, tab etc
+    \\d  \\D = [^0-9]
+    \\w [a-zA-Z0-9_]  \\W = [^a-zA-Z0-9_]
+    \\s white space, tab etc
     letters only [a-zA-Z]
-    \ t \ r \ n
+    \\ t \\ r \\ n
     """
     return re.sub(pattern, replace, string, count=count, flags=re.IGNORECASE)
 #endregion regexprepi
@@ -1220,7 +1220,7 @@ ls([path[, regex]], full=True, dotfile=False, sort=True)    # Returns a list of 
     path, pattern_regex = _ListingParse(path, pattern_regex)
 
     files = _FilterList(os.listdir(path), pattern_regex)
-    if not dotfile: files = _FilterList(files,'^[^\.]')
+    if not dotfile: files = _FilterList(files,'^[^\\.]')
     if full:
         files = [os.path.join(path,file) for file in files]
         result = [file for file in files if os.path.isfile(file)]
@@ -1270,7 +1270,7 @@ lsd([path[, regex]], full=False, dotfolder=False, sort=True), Returns a list of 
     olddir = os.getcwd()
     os.chdir(path)
     files = _FilterList(os.listdir(path), pattern_regex)
-    if not dotfolder: files = _FilterList(files,'^[^\.]')
+    if not dotfolder: files = _FilterList(files,'^[^\\.]')
     if full: files = [os.path.join(path,file) for file in files]
     result = [file for file in files if not os.path.isfile(file)]
     os.chdir(olddir)
@@ -1322,7 +1322,7 @@ fls([path[, regex=".*", dotf=False], sort=True, case=True])   # Returns a list o
             if len(dotfolders)>0: continue
 
         filteredFiles = _FilterList(files, pattern_regex)
-        if not dotf: filteredFiles = _FilterList(filteredFiles,'^[^\.]')
+        if not dotf: filteredFiles = _FilterList(filteredFiles,'^[^\\.]')
         ## If there is matched
         if filteredFiles:
             for file in filteredFiles:
@@ -1371,7 +1371,7 @@ def flsd(path="./", regex=".*", dotf=False, sort=True, case=True):
             if len(dotfolders)>0: continue
 
         filteredFolders = _FilterList(dirs, pattern_regex)
-        if not dotf: filteredFolders = _FilterList(filteredFolders,'^[^\.]')
+        if not dotf: filteredFolders = _FilterList(filteredFolders,'^[^\\.]')
         ## If there is matched
         if filteredFolders:
             for folder in filteredFolders:
@@ -1394,13 +1394,13 @@ def clorox(path='~/Dropbox',delete=False):
 
 
     Clean up certain files. Why clorox? -My favorite(?) cleaning product brand.
-    Mac: ^\._; Windows: ^\._|\.DS_Store|^Icon.$
+    Mac: ^\\._; Windows: ^\\._|\\.DS_Store|^Icon.$
     delete: actually delete; if False, return file lists
     """
     if platform.system()=='Darwin':
-        remover='^\._'
+        remover='^\\._'
     else:
-        remover='^\._|\.DS_Store|^Icon.$'
+        remover='^\\._|\\.DS_Store|^Icon.$'
 
     stains = fls(path,remover,dotf=True)
 
@@ -1849,11 +1849,11 @@ def tree(path='./', sum=True, save=None, sort=True, case=True):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #region lines
-def lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True):
+def lines(path='.', pattern='\\.py$|.ini$|\\.c$|\\.h$|\\.m$', recursive=True):
     """Count lines in matching source files.
 
 Counts lines of codes, counting empty lines as well.
-    lines(path='.', pattern='\.py$|.ini$|\.c$|\.h$|\.m$', recursive=True)
+    lines(path='.', pattern='\\.py$|.ini$|\\.c$|\\.h$|\\.m$', recursive=True)
     """
 
     # modified from https://liangsun.org/posts/python-code-for-counting-loclines-of-code/
@@ -3919,9 +3919,9 @@ class Moment(object):
                     # /60.  add .  to get decimal points
                     return "%s%02d%02d" % (sign, abs(offset) / 60., abs(offset) % 60)
             import re
-            naive_datetimeString = re.sub('[-+]\d{4}','',datetimeString)
+            naive_datetimeString = re.sub('[-+]\\d{4}','',datetimeString)
             naive_dt = datetime.datetime.strptime(naive_datetimeString, datetimeFormat.replace('%z',''))
-            offset_str = re.findall('[-+]\d{4}',datetimeString)[0]
+            offset_str = re.findall('[-+]\\d{4}',datetimeString)[0]
             offset = int(offset_str[-4:-2])*60 + int(offset_str[-2:])
             if offset_str[0] == "-":
                 offset = -offset
@@ -4484,8 +4484,8 @@ def pinyinauthor(names):
     convert Yuan Zhang Zhu, Jian Zhu --> Zhu, Y. Z., Zhu, J. for APA reference list
     can auto get rid of numbers in the author names
     """
-    names = re.sub('(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\s','\s','\s','\s'), '', names, count=0)
-    names = re.sub('\d', '', names, count=0)
+    names = re.sub('(?<=[(%s)])(%s)*|^(%s)+|(%s)+$' % ('\\s','\\s','\\s','\\s'), '', names, count=0)
+    names = re.sub('\\d', '', names, count=0)
     names = re.sub(',{2,}', ',', names, count=0)
     names = names.split(', ')
     newnames = ''; i = 0
@@ -5879,7 +5879,7 @@ def office_pdf_autoname(inputpdfs):
                 from bs4 import BeautifulSoup
                 soup = BeautifulSoup(html_text,"lxml")
                 # https://stackoverflow.com/a/39016902/2292993
-                patt = re.compile("font-size:(\d+)")
+                patt = re.compile("font-size:(\\d+)")
                 for tag in soup.select("[style*=font-size]"):
                     output.update({float(patt.search(tag["style"]).group(1)): [tag.text.strip()]})
                 i += 1
@@ -8703,7 +8703,7 @@ def pdfannot(pdfpath, mdpath=None, force=1):
         return md
 
     def _process_pdffolder(pdffolder, mdpath=None, force=0):
-        pdfs = fls(pdffolder,regex='\.pdf$')
+        pdfs = fls(pdffolder,regex='\\.pdf$')
         # pdfs = sorted(pdfs,key=lambda p: (sp(p)[0], -os.path.getmtime(p)))  # first path (asc), then modify time (desc)
         # also sort mtime asc, because newer ones are added to top of md file
         pdfs = sorted(pdfs,key=lambda p: (sp(p)[0], os.path.getmtime(p)))  # first path (asc), then modify time (asc)

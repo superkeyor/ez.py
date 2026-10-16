@@ -250,6 +250,15 @@ class CatalogTests(unittest.TestCase):
         for shortcut in ("pwd", "cwd", "Randomize", "randomize", "sleep", "wait", "ppprint", "which"):
             self.assertIn(shortcut, doc)
 
+    def test_live_module_parses_and_compiles_without_syntax_warnings(self):
+        path = ROOT / "ez/ez.py"
+        source = path.read_text(encoding="utf-8")
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", SyntaxWarning)
+            warnings.simplefilter("error", DeprecationWarning)
+            ast.parse(source, filename=str(path))
+            compile(source, str(path), "exec")
+
 
 class PrepublishTests(unittest.TestCase):
     def setUp(self):

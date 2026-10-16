@@ -722,6 +722,11 @@ existing `ezupdate` command/function/alias before preparing a release. It then:
    are not deleted or uploaded. Existing files for the new version are not overwritten.
 5. Stages **all checkout changes**, commits, pushes to `origin master`, then runs
    `ezupdate` three times, preserving the existing post-release workflow.
+6. Prints the distribution version and files in `dist/`, followed by the locally
+   installed `ez` version and installation location from `uv pip show ez`.
+   This reports uv's selected Python environment, which may differ from the
+   environment your `ezupdate` command upgrades. A missing package or reporting
+   error is shown explicitly and stops the script rather than reporting success.
 
 Errors stop subsequent steps. A failed build/upload may leave the version bumped
 and artifacts in `dist/`; inspect the state before retrying. A partial upload or a

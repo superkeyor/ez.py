@@ -23,7 +23,8 @@ rm -rf *.egg-info
 
 # python setup.py register
 
-uv build --sdist
+# uv build --sdist
+python setup.py sdist
 # python setup.py sdist upload
 uvx twine upload dist/*
 

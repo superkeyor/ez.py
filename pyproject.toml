@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "ez"
-version = "11.8.9"
+version = "11.9.0"
 description = "easy stuff"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -78,7 +78,10 @@ dependencies = [
 
     # Cloud storage, spreadsheets and calendars
     "dropbox",
-    "pydrive2",
+    "google-api-python-client",
+    "google-auth",
+    "google-auth-httplib2",
+    "google-auth-oauthlib",
     "gspread",
     "gcsa",
 
@@ -103,4 +106,4 @@ pdf2md = "ez.ez:_cli"
 module-root = ""
 module-name = "ez"
 source-include = ["tests/**", "scripts/publish.py", "publish.sh", "Publish.app/Contents/Resources/script"]
-source-exclude = [".DS_Store"]
+source-exclude = [".DS_Store", "gdrive_secrets.json", "gdrive_token.json"]

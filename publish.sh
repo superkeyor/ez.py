@@ -98,4 +98,4 @@ eval "$(uv pip show ez 2>/dev/null | awk -F': ' '
 ')"
 printf 'Local: %s (%s)\n' "$package" "$location"
 
-printf '\nDone.\n'
+printf 'Done.\n'

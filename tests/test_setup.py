@@ -61,6 +61,11 @@ class PackagingTests(unittest.TestCase):
         requirements = self.metadata["dependencies"]
         self.assertEqual(len(requirements), len(set(requirements)))
         self.assertFalse({"twine", "setuptools", "uv", "uv_build"} & set(requirements))
+        self.assertNotIn("pydrive2", requirements)
+        for requirement in (
+            "google-api-python-client", "google-auth", "google-auth-httplib2", "google-auth-oauthlib",
+        ):
+            self.assertIn(requirement, requirements)
         for requirement in (
             'psutil; sys_platform != "linux"',
             'pynput; sys_platform != "linux"',
@@ -157,6 +162,7 @@ class BuiltArtifactTests(unittest.TestCase):
         ))
         for name in ("ez/__init__.py", "ez/ez.py", "ez/version.py", "ez/prepublish.py"):
             self.assertIn(name, names)
+        self.assertNotIn("ez/_gdrive.py", names)
         entries = configparser.ConfigParser()
         entries.read_string(self.wheel.read(f"{self.info}/entry_points.txt").decode())
         self.assertEqual(dict(entries["console_scripts"]), self.project["scripts"])
@@ -191,6 +197,29 @@ class BuiltArtifactTests(unittest.TestCase):
             )
         finally:
             sys.path.pop(0)
+
+    def test_cached_drive_credentials_are_never_packaged(self):
+        source = self.output / "private-cache-source"
+        package = source / "ez"
+        package.mkdir(parents=True)
+        for name in ("pyproject.toml", "README.md"):
+            shutil.copy2(ROOT / name, source / name)
+        for name in ("__init__.py", "ez.py", "version.py", "prepublish.py"):
+            shutil.copy2(ROOT / "ez" / name, package / name)
+        for name in ("gdrive_secrets.json", "gdrive_token.json"):
+            (package / name).write_text('{"test": "not-a-real-credential"}')
+        output = self.output / "private-cache-build"
+        subprocess.run(
+            ["uv", "build", str(source), "--out-dir", str(output)],
+            capture_output=True, text=True, check=True,
+        )
+        with zipfile.ZipFile(output / self.wheel_name) as wheel:
+            names = wheel.namelist()
+        with tarfile.open(output / f"ez-{self.version}.tar.gz") as archive:
+            names.extend(archive.getnames())
+        self.assertFalse(any(
+            name.endswith(("gdrive_secrets.json", "gdrive_token.json")) for name in names
+        ))
 
 
 if __name__ == "__main__":

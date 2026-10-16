@@ -249,7 +249,12 @@ Dropbox:
     delfilefolder - Delete a Dropbox file or folder.
 
 Google Drive:
-    gauth - Authenticate to Google Drive and return the configured drive client.
+    _gdrive_save_private - Atomically save private Drive credentials with owner-only permissions.
+    _gdrive_authenticate - Return an authorized v3 service, caching credentials beside the package.
+    _gdrive_query_literal - Quote a Drive query literal without treating names as query syntax.
+    _gdrive_list_files - Collect all Drive result pages in server order.
+    _gdrive_parent_changes - Translate a Drive destination into v3 parent update parameters.
+    gauth - Authenticate to Google Drive and return the native Drive API v3 service.
     gdownload - Export or download a Google Drive file.
     gupload - Upload a file to Google Drive, updating the first matching title if present.
     gdelete - Permanently delete a Drive file by its ID or name.
@@ -7763,46 +7768,133 @@ class GCal():
 ####************************************************************************************************
                                      ####*GDrive*####
 ####************************************************************************************************
-# Reference: 
-# https://docs.iterative.ai/PyDrive2/quickstart/#authentication
-# https://qiita-com.translate.goog/ftnext/items/60ced8bc432bec6101f0?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en&_x_tr_pto=wapp
-# https://stackoverflow.com/a/24542604/2292993 (outdated)
-
-# Steps:
-# 1) Create and save as gdrive_secrets.json (I saved the contents to pysecrets.py and dump it to physical json file)
-# 2) Create settings.yaml
-# 3) Authorize via web with gdrive_secrets.json for the first time
-# 4) Get saved gdrive_token.json which can be used in the future without need to authroize via web
+# https://developers.google.com/workspace/drive/api/quickstart/python
+# GDRIVE_KEY supplies the OAuth client configuration. Credentials and cached tokens
+# remain in gdrive_secrets.json and gdrive_token.json beside this module.
 # ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 #region Google Drive
+#region _gdrive_save_private
+def _gdrive_save_private(path, content: str) -> None:
+    """Atomically save private Drive credentials with owner-only permissions."""
+    import tempfile
+
+    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}-", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(content)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+#endregion _gdrive_save_private
+
+#region _gdrive_authenticate
+def _gdrive_authenticate(client_config: dict, directory):
+    """Return an authorized v3 service, caching credentials beside the package."""
+    import warnings
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+    from google_auth_oauthlib.flow import InstalledAppFlow
+    from googleapiclient.discovery import build
+
+    scopes = ["https://www.googleapis.com/auth/drive"]
+    if not isinstance(client_config, dict):
+        raise ValueError("GDRIVE_KEY must be a Google OAuth client configuration dictionary.")
+    settings = client_config.get("installed", client_config.get("web"))
+    if not isinstance(settings, dict) or any(
+        not isinstance(settings.get(key), str) or not settings[key]
+        for key in ("client_id", "client_secret", "auth_uri", "token_uri")
+    ):
+        raise ValueError("GDRIVE_KEY must contain valid installed/web OAuth client settings.")
+
+    credentials_path = directory / "gdrive_secrets.json"
+    token_path = directory / "gdrive_token.json"
+    _gdrive_save_private(credentials_path, json.dumps(client_config))
+    credentials = None
+    if token_path.exists():
+        try:
+            token = json.loads(token_path.read_text(encoding="utf-8"))
+        except (ValueError, UnicodeError):
+            raise ValueError("Invalid gdrive_token.json; restore a valid token or remove it to reauthorize.") from None
+        if not isinstance(token, dict):
+            raise ValueError("gdrive_token.json must contain a credential object.")
+        module = token.get("_module", "")
+        if not isinstance(module, str):
+            raise ValueError("gdrive_token.json contains an invalid credential format.")
+        if module.startswith("oauth2client.") or token.get("_class") == "OAuth2Credentials":
+            warnings.warn(
+                "Legacy PyDrive2 token detected; one-time Google Drive browser authorization is required.",
+                UserWarning, stacklevel=2,
+            )
+        else:
+            try:
+                credentials = Credentials.from_authorized_user_info(token)
+            except ValueError:
+                raise ValueError("Invalid cached Google Drive credentials; restore or remove gdrive_token.json.") from None
+            if not credentials.has_scopes(scopes):
+                raise ValueError("Cached Google Drive credentials lack Drive access; remove the token to reauthorize.")
+
+    if credentials is None:
+        flow = InstalledAppFlow.from_client_config(client_config, scopes)
+        credentials = flow.run_local_server(port=0, access_type="offline", prompt="consent")
+        _gdrive_save_private(token_path, credentials.to_json())
+    elif not credentials.valid:
+        if not credentials.expired or not credentials.refresh_token:
+            raise ValueError("Cached Google Drive credentials cannot be refreshed; remove the token to reauthorize.")
+        credentials.refresh(Request())
+        _gdrive_save_private(token_path, credentials.to_json())
+    return build("drive", "v3", credentials=credentials, cache_discovery=False)
+#endregion _gdrive_authenticate
+
+#region _gdrive_query_literal
+def _gdrive_query_literal(value: str) -> str:
+    """Quote a Drive query literal without treating names as query syntax."""
+    return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
+#endregion _gdrive_query_literal
+
+#region _gdrive_list_files
+def _gdrive_list_files(service, query: str) -> list[dict]:
+    """Collect all Drive result pages in server order."""
+    files = []
+    parameters = {"q": query, "fields": "nextPageToken,files(id,name,mimeType,parents)"}
+    while True:
+        response = service.files().list(**parameters).execute()
+        files.extend(response.get("files", []))
+        page = response.get("nextPageToken")
+        if not page:
+            return files
+        parameters["pageToken"] = page
+#endregion _gdrive_list_files
+
+#region _gdrive_parent_changes
+def _gdrive_parent_changes(service, file_id: str, destination: str) -> dict[str, str]:
+    """Translate a Drive destination into v3 parent update parameters."""
+    if destination == "root":
+        destination = service.files().get(fileId="root", fields="id").execute()["id"]
+    parents = service.files().get(fileId=file_id, fields="parents").execute().get("parents", [])
+    changes = {}
+    if destination not in parents:
+        changes["addParents"] = destination
+    removed = [parent for parent in parents if parent != destination]
+    if removed:
+        changes["removeParents"] = ",".join(removed)
+    return changes
+#endregion _gdrive_parent_changes
+
 #region gauth
 def gauth():
-    # work in library path
-    """Authenticate to Google Drive and return the configured drive client."""
-    oldpwd = os.getcwd()
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    """Authenticate to Google Drive and return the native Drive API v3 service.
 
-    from pydrive2.auth import GoogleAuth
-    from pydrive2.drive import GoogleDrive
+    GDRIVE_KEY must contain an installed/web Google OAuth client configuration.
+    Tokens are cached beside this module; legacy PyDrive2 tokens require one-time
+    browser reauthorization. The returned service uses files().get/list/etc.,
+    not the old PyDrive2 CreateFile/ListFile interface.
+    """
+    from pathlib import Path
 
-    # jerry: dump gdrive_secrets.json
-    savej(GDRIVE_KEY,'gdrive_secrets.json')
-    settings="""
-            client_config_file: gdrive_secrets.json
-            save_credentials: True
-            save_credentials_backend: file
-            save_credentials_file: gdrive_token.json
-            get_refresh_token: True
-            """
-    with open('settings.yaml', 'w') as f:
-        f.write(settings)
-
-    googleauth = GoogleAuth()
-    googleauth.LocalWebserverAuth()
-    gdrive = GoogleDrive(googleauth)
-
-    os.chdir(oldpwd)
-    return gdrive
+    if 'GDRIVE_KEY' not in globals():
+        raise ValueError("Configure GDRIVE_KEY before authenticating to Google Drive.")
+    return _gdrive_authenticate(GDRIVE_KEY, Path(__file__).resolve().parent)
 #endregion gauth
 
 #region gdownload
@@ -7813,12 +7905,14 @@ def gdownload(id,filename=None):
     export/download a file
     id: get from link
     filename: local file path, if none, same file name as cloudfile in pwd (override if exists)
-    the downloaded file may not have the exact same content formatting
+    Uploaded files are downloaded unchanged. Native Google documents are exported
+    using the destination extension; export formatting may differ.
     """
     gdrive = gauth()
-    # https://developers.google.com/drive/api/guides/ref-export-formats
-    gfile = gdrive.CreateFile({'id': id})
-    if filename is None: filename=joinpath(pwd(),gfile['title'])
+    from googleapiclient.http import MediaIoBaseDownload
+
+    metadata = gdrive.files().get(fileId=id, fields="id,name,mimeType").execute()
+    if filename is None: filename=joinpath(pwd(),metadata['name'])
     FORMATS = { 
                 '.txt': 'text/plain',
                 '.rtf': 'application/rtf',
@@ -7829,7 +7923,18 @@ def gdownload(id,filename=None):
                 '.svg': 'image/svg+xml',
                 '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
                }
-    gfile.GetContentFile(filename, FORMATS[splitpath(filename)[-1]])
+    if metadata["mimeType"].startswith("application/vnd.google-apps."):
+        extension = splitpath(filename)[-1].lower()
+        if extension not in FORMATS:
+            raise ValueError(f"Unsupported Google Drive export extension: {extension!r}")
+        request = gdrive.files().export_media(fileId=id, mimeType=FORMATS[extension])
+    else:
+        request = gdrive.files().get_media(fileId=id)
+    with open(filename, "wb") as stream:
+        downloader = MediaIoBaseDownload(stream, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
     return filename
 #endregion gdownload
 
@@ -7840,29 +7945,35 @@ def gupload(localfile,id=None):
 
     upload a file with overriding the file of the same title
     id: folder id, get from link, if none, then upload to root folder
-    returns id of cloudfile
+    returns (cloud filename, cloud file ID)
     """
     gdrive = gauth()
+    from googleapiclient.http import MediaFileUpload
+
     # same file name as localfile
     cloudfile = ''.join(splitpath(localfile)[1:])
 
     if id is None:
-        parents_id = [{'id': 'root'}]
+        parent = 'root'
     else:
-        parents_id = [{'id': id}]
+        parent = id
 
     # Search for existing file
-    file_list = gdrive.ListFile({'q': f"title='{cloudfile}' and trashed=false"}).GetList()
+    file_list = _gdrive_list_files(gdrive, f"name={_gdrive_query_literal(cloudfile)} and trashed=false")
+    media = MediaFileUpload(localfile, resumable=True)
     if file_list:
         # File exists, update it
-        gfile = gdrive.CreateFile({'id': file_list[0]['id'], 'title': cloudfile, 'parents': parents_id})
+        file_id = file_list[0]['id']
+        gfile = gdrive.files().update(
+            fileId=file_id, body={'name': cloudfile}, media_body=media, fields="id",
+            **_gdrive_parent_changes(gdrive, file_id, parent),
+        ).execute()
         print(f'Updated file {cloudfile}')
     else:
         # File does not exist, create new
-        gfile = gdrive.CreateFile({'title': cloudfile, 'parents': parents_id})
-    
-    gfile.SetContentFile(localfile)
-    gfile.Upload()
+        gfile = gdrive.files().create(
+            body={'name': cloudfile, 'parents': [parent]}, media_body=media, fields="id",
+        ).execute()
     return (cloudfile,gfile['id'])
 #endregion gupload
 
@@ -7887,8 +7998,7 @@ def gdelete(file_id=None, file_name=None, folderid=None):
         file_id = matches[0]
 
     gdrive = gauth()
-    gfile = gdrive.CreateFile({'id': file_id})
-    gfile.Delete()
+    gdrive.files().delete(fileId=file_id).execute()
 #endregion gdelete
 
 #region gcopy
@@ -7901,18 +8011,11 @@ def gcopy(id,filetitle,folderid=None):
     filetitle: new file title/name
     folderid: copy to a folder other than root [optional], get from link
     """
-    # https://developers.google.com/drive/api/v2/reference/files/copy
-    # https://stackoverflow.com/questions/43865016/python-copy-a-file-in-google-drive-into-a-specific-folder
-    # https://github.com/iterative/PyDrive2/issues/53
     gdrive = gauth()
-    # https://github.com/googlearchive/PyDrive/blob/986ad8fb4f68dde6ffaa7c61c951d9573314dea0/pydrive/auth.py#L61
-    gdrive.auth.Authorize() # needed, otherwise gdrive.auth.service is None
-    if folderid is None:
-        gdrive.auth.service.files().copy(fileId=id,
-                                         body={'title': filetitle}).execute()
-    else:
-        gdrive.auth.service.files().copy(fileId=id,
-                                         body={"parents": [{"id": folderid}],'title': filetitle}).execute()
+    body = {'name': filetitle}
+    if folderid is not None:
+        body['parents'] = [folderid]
+    gdrive.files().copy(fileId=id, body=body).execute()
     return filetitle
 #endregion gcopy
 
@@ -7924,16 +8027,10 @@ def gmove(file_id,new_folder_id):
     new_folder_id: destination folder's ID
     """
     gdrive = gauth()
-    # Fetch the existing file
-    gfile = gdrive.CreateFile({'id': file_id})
-    gfile.FetchMetadata(fetch_all=True)
 
-    # Retrieve the current parents of the gfile for removal
-    current_parents = ",".join([parent['id'] for parent in gfile['parents']])
-
-    # Move the gfile by updating its parents
-    gfile['parents'] = [{'id': new_folder_id}]
-    gfile.Upload(param={'removeParents': current_parents})
+    changes = _gdrive_parent_changes(gdrive, file_id, new_folder_id)
+    if changes:
+        gdrive.files().update(fileId=file_id, **changes).execute()
 #endregion gmove
     
 #region gls
@@ -7946,22 +8043,10 @@ def gls(folderid=None):
     returns a list of tuples (title,id)
     """
     gdrive = gauth()
-    res = []
 
-    # https://stackoverflow.com/questions/40224559/list-of-file-in-a-folder-drive-api-pydrive
-    # Build string dynamically (need to use escape characters to support single quote syntax)
-    if folderid is None:
-        str = "'root' in parents and trashed=false"
-    else:
-        str = "\'" + folderid + "\'" + " in parents and trashed=false"    
-
-    # Starting iterating over files
-    filelist = gdrive.ListFile({'q': str}).GetList()
-    for file in filelist:
-        # print('title: %s, id: %s' % (file['title'], file['id']))
-        res.append((file['title'], file['id']))
-    
-    return res
+    parent = 'root' if folderid is None else folderid
+    filelist = _gdrive_list_files(gdrive, f"{_gdrive_query_literal(parent)} in parents and trashed=false")
+    return [(file['name'], file['id']) for file in filelist]
 #endregion gls
 
 #region gfileid

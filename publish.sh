@@ -87,7 +87,6 @@ ver="$(uv version --short 2>/dev/null)"
 distfiles="$(ls "$csd/dist" 2>/dev/null | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')"
 printf 'Distribution: %s (%s)\n' "$ver" "$distfiles"
 
-printf '\n'
 eval "$(uv pip show ez 2>/dev/null | awk -F': ' '
   /^Name:/ { name = $2 }
   /^Version:/ { version = $2 }
@@ -99,4 +98,4 @@ eval "$(uv pip show ez 2>/dev/null | awk -F': ' '
 ')"
 printf 'Local: %s (%s)\n' "$package" "$location"
 
-printf 'Done.\n'
+printf '\nDone.\n'

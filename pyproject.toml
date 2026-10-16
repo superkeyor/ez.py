@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "ez"
-version = "11.9.2"
+version = "11.9.3"
 description = "easy stuff"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -89,6 +89,20 @@ dependencies = [
     "yagmail",
     "imap-tools",
     "O365",
+]
+
+[project.optional-dependencies]
+# Packages used by webapp etc.
+extra = [
+    "Flask",
+    "flask-cors",
+    "flask-ipban",
+    "gunicorn",
+    "cachelib",
+    "duckdb",
+    "parse",
+    "PyYAML",
+    "xmltodict",
 ]
 
 [project.urls]

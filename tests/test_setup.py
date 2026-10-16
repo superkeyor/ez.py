@@ -70,9 +70,20 @@ class PackagingTests(unittest.TestCase):
             'psutil; sys_platform != "linux"',
             'pynput; sys_platform != "linux"',
             'docx2pdf; sys_platform != "linux"',
-            'imessage_reader; sys_platform == "darwin"',
         ):
             self.assertIn(requirement, requirements)
+
+    def test_external_script_packages_are_optional(self):
+        extra = self.metadata["optional-dependencies"]["extra"]
+        self.assertEqual(set(extra), {
+            'imessage_reader; sys_platform == "darwin"',
+            "Flask", "flask-cors", "flask-ipban", "gunicorn", "cachelib",
+            "duckdb", "parse", "PyYAML", "xmltodict",
+        })
+        self.assertFalse(set(extra) & set(self.metadata["dependencies"]))
+        all_requirements = self.metadata["dependencies"] + extra
+        for name in ("selenium", "selenium-requests", "td-ameritrade-python-api"):
+            self.assertNotIn(name, all_requirements)
 
     def test_readme_and_license(self):
         self.assertEqual(self.metadata["readme"], "README.md")
@@ -149,8 +160,17 @@ class BuiltArtifactTests(unittest.TestCase):
 
         self.assertEqual(
             {normalized(item) for item in self.metadata.get_all("Requires-Dist")},
-            {normalized(item) for item in self.project["dependencies"]},
+            {normalized(item) for item in self.project["dependencies"]}
+            | {
+                normalized(
+                    f'{item}; extra == "{extra}"' if ";" not in item
+                    else f'{item} and extra == "{extra}"'
+                )
+                for extra, requirements in self.project["optional-dependencies"].items()
+                for item in requirements
+            },
         )
+        self.assertIn("extra", self.metadata.get_all("Provides-Extra"))
 
     def test_wheel_is_universal_and_contains_only_package_and_metadata(self):
         self.assertIn(b"Tag: py3-none-any", self.wheel.read(f"{self.info}/WHEEL"))

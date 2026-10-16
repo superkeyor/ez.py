@@ -16,6 +16,15 @@ pip install ez
 
 Requires Python 3.11+.
 
+For packages used by external scripts (Flask and its extensions, Gunicorn,
+cachelib, DuckDB, parse, PyYAML, xmltodict, and macOS-only imessage_reader):
+
+```bash
+pip install 'ez[extra]'
+```
+
+These packages are optional and are not installed with plain `ez`.
+
 ---
 
 ## Quick Start

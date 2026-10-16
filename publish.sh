@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 source ~/.bash_profile
+shopt -s expand_aliases
+
 
 csd=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # hack app

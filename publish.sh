@@ -80,12 +80,23 @@ stage="upgrading the local installation (PyPI upload already completed)"
 for _ in 1 2 3; do
     ezupdate
 done
+
 stage="reporting distribution and installed versions (PyPI upload already completed)"
-printf '\nDistribution version: '
-uv version --short
-printf '\nDistribution files:\n'
-ls "$csd/dist"
-printf '\nLocally installed package (uv-selected Python environment):\n'
-installed_package="$(uv pip show ez)"
-printf '%s\n' "$installed_package" | grep -E '^(Name|Version|Location):'
-printf 'Release published, committed, pushed, and local upgrades completed.\n'
+
+ver="$(uv version --short 2>/dev/null)"
+distfile=$(ls "$csd/dist")
+printf 'Distribution: %s (%s)\n' "$ver" "$distfile"
+
+printf '\n'
+eval "$(uv pip show ez 2>/dev/null | awk -F': ' '
+  /^Name:/ { name = $2 }
+  /^Version:/ { version = $2 }
+  /^Location:/ { location = $2 }
+  END {
+    print "location=\"" location "\""
+    print "package=\"" name " " version "\""
+  }
+')"
+printf 'Local: %s (%s)\n' "$package" "$location"
+
+printf 'Done.\n'

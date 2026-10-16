@@ -80,7 +80,6 @@ install_requires = [
 
     # Images, media downloads and subtitles
     'Pillow',
-    'yt-dlp[default,curl-cffi]',
     'pysubs2',
 
     # Text to speech

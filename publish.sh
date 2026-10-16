@@ -84,8 +84,8 @@ done
 stage="reporting distribution and installed versions (PyPI upload already completed)"
 
 ver="$(uv version --short 2>/dev/null)"
-distfile=$(ls "$csd/dist")
-printf 'Distribution: %s (%s)\n' "$ver" "$distfile"
+distfiles="$(ls "$csd/dist" 2>/dev/null | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')"
+printf 'Distribution: %s (%s)\n' "$ver" "$distfiles"
 
 printf '\n'
 eval "$(uv pip show ez 2>/dev/null | awk -F': ' '

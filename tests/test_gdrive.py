@@ -98,6 +98,21 @@ class AuthenticationTests(unittest.TestCase):
         self.credentials.refresh.assert_not_called()
         self.assertEqual(self.token.read_text(), '{"refresh_token": "test-placeholder"}')
 
+    def test_gauth_reuses_saved_secrets_and_token_without_configured_key(self):
+        (self.root / "gdrive_secrets.json").write_text(json.dumps(self.config))
+        self.token.write_text('{"refresh_token": "test-placeholder"}')
+        namespace = {**vars(drive), "__file__": str(self.root / "ez.py")}
+        function = next(node for node in source.body
+                        if isinstance(node, ast.FunctionDef) and node.name == "gauth")
+        exec(compile(ast.Module(body=[function], type_ignores=[]), "ez/ez.py", "exec"),
+             namespace)
+        self.assertIs(namespace["gauth"](), self.build.return_value)
+        self.factory.from_authorized_user_info.assert_called_once_with(
+            {"refresh_token": "test-placeholder"},
+        )
+        self.flow.from_client_config.assert_not_called()
+        self.credentials.refresh.assert_not_called()
+
     def test_expired_credentials_refresh_and_persist(self):
         self.token.write_text("{}")
         self.credentials.valid = False
@@ -193,12 +208,15 @@ class AuthenticationTests(unittest.TestCase):
 
 class DriveFunctionTests(unittest.TestCase):
     def setUp(self):
+        self.directory = tempfile.TemporaryDirectory(prefix="ez-drive-functions-")
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name).resolve()
         source = ast.parse((ROOT / "ez/ez.py").read_text())
         names = {"gauth", "gdownload", "gupload", "gdelete", "gcopy", "gmove", "gls", "gfileid"}
         functions = [node for node in source.body
                      if isinstance(node, ast.FunctionDef) and node.name in names]
         self.namespace = {
-            "__file__": str(ROOT / "ez/ez.py"), "__package__": "ez",
+            "__file__": str(self.root / "ez.py"), "__package__": "ez",
             "joinpath": os.path.join, "pwd": os.getcwd,
             "splitpath": lambda value: (
                 os.path.dirname(value), *os.path.splitext(os.path.basename(value)),
@@ -229,7 +247,35 @@ class DriveFunctionTests(unittest.TestCase):
         with patch.dict(self.namespace, {"_gdrive_authenticate": Mock()}) as namespace:
             authenticate = namespace["_gdrive_authenticate"]
             self.assertIs(self.original_auth(), authenticate.return_value)
-        authenticate.assert_called_once_with(self.namespace["GDRIVE_KEY"], ROOT / "ez")
+        authenticate.assert_called_once_with(self.namespace["GDRIVE_KEY"], self.root)
+
+    def test_auth_loads_saved_client_configuration(self):
+        config = {"installed": {"client_id": "test-client"}}
+        secrets = self.root / "gdrive_secrets.json"
+        secrets.write_text(json.dumps(config))
+        cwd = Path.cwd()
+        with patch.dict(self.namespace, {"_gdrive_authenticate": Mock()}) as namespace:
+            authenticate = namespace["_gdrive_authenticate"]
+            self.assertIs(self.original_auth(), authenticate.return_value)
+        authenticate.assert_called_once_with(config, self.root)
+        self.assertEqual(Path.cwd(), cwd)
+
+    def test_configured_key_takes_precedence_over_saved_configuration(self):
+        self.namespace["GDRIVE_KEY"] = {"test": "placeholder"}
+        (self.root / "gdrive_secrets.json").write_text("invalid")
+        with patch.dict(self.namespace, {"_gdrive_authenticate": Mock()}) as namespace:
+            self.original_auth()
+            namespace["_gdrive_authenticate"].assert_called_once_with(
+                self.namespace["GDRIVE_KEY"], self.root,
+            )
+
+    def test_invalid_saved_client_configuration_is_explicit_and_private(self):
+        for content in (b"do-not-print", b"\xff"):
+            with self.subTest(content=content):
+                (self.root / "gdrive_secrets.json").write_bytes(content)
+                with self.assertRaisesRegex(ValueError, "Invalid gdrive_secrets.json") as result:
+                    self.original_auth()
+                self.assertNotIn("do-not-print", str(result.exception))
 
     def test_missing_auth_configuration_is_explicit(self):
         with self.assertRaisesRegex(ValueError, "GDRIVE_KEY"):

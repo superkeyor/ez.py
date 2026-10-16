@@ -7823,7 +7823,7 @@ def _gdrive_authenticate(client_config: dict, directory):
             raise ValueError("gdrive_token.json contains an invalid credential format.")
         if module.startswith("oauth2client.") or token.get("_class") == "OAuth2Credentials":
             warnings.warn(
-                "Legacy PyDrive2 token detected; one-time Google Drive browser authorization is required.",
+                "Legacy credential format detected; one-time Google Drive browser authorization is required.",
                 UserWarning, stacklevel=2,
             )
         else:
@@ -7885,16 +7885,32 @@ def _gdrive_parent_changes(service, file_id: str, destination: str) -> dict[str,
 def gauth():
     """Authenticate to Google Drive and return the native Drive API v3 service.
 
-    GDRIVE_KEY must contain an installed/web Google OAuth client configuration.
-    Tokens are cached beside this module; legacy PyDrive2 tokens require one-time
-    browser reauthorization. The returned service uses files().get/list/etc.,
-    not the old PyDrive2 CreateFile/ListFile interface.
+    Use GDRIVE_KEY when configured, otherwise load gdrive_secrets.json beside
+    this module. OAuth client settings are required to start browser login.
+    Without a cached token, open the browser for login and consent, then save
+    gdrive_token.json beside gdrive_secrets.json. Reuse and refresh that token
+    on subsequent calls. Legacy credential formats require one-time browser
+    reauthorization. The returned service uses files().get/list/etc.
     """
+    import json
     from pathlib import Path
 
-    if 'GDRIVE_KEY' not in globals():
-        raise ValueError("Configure GDRIVE_KEY before authenticating to Google Drive.")
-    return _gdrive_authenticate(GDRIVE_KEY, Path(__file__).resolve().parent)
+    directory = Path(__file__).resolve().parent
+    if 'GDRIVE_KEY' in globals():
+        client_config = GDRIVE_KEY
+    else:
+        secrets_path = directory / "gdrive_secrets.json"
+        try:
+            client_config = json.loads(secrets_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            raise ValueError(
+                f"Configure GDRIVE_KEY or save your Google OAuth client configuration to {secrets_path}."
+            ) from None
+        except (ValueError, UnicodeError):
+            raise ValueError(
+                "Invalid gdrive_secrets.json; provide a valid Google OAuth client configuration."
+            ) from None
+    return _gdrive_authenticate(client_config, directory)
 #endregion gauth
 
 #region gdownload

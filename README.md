@@ -606,13 +606,18 @@ service = ez.gauth()
 metadata = service.files().get(fileId=file_id, fields="id,name,mimeType").execute()
 ```
 
-Set `GDRIVE_KEY` to your Google OAuth client configuration in your private
-configuration. Client settings and cached credentials are stored in
-`gdrive_secrets.json` and `gdrive_token.json` beside the installed module.
+`ez.gauth()` uses `GDRIVE_KEY` from your private configuration when configured;
+otherwise it reads `gdrive_secrets.json` beside the installed module. If you
+already have that file and `gdrive_token.json` there, no `GDRIVE_KEY` is needed.
+Client settings must contain an installed/web Google OAuth client configuration.
+The cached token is reused and refreshed as needed.
 Authentication does not change the working directory.
 
-The first call opens your browser for Google authorization and caches the token
-after authorization succeeds. Subsequent calls reuse the token and refresh it
+When no token is cached, the call opens your browser for Google login and consent,
+then saves `gdrive_token.json` beside `gdrive_secrets.json` after authorization
+succeeds. It does not create a separate `token.json`. Browser authorization requires
+OAuth client settings: if neither `GDRIVE_KEY` nor `gdrive_secrets.json` is available,
+configure one first. Subsequent calls reuse the token and refresh it
 when expired. Malformed tokens, failed refreshes, and write errors
 are reported rather than silently restarting authorization. New credential files
 are written atomically with owner-only permissions; never commit or share them.

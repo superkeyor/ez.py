@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "ez"
-version = "11.9.4"
+version = "11.9.5"
 description = "easy stuff"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -68,13 +68,8 @@ dependencies = [
     "numpy",
     "pyarrow",
 
-    # Images, media downloads and subtitles
+    # Images
     "Pillow",
-    "pysubs2",
-
-    # Text to speech
-    "gTTS",
-    "edge-tts",
 
     # Cloud storage, spreadsheets and calendars
     "dropbox",

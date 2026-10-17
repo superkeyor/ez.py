@@ -2705,6 +2705,7 @@ version = ver
 #region require
 def require(pkg, version="latest", confirm=True, channel="pip", quiet=True):
     """Ensure a package is installed at the latest compatible or a specified version via pip or Conda.
+    Well, probably not needed any more, because I use uv tool install --upgrade
 
     pkg: Package name, optionally with pip extras, e.g. "httpx[http2]".
         Pass version pins through version, not through pkg.

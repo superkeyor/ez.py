@@ -226,7 +226,11 @@ class BuiltArtifactTests(unittest.TestCase):
             shutil.copy2(ROOT / name, source / name)
         for name in ("__init__.py", "ez.py", "version.py", "prepublish.py"):
             shutil.copy2(ROOT / "ez" / name, package / name)
-        for name in ("gdrive_secrets.json", "gdrive_token.json"):
+        private_files = (
+            "gdrive_secrets.json", "gdrive_token.json",
+            "gcal_secrets.json", "gcal_token.pickle",
+        )
+        for name in private_files:
             (package / name).write_text('{"test": "not-a-real-credential"}')
         output = self.output / "private-cache-build"
         subprocess.run(
@@ -238,7 +242,7 @@ class BuiltArtifactTests(unittest.TestCase):
         with tarfile.open(output / f"ez-{self.version}.tar.gz") as archive:
             names.extend(archive.getnames())
         self.assertFalse(any(
-            name.endswith(("gdrive_secrets.json", "gdrive_token.json")) for name in names
+            name.endswith(private_files) for name in names
         ))
 
 

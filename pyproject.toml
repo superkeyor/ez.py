@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "ez"
-version = "11.9.3"
+version = "11.9.4"
 description = "easy stuff"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -120,4 +120,4 @@ pdf2md = "ez.ez:_cli"
 module-root = ""
 module-name = "ez"
 source-include = ["tests/**", "scripts/publish.py", "publish.sh", "Publish.app/Contents/Resources/script"]
-source-exclude = [".DS_Store", "gdrive_secrets.json", "gdrive_token.json"]
+source-exclude = [".DS_Store", "gdrive_secrets.json", "gdrive_token.json", "gcal_secrets.json", "gcal_token.pickle"]

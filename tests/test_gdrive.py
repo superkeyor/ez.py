@@ -84,8 +84,8 @@ class AuthenticationTests(unittest.TestCase):
             port=0, access_type="offline", prompt="consent",
         )
         self.assertEqual(self.token.read_text(), self.credentials.to_json())
-        for path in (self.token, self.root / "gdrive_secrets.json"):
-            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(self.token.stat().st_mode & 0o777, 0o600)
+        self.assertFalse((self.root / "gdrive_secrets.json").exists())
         self.assertFalse((self.root / "settings.yaml").exists())
         self.build.assert_called_once_with(
             "drive", "v3", credentials=self.credentials, cache_discovery=False,
@@ -160,10 +160,10 @@ class AuthenticationTests(unittest.TestCase):
             self.authenticate()
         self.assertEqual(self.token.read_text(), original)
 
-    def test_gauth_reuses_saved_secrets_and_token_without_configured_key(self):
-        (self.root / "gdrive_secrets.json").write_text(json.dumps(self.config))
+    def test_gauth_reuses_token_with_configured_key_without_secrets_file(self):
         self.token.write_text('{"refresh_token": "test-placeholder"}')
-        namespace = {**vars(drive), "__file__": str(self.root / "ez.py")}
+        namespace = {**vars(drive), "__file__": str(self.root / "ez.py"),
+                     "GDRIVE_KEY": self.config}
         function = next(node for node in source.body
                         if isinstance(node, ast.FunctionDef) and node.name == "gauth")
         exec(compile(ast.Module(body=[function], type_ignores=[]), "ez/ez.py", "exec"),
@@ -268,6 +268,126 @@ class AuthenticationTests(unittest.TestCase):
         self.assertFalse(any(path.name.startswith(".gdrive") for path in self.root.iterdir()))
 
 
+class CalendarAuthenticationTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory(prefix="ez-calendar-auth-")
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name).resolve()
+        self.token = self.root / "gcal_token.pickle"
+        self.config = {"installed": {"client_id": "test-client"}}
+        self.credentials = Mock(valid=True, expired=False, refresh_token="test-refresh")
+        self.credentials.has_scopes.return_value = True
+        self.flow = Mock()
+        self.flow.from_client_config.return_value.run_local_server.return_value = self.credentials
+        self.calendar = Mock()
+        self.request = Mock()
+        modules = fake_modules({
+            "google.auth.transport.requests": {"Request": self.request},
+            "google.oauth2.credentials": {"Credentials": type(self.credentials)},
+            "google_auth_oauthlib.flow": {"InstalledAppFlow": self.flow},
+            "gcsa.google_calendar": {"GoogleCalendar": self.calendar},
+        })
+        patcher = patch.dict(sys.modules, modules)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        dumps = patch("pickle.dumps", return_value=b"cached-calendar-token")
+        loads = patch("pickle.load", return_value=self.credentials)
+        self.dumps = dumps.start()
+        self.loads = loads.start()
+        self.addCleanup(dumps.stop)
+        self.addCleanup(loads.stop)
+        node = next(node for node in source.body
+                    if isinstance(node, ast.ClassDef) and node.name == "GCal")
+        self.namespace = {
+            "__file__": str(self.root / "ez.py"), "GCAL_KEY": self.config,
+            "_gdrive_save_private": drive._gdrive_save_private,
+        }
+        exec(compile(ast.Module(body=[node], type_ignores=[]), "calendar", "exec"),
+             self.namespace)
+        self.cwd = Path.cwd()
+
+    def tearDown(self):
+        self.assertEqual(Path.cwd(), self.cwd)
+        self.assertFalse((self.root / "gcal_secrets.json").exists())
+
+    def authenticate(self):
+        return self.namespace["GCal"]("primary")
+
+    def test_initial_authorization_uses_key_and_persists_only_token(self):
+        self.assertIs(self.authenticate().gcal, self.calendar.return_value)
+        self.flow.from_client_config.assert_called_once_with(
+            self.config, ["https://www.googleapis.com/auth/calendar"],
+        )
+        self.flow.from_client_config.return_value.run_local_server.assert_called_once_with(
+            port=8080, access_type="offline", prompt="consent",
+        )
+        self.calendar.assert_called_once_with("primary", credentials=self.credentials)
+        self.assertEqual(self.token.read_bytes(), b"cached-calendar-token")
+        self.assertEqual(self.token.stat().st_mode & 0o777, 0o600)
+
+    def test_existing_pickle_token_is_reused_without_browser(self):
+        self.token.write_bytes(b"existing-token")
+        self.authenticate()
+        self.flow.from_client_config.assert_not_called()
+        self.credentials.refresh.assert_not_called()
+        self.assertEqual(self.token.read_bytes(), b"existing-token")
+
+    def test_expired_token_is_refreshed_and_saved(self):
+        self.token.write_bytes(b"existing-token")
+        self.credentials.valid = False
+        self.credentials.expired = True
+        self.authenticate()
+        self.credentials.refresh.assert_called_once_with(self.request.return_value)
+        self.assertEqual(self.token.read_bytes(), b"cached-calendar-token")
+        self.flow.from_client_config.assert_not_called()
+
+    def test_failed_refresh_preserves_token(self):
+        self.token.write_bytes(b"existing-token")
+        self.credentials.valid = False
+        self.credentials.expired = True
+        self.credentials.refresh.side_effect = RuntimeError("refresh failed")
+        with self.assertRaisesRegex(RuntimeError, "refresh failed"):
+            self.authenticate()
+        self.assertEqual(self.token.read_bytes(), b"existing-token")
+        self.calendar.assert_not_called()
+
+    def test_write_failure_is_explicit_without_changing_working_directory(self):
+        with patch.object(drive.os, "replace", side_effect=PermissionError("write denied")):
+            with self.assertRaisesRegex(PermissionError, "write denied"):
+                self.authenticate()
+        self.assertFalse(self.token.exists())
+        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_invalid_cached_token_is_not_silently_replaced(self):
+        self.token.write_bytes(b"existing-token")
+        self.loads.return_value = {}
+        with self.assertRaisesRegex(ValueError, "Invalid gcal_token"):
+            self.authenticate()
+        self.assertEqual(self.token.read_bytes(), b"existing-token")
+        self.flow.from_client_config.assert_not_called()
+
+    def test_missing_key_has_no_json_fallback(self):
+        del self.namespace["GCAL_KEY"]
+        (self.root / "gcal_secrets.json").write_text("{}")
+        with self.assertRaisesRegex(ValueError, "GCAL_KEY"):
+            self.authenticate()
+        (self.root / "gcal_secrets.json").unlink()
+        self.calendar.assert_not_called()
+
+    def test_unusable_cached_credentials_fail_explicitly(self):
+        self.token.write_bytes(b"existing-token")
+        self.credentials.has_scopes.return_value = False
+        with self.assertRaisesRegex(ValueError, "lack Calendar"):
+            self.authenticate()
+        self.credentials.has_scopes.return_value = True
+        self.credentials.valid = False
+        self.credentials.expired = False
+        with self.assertRaisesRegex(ValueError, "cannot be refreshed"):
+            self.authenticate()
+        self.assertEqual(self.token.read_bytes(), b"existing-token")
+        self.flow.from_client_config.assert_not_called()
+
+
 class DriveFunctionTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix="ez-drive-functions-")
@@ -311,15 +431,12 @@ class DriveFunctionTests(unittest.TestCase):
             self.assertIs(self.original_auth(), authenticate.return_value)
         authenticate.assert_called_once_with(self.namespace["GDRIVE_KEY"], self.root)
 
-    def test_auth_loads_saved_client_configuration(self):
-        config = {"installed": {"client_id": "test-client"}}
+    def test_auth_does_not_fall_back_to_saved_client_configuration(self):
         secrets = self.root / "gdrive_secrets.json"
-        secrets.write_text(json.dumps(config))
+        secrets.write_text('{"installed": {"client_id": "test-client"}}')
         cwd = Path.cwd()
-        with patch.dict(self.namespace, {"_gdrive_authenticate": Mock()}) as namespace:
-            authenticate = namespace["_gdrive_authenticate"]
-            self.assertIs(self.original_auth(), authenticate.return_value)
-        authenticate.assert_called_once_with(config, self.root)
+        with self.assertRaisesRegex(ValueError, "GDRIVE_KEY"):
+            self.original_auth()
         self.assertEqual(Path.cwd(), cwd)
 
     def test_configured_key_takes_precedence_over_saved_configuration(self):
@@ -331,11 +448,11 @@ class DriveFunctionTests(unittest.TestCase):
                 self.namespace["GDRIVE_KEY"], self.root,
             )
 
-    def test_invalid_saved_client_configuration_is_explicit_and_private(self):
+    def test_saved_client_configuration_is_ignored_without_key(self):
         for content in (b"do-not-print", b"\xff"):
             with self.subTest(content=content):
                 (self.root / "gdrive_secrets.json").write_bytes(content)
-                with self.assertRaisesRegex(ValueError, "Invalid gdrive_secrets.json") as result:
+                with self.assertRaisesRegex(ValueError, "GDRIVE_KEY") as result:
                     self.original_auth()
                 self.assertNotIn("do-not-print", str(result.exception))
 

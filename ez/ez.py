@@ -249,7 +249,7 @@ Dropbox:
     delfilefolder - Delete a Dropbox file or folder.
 
 Google Drive:
-    _gdrive_save_private - Atomically save private Drive credentials with owner-only permissions.
+    _gdrive_save_private - Atomically save private Google credentials with owner-only permissions.
     _gdrive_authenticate - Return an authorized v3 service, caching credentials beside the package.
     _gdrive_query_literal - Quote a Drive query literal without treating names as query syntax.
     _gdrive_list_files - Collect all Drive result pages in server order.
@@ -7722,18 +7722,40 @@ class GCal():
                 Users email address or name/id of the calendar. Default: primary calendar of the user
                 If user's email or "primary" is specified, then primary calendar of the user is used.
                 You don't need to specify this parameter in this case as it is a default behaviour.
+
+        Use GCAL_KEY imported from ez.pysecrets. Cache authorization in
+        gcal_token.pickle beside this module; do not create a client-settings
+        JSON file or change the working directory.
         """
-        # work in library path
-        oldpwd = os.getcwd()
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
+        import pickle
+        from pathlib import Path
+        from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
+        from google_auth_oauthlib.flow import InstalledAppFlow
         from gcsa.google_calendar import GoogleCalendar
-        savej(GCAL_KEY,'gcal_secrets.json')
-        
-        calendar = GoogleCalendar(default_calendar,credentials_path='gcal_secrets.json',token_path='gcal_token.pickle',save_token=True)
 
-        os.chdir(oldpwd)
-        self.gcal = calendar
+        if 'GCAL_KEY' not in globals():
+            raise ValueError("Configure GCAL_KEY in ez.pysecrets before authenticating to Google Calendar.")
+        token_path = Path(__file__).resolve().parent / "gcal_token.pickle"
+        scopes = ["https://www.googleapis.com/auth/calendar"]
+        credentials = None
+        if token_path.exists():
+            with token_path.open("rb") as stream:
+                credentials = pickle.load(stream)
+            if not isinstance(credentials, Credentials):
+                raise ValueError("Invalid gcal_token.pickle; restore or remove it to reauthorize.")
+            if not credentials.has_scopes(scopes):
+                raise ValueError("Cached Google Calendar credentials lack Calendar access; remove the token to reauthorize.")
+        if credentials is None:
+            flow = InstalledAppFlow.from_client_config(GCAL_KEY, scopes)
+            credentials = flow.run_local_server(port=8080, access_type="offline", prompt="consent")
+            _gdrive_save_private(token_path, pickle.dumps(credentials))
+        elif not credentials.valid:
+            if not credentials.expired or not credentials.refresh_token:
+                raise ValueError("Cached Google Calendar credentials cannot be refreshed; remove the token to reauthorize.")
+            credentials.refresh(Request())
+            _gdrive_save_private(token_path, pickle.dumps(credentials))
+        self.gcal = GoogleCalendar(default_calendar, credentials=credentials)
 
     def addevent(self,*args,**kwargs):
         """
@@ -7769,18 +7791,19 @@ class GCal():
                                      ####*GDrive*####
 ####************************************************************************************************
 # https://developers.google.com/workspace/drive/api/quickstart/python
-# GDRIVE_KEY supplies the OAuth client configuration. Credentials and cached tokens
-# remain in gdrive_secrets.json and gdrive_token.json beside this module.
+# GDRIVE_KEY supplies the OAuth client configuration; gdrive_token.json caches
+# authorization beside this module.
 # ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 #region Google Drive
 #region _gdrive_save_private
-def _gdrive_save_private(path, content: str) -> None:
-    """Atomically save private Drive credentials with owner-only permissions."""
+def _gdrive_save_private(path, content: str | bytes) -> None:
+    """Atomically save private Google credentials with owner-only permissions."""
     import tempfile
 
     descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}-", dir=path.parent)
     try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+        options = {} if isinstance(content, bytes) else {"encoding": "utf-8"}
+        with os.fdopen(descriptor, "wb" if isinstance(content, bytes) else "w", **options) as stream:
             stream.write(content)
         os.replace(temporary, path)
     finally:
@@ -7807,9 +7830,7 @@ def _gdrive_authenticate(client_config: dict, directory):
     ):
         raise ValueError("GDRIVE_KEY must contain valid installed/web OAuth client settings.")
 
-    credentials_path = directory / "gdrive_secrets.json"
     token_path = directory / "gdrive_token.json"
-    _gdrive_save_private(credentials_path, json.dumps(client_config))
     credentials = None
     if token_path.exists():
         try:
@@ -7867,7 +7888,7 @@ def _gdrive_authenticate(client_config: dict, directory):
                     "OAuth web client needs a registered local redirect URI such as "
                     "http://localhost:8080/. Add it to the existing client's authorized "
                     "redirect URIs in Google Cloud Console and update redirect_uris in "
-                    "GDRIVE_KEY or gdrive_secrets.json. No new OAuth client is needed."
+                    "GDRIVE_KEY. No new OAuth client is needed."
                 )
         flow = InstalledAppFlow.from_client_config(client_config, scopes)
         credentials = flow.run_local_server(
@@ -7921,10 +7942,9 @@ def _gdrive_parent_changes(service, file_id: str, destination: str) -> dict[str,
 def gauth():
     """Authenticate to Google Drive and return the native Drive API v3 service.
 
-    Use GDRIVE_KEY when configured, otherwise load gdrive_secrets.json beside
-    this module. OAuth client settings are required to start browser login.
+    Use GDRIVE_KEY imported from ez.pysecrets for OAuth client settings.
     Without a cached token, open the browser for login and consent, then save
-    gdrive_token.json beside gdrive_secrets.json. Reuse and refresh that token
+    gdrive_token.json beside this module. Reuse and refresh that token
     on subsequent calls. Legacy credential formats require one-time browser
     reauthorization. The returned service uses files().get/list/etc.
 
@@ -7932,25 +7952,11 @@ def gauth():
     localhost or 127.0.0.1 with an explicit port and no path other than "/".
     Desktop clients use an available local port.
     """
-    import json
     from pathlib import Path
 
-    directory = Path(__file__).resolve().parent
-    if 'GDRIVE_KEY' in globals():
-        client_config = GDRIVE_KEY
-    else:
-        secrets_path = directory / "gdrive_secrets.json"
-        try:
-            client_config = json.loads(secrets_path.read_text(encoding="utf-8"))
-        except FileNotFoundError:
-            raise ValueError(
-                f"Configure GDRIVE_KEY or save your Google OAuth client configuration to {secrets_path}."
-            ) from None
-        except (ValueError, UnicodeError):
-            raise ValueError(
-                "Invalid gdrive_secrets.json; provide a valid Google OAuth client configuration."
-            ) from None
-    return _gdrive_authenticate(client_config, directory)
+    if 'GDRIVE_KEY' not in globals():
+        raise ValueError("Configure GDRIVE_KEY in ez.pysecrets before authenticating to Google Drive.")
+    return _gdrive_authenticate(GDRIVE_KEY, Path(__file__).resolve().parent)
 #endregion gauth
 
 #region gdownload

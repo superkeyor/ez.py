@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "ez"
-version = "11.9.6"
+version = "11.9.7"
 description = "easy stuff"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -50,18 +50,8 @@ dependencies = [
     "pdfCropMargins",
     "pdfannots",
 
-    # HTTP and web
-    "requests",
-    "webdavclient3",
-    "fake_useragent",
-    "tldextract",
-    "tenacity",
-
-    # Text encoding, HTML/XML and eBooks
-    "chardet",
-    "beautifulsoup4",
-    "lxml",
-    "ebooklib",
+    # Images
+    "Pillow",
 
     # Data analysis and storage
     "pandas",
@@ -69,8 +59,25 @@ dependencies = [
     "pyarrow",  # for ticker.parquet
     # "plotnine",  # python's ggplot2 (not use, use R)
 
-    # Images
-    "Pillow",
+    # HTTP and web
+    "requests",
+    "webdavclient3",
+    "fake_useragent",
+    "tldextract",
+    "tenacity",
+
+    # Website
+    "Flask",
+    "flask-cors",
+    "flask-ipban",
+    "cachelib",
+    "gunicorn",
+
+    # Text encoding, HTML/XML and eBooks
+    "chardet",
+    "beautifulsoup4",
+    "lxml",
+    "ebooklib",
 
     # Cloud storage, spreadsheets and calendars
     "dropbox",
@@ -85,17 +92,6 @@ dependencies = [
     "yagmail",
     "imap-tools",
     "O365",
-]
-
-[project.optional-dependencies]
-# Above for desktop/server use
-# Below for web app
-flask = [
-    "Flask",
-    "flask-cors",
-    "flask-ipban",
-    "cachelib",
-    "gunicorn",
 ]
 
 [project.urls]

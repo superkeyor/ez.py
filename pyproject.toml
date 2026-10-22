@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "ez"
-version = "11.9.7"
+version = "11.9.8"
 description = "easy stuff"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,6 +19,10 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
+    # dep of dep
+    "aiohttp",
+    "pydantic",
+
     # Dates and time zones
     "pytz",
     "tzlocal",

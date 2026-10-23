@@ -161,17 +161,18 @@ Desktop and Keyboard Maestro:
     menubar - Set Keyboard Maestro's menubar text.
 
 Office-to-Markdown Conversion:
-    _md_paths - Resolve and validate input and output paths for document conversion.
-    _md_write - Write converted Markdown to a file or standard output.
-    _md_ranges - Parse a one-based comma-separated list of values and ranges.
+    _output_paths - Resolve paths and protect source files and existing outputs.
+    _output_write - Write UTF-8 text to a file or standard output.
+    _md_combine - Combine document Markdown with source headings in input order.
+    _parse_ranges - Parse a one-based comma-separated list of values and ranges.
     _md_load_office - Load an Office document and normalize missing-member errors.
     pptx2md - Convert a PowerPoint presentation to Markdown using MarkItDown.
     docx2md - Convert a Word .docx document to Markdown using MarkItDown.
     xlsx2md - Convert Excel .xlsx worksheets to Markdown tables using openpyxl.
     pdf2md - Convert text-based PDF pages to Markdown using PyMuPDF and MarkItDown.
     _cli_input_files - Resolve and validate input files for a batch conversion.
-    _cli_output_files - Build safe Markdown output paths for batch input files.
-    _cli_batch - Run a document conversion over the selected batch of input files.
+    _cli_output_files - Build safe output paths for batch input files.
+    _cli_batch - Run a registered tool with separate or combined output files.
     _cli - Run an explicitly registered CLI tool; return an integer exit status.
 
 Office and PDF Utilities:
@@ -266,6 +267,8 @@ Google Drive:
 Images and PDF Annotations:
     gif - Create an animated GIF from image files.
     pdf2gif - Create an animated GIF from cropped PDF pages.
+    _pdfannot_extract - Extract annotation Markdown and optionally mark the source PDF.
+    _pdfannot_cli - Extract one PDF's annotations with standard command output options.
     pdfannot - Extract PDF highlights and annotations into Markdown.
 """
 # for __all__
@@ -4716,9 +4719,9 @@ def menubar(msg):
 
 # ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 #region Office-to-Markdown Conversion
-#region _md_paths
-def _md_paths(input_path, output, overwrite):
-    """Resolve and validate input and output paths for document conversion."""
+#region _output_paths
+def _output_paths(input_path, output, overwrite):
+    """Resolve paths and protect source files and existing outputs."""
     input_path = os.path.abspath(os.path.expanduser(os.fspath(input_path)))
     if output is not None:
         output = os.path.abspath(os.path.expanduser(os.fspath(output)))
@@ -4728,23 +4731,34 @@ def _md_paths(input_path, output, overwrite):
         if not overwrite and os.path.lexists(output):
             raise FileExistsError(f"Output already exists: {output}")
     return input_path, output
-#endregion _md_paths
+#endregion _output_paths
 
-#region _md_write
-def _md_write(markdown, output, overwrite):
-    """Write converted Markdown to a file or standard output."""
-    if markdown:
-        markdown += "\n"
+#region _output_write
+def _output_write(content, output, overwrite):
+    """Write UTF-8 text to a file or standard output."""
+    if content:
+        content += "\n"
     if output is None:
-        sys.stdout.write(markdown)
+        sys.stdout.write(content)
     else:
         with open(output, "w" if overwrite else "x", encoding="utf-8") as target:
-            target.write(markdown)
-    return markdown
-#endregion _md_write
+            target.write(content)
+    return content
+#endregion _output_write
 
-#region _md_ranges
-def _md_ranges(selection, count, label):
+#region _md_combine
+def _md_combine(results, root):
+    """Combine document Markdown with source headings in input order."""
+    sections = []
+    for path, content in results:
+        title = os.path.relpath(path, root).replace("\n", " ").replace("\r", " ")
+        title = re.sub(r"([\\`*_{}\[\]<>()#!|])", r"\\\1", title)
+        sections.append(f"# {title}\n\n{content}".rstrip("\n"))
+    return "\n\n---\n\n".join(sections)
+#endregion _md_combine
+
+#region _parse_ranges
+def _parse_ranges(selection, count, label):
     """Parse a one-based comma-separated list of values and ranges."""
     if selection is None:
         return list(range(1, count + 1))
@@ -4764,7 +4778,7 @@ def _md_ranges(selection, count, label):
             )
         selected.update(range(first, last + 1))
     return sorted(selected)
-#endregion _md_ranges
+#endregion _parse_ranges
 
 #region _md_load_office
 def _md_load_office(loader, *args, **kwargs):
@@ -4777,7 +4791,7 @@ def _md_load_office(loader, *args, **kwargs):
 
 #region pptx2md
 def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
-            output=None, overwrite=False):
+            output=None, overwrite=False, skip_hidden=True):
     """
     Convert a PowerPoint presentation to Markdown using MarkItDown.
 
@@ -4791,6 +4805,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
             Filename references do not extract image files.
     output: write UTF-8 Markdown here, or print to stdout when None.
     overwrite: allow replacing an existing output file (never the input).
+    skip_hidden: skip hidden slides, even when selected; False includes them.
 
     Returns the Markdown string, including a final newline when nonempty.
     Raises ValueError for invalid selections and FileExistsError if output
@@ -4801,11 +4816,16 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
     from markitdown import MarkItDown, StreamInfo
     from pptx import Presentation
 
-    pptx_path, output = _md_paths(pptx_path, output, overwrite)
+    pptx_path, output = _output_paths(pptx_path, output, overwrite)
     with open(pptx_path, "rb") as source:
         presentation = _md_load_office(Presentation, source)
     slide_count = len(presentation.slides)
-    original_numbers = _md_ranges(slides, slide_count, "slides")
+    original_numbers = _parse_ranges(slides, slide_count, "slides")
+    if skip_hidden:
+        original_numbers = [
+            number for number in original_numbers
+            if presentation.slides[number - 1]._element.get("show") not in ("0", "false")
+        ]
     selected = set(original_numbers)
     for number, slide in enumerate(presentation.slides, 1):
         if number in selected and not note and slide.has_notes_slide:
@@ -4839,7 +4859,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
             content = f"<!-- Slide number: {original_numbers[index]} -->\n{content}"
         sections.append(content.rstrip())
     markdown = ("\n\n" if markers else "\n\n---\n\n").join(sections)
-    return _md_write(markdown, output, overwrite)
+    return _output_write(markdown, output, overwrite)
 #endregion pptx2md
 
 #region docx2md
@@ -4859,13 +4879,13 @@ def docx2md(docx_path, images=False, output=None, overwrite=False):
     from markitdown import StreamInfo
     from markitdown.converters import DocxConverter
 
-    docx_path, output = _md_paths(docx_path, output, overwrite)
+    docx_path, output = _output_paths(docx_path, output, overwrite)
     with open(docx_path, "rb") as source:
         markdown = _md_load_office(
             DocxConverter().convert, source, StreamInfo(extension=".docx"),
             keep_data_uris=images,
         ).text_content
-    return _md_write(markdown.rstrip("\r\n"), output, overwrite)
+    return _output_write(markdown.rstrip("\r\n"), output, overwrite)
 #endregion docx2md
 
 #region xlsx2md
@@ -4896,7 +4916,7 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
     from openpyxl import load_workbook
     from openpyxl.utils import get_column_letter
 
-    xlsx_path, output = _md_paths(xlsx_path, output, overwrite)
+    xlsx_path, output = _output_paths(xlsx_path, output, overwrite)
     if sheets is not None and (
             not isinstance(sheets, (list, tuple)) or not sheets
             or any(not isinstance(name, str) or not name for name in sheets)):
@@ -4956,7 +4976,7 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                 table.extend("| " + " | ".join(row) + " |" for row in rows)
                 section += "\n\n" + "\n".join(table)
             sections.append(section)
-    return _md_write("\n\n".join(sections), output, overwrite)
+    return _output_write("\n\n".join(sections), output, overwrite)
 #endregion xlsx2md
 
 #region pdf2md
@@ -4981,13 +5001,13 @@ def pdf2md(pdf_path, pages=None, markers=True, output=None, overwrite=False):
     import pymupdf
     from markitdown import MarkItDown, StreamInfo
 
-    pdf_path, output = _md_paths(pdf_path, output, overwrite)
+    pdf_path, output = _output_paths(pdf_path, output, overwrite)
     sections = []
     converter = MarkItDown()
     with pymupdf.open(pdf_path) as document:
         if document.needs_pass:
             raise PermissionError("PDF requires a password; decrypt it before conversion.")
-        for number in _md_ranges(pages, len(document), "pages"):
+        for number in _parse_ranges(pages, len(document), "pages"):
             with pymupdf.open() as page_document:
                 page_document.insert_pdf(document, from_page=number - 1, to_page=number - 1)
                 with BytesIO(page_document.tobytes()) as stream:
@@ -4998,27 +5018,33 @@ def pdf2md(pdf_path, pages=None, markers=True, output=None, overwrite=False):
                 content = f"<!-- Page number: {number} -->\n{content}"
             sections.append(content.rstrip())
     separator = "\n\n" if markers else "\n\n---\n\n"
-    return _md_write(separator.join(sections), output, overwrite)
+    return _output_write(separator.join(sections), output, overwrite)
 #endregion pdf2md
 
 _CLI_ARGUMENT_GROUPS = {
     "output": [
-        (["-o", "--output"], {"metavar": "FILE", "help": "Write UTF-8 to FILE instead of stdout."}),
-        (["-f", "--force"], {"dest": "overwrite", "action": "store_true",
-                            "help": "Allow replacing an existing output file."}),
+        (["-o", "--output-file"], {"dest": "output", "metavar": "FILE",
+                                 "help": "Write output to FILE; combine multiple inputs."}),
+        (["--overwrite"], {"action": "store_true",
+                          "help": "Allow replacing an existing output file."}),
     ],
     "batch": [
         (["--output-dir"], {"metavar": "DIR",
-                            "help": "Write one .md per input, preserving subfolders."}),
+                            "help": "Write one output file per input, preserving subfolders."}),
         (["--recursive"], {"action": "store_true",
                            "help": "Scan nested folders and enable ** wildcard patterns."}),
     ],
+}
+
+_CLI_OUTPUT_FORMATS = {
+    "markdown": {"extension": ".md", "combine": "_md_combine"},
 }
 
 # Literal metadata lets prepublish discover commands without importing this module.
 _CLI_COMMANDS = {
     "pptx2md": {
         "function": "pptx2md",
+        "output_format": "markdown",
         "description": "Convert a PowerPoint presentation to Markdown.",
         "arguments": [
             (["pptx_path"], {"metavar": "INPUT", "nargs": "+",
@@ -5028,6 +5054,8 @@ _CLI_COMMANDS = {
             (["--no-markers"], {"dest": "markers", "action": "store_false",
                                "help": "Replace slide comments with --- separators."}),
             (["--images"], {"action": "store_true", "help": "Embed images as base64 data URIs."}),
+            (["--include-hidden"], {"dest": "skip_hidden", "action": "store_false",
+                                   "help": "Include hidden slides (skipped by default)."}),
         ],
         "groups": ["output", "batch"],
         "batch": {
@@ -5039,6 +5067,7 @@ _CLI_COMMANDS = {
         },
         "notes": [
             "Slides are 1-based; selections retain original order and numbering.",
+            "Hidden slides are skipped, even when selected, unless --include-hidden is used.",
             "Without --images, filename references do not extract image files.",
             "The input is never overwritten. Output defaults to stdout.",
         ],
@@ -5047,6 +5076,7 @@ _CLI_COMMANDS = {
     },
     "docx2md": {
         "function": "docx2md",
+        "output_format": "markdown",
         "description": "Convert a Word document to Markdown.",
         "arguments": [
             (["docx_path"], {"metavar": "INPUT", "nargs": "+",
@@ -5072,6 +5102,7 @@ _CLI_COMMANDS = {
     },
     "xlsx2md": {
         "function": "xlsx2md",
+        "output_format": "markdown",
         "description": "Convert Excel worksheets to Markdown tables.",
         "arguments": [
             (["xlsx_path"], {"metavar": "INPUT", "nargs": "+",
@@ -5101,6 +5132,7 @@ _CLI_COMMANDS = {
     },
     "pdf2md": {
         "function": "pdf2md",
+        "output_format": "markdown",
         "description": "Convert text-based PDF pages to Markdown.",
         "arguments": [
             (["pdf_path"], {"metavar": "INPUT", "nargs": "+",
@@ -5125,6 +5157,35 @@ _CLI_COMMANDS = {
         ],
         "examples": ["pdf2md paper.pdf -p 1-3,5 -o paper.md",
                      'pdf2md "reports/**/*.pdf" --recursive --output-dir markdown'],
+    },
+    "pdfannot": {
+        "function": "_pdfannot_cli",
+        "output_format": "markdown",
+        "description": "Extract PDF highlights and annotations to Markdown.",
+        "arguments": [
+            (["pdfpath"], {"metavar": "INPUT", "nargs": "+",
+                          "help": "Input PDF files, folders, or wildcard patterns."}),
+            (["--mode"], {"type": "int", "choices": [0, 1, 2],
+                          "help": "Processing mode: 0, 1, or 2 (default: 2)."}),
+            (["--update-metadata"], {"action": "store_true",
+                                    "help": "Mark extracted PDFs as processed (default)."}),
+            (["--no-update-metadata"], {"dest": "update_metadata", "action": "store_false",
+                                       "help": "Leave source PDF content and metadata unchanged."}),
+        ],
+        "groups": ["output", "batch"],
+        "batch": {
+            "input": "pdfpath", "extension": ".pdf",
+            "errors": [("pymupdf", "FileDataError"), ("pymupdf.mupdf", "FzErrorBase")],
+        },
+        "notes": [
+            "Mode 0 skips timestamp-matched and previously marked PDFs; mode 1 only applies the timestamp check.",
+            "Mode 2 (default) bypasses both skip rules. PDFs without annotations produce no content.",
+            "Metadata updates are enabled by default and happen after extraction, even if output writing later fails.",
+            "Use --no-update-metadata to keep PDFs unchanged. Output defaults to stdout.",
+        ],
+        "examples": ["pdfannot paper.pdf",
+                     "pdfannot first.pdf second.pdf --output-file notes.md --no-update-metadata",
+                     "pdfannot papers --recursive --output-dir notes --overwrite"],
     },
 }
 
@@ -5220,8 +5281,8 @@ def _cli_input_files(inputs, extension, recursive):
 
 
 #region _cli_output_files
-def _cli_output_files(files, output_dir):
-    """Build safe Markdown output paths for batch input files."""
+def _cli_output_files(files, output_dir, extension):
+    """Build safe output paths for batch input files."""
     import tempfile
 
     root = os.path.commonpath([parent for _, parent, _ in files])
@@ -5235,7 +5296,7 @@ def _cli_output_files(files, output_dir):
     inputs = {identity for _, _, identity in files}
     jobs, errors, destinations = [], [], {}
     for path, _, _ in files:
-        output = os.path.join(output_dir, os.path.splitext(os.path.relpath(path, root))[0] + ".md")
+        output = os.path.join(output_dir, os.path.splitext(os.path.relpath(path, root))[0] + extension)
         try:
             resolved = os.path.realpath(output)
             if os.path.commonpath([resolved_dir, resolved]) != resolved_dir:
@@ -5266,24 +5327,37 @@ def _cli_output_files(files, output_dir):
 
 #region _cli_batch
 def _cli_batch(parser, spec, kwargs):
-    """Run a document conversion over the selected batch of input files."""
+    """Run a registered tool with separate or combined output files."""
     from importlib import import_module
+    import tempfile
     from zipfile import BadZipFile
 
     batch = spec["batch"]
     inputs = kwargs.pop(batch["input"])
     output_dir = kwargs.pop("output_dir", None)
+    output_file = kwargs.pop("output", None)
+    overwrite = kwargs.get("overwrite", False)
     recursive = kwargs.pop("recursive", False)
-    if output_dir is not None and "output" in kwargs:
-        parser.error("-o/--output and --output-dir are mutually exclusive.")
+    if output_dir is not None and output_file is not None:
+        parser.error("--output-file and --output-dir are mutually exclusive.")
     files, errors = _cli_input_files(inputs, batch["extension"], recursive)
-    if len(files) > 1 and output_dir is None:
-        parser.error("Multiple inputs require --output-dir; -o/--output is for one file.")
-    is_batch = output_dir is not None or len(inputs) > 1 or bool(errors)
-    jobs = [(path, kwargs.get("output")) for path, _, _ in files]
+    if len(files) > 1 and output_dir is None and output_file is None:
+        parser.error("Multiple inputs require --output-file or --output-dir.")
+    output_format = _CLI_OUTPUT_FORMATS[spec["output_format"]]
+    combined = output_file is not None and len(files) > 1
+    is_batch = output_dir is not None or len(files) > 1 or len(inputs) > 1 or bool(errors)
+    jobs = [(path, output_file) for path, _, _ in files]
+    if files and output_file is not None:
+        try:
+            for path, _, _ in files:
+                _, output_file = _output_paths(path, output_file, overwrite)
+            jobs = [(path, output_file) for path, _, _ in files]
+        except (OSError, ValueError) as exc:
+            errors.extend((path, str(exc)) for path, _, _ in files)
+            jobs = []
     if files and output_dir is not None:
         try:
-            jobs, output_errors = _cli_output_files(files, output_dir)
+            jobs, output_errors = _cli_output_files(files, output_dir, output_format["extension"])
             errors.extend(output_errors)
         except (OSError, ValueError) as exc:
             errors.extend((path, str(exc)) for path, _, _ in files)
@@ -5297,23 +5371,43 @@ def _cli_batch(parser, spec, kwargs):
             errors.extend((path, str(exc)) for path, _ in jobs)
             jobs = []
     succeeded = 0
-    for path, output in jobs:
-        try:
-            if output_dir is not None:
-                os.makedirs(os.path.dirname(output), exist_ok=True)
-                resolved_dir = os.path.realpath(os.path.abspath(os.path.expanduser(output_dir)))
-                if os.path.commonpath([resolved_dir, os.path.realpath(output)]) != resolved_dir:
-                    raise ValueError(f"Output escapes --output-dir: {output}")
-                if os.path.exists(output) and any(os.path.samefile(output, source) for source, _, _ in files):
-                    raise ValueError(f"Output must not replace any batch input: {output}")
-            options = dict(kwargs)
-            options[batch["input"]] = path
-            if output is not None:
-                options["output"] = output
-            globals()[spec["function"]](**options)
-            succeeded += 1
-        except expected_errors as exc:
-            errors.append((path, str(exc)))
+    results = []
+    with tempfile.TemporaryDirectory(prefix="ez-output-") as staging:
+        for index, (path, output) in enumerate(jobs):
+            try:
+                if output_dir is not None:
+                    os.makedirs(os.path.dirname(output), exist_ok=True)
+                    resolved_dir = os.path.realpath(os.path.abspath(os.path.expanduser(output_dir)))
+                    if os.path.commonpath([resolved_dir, os.path.realpath(output)]) != resolved_dir:
+                        raise ValueError(f"Output escapes --output-dir: {output}")
+                    if os.path.exists(output) and any(os.path.samefile(output, source) for source, _, _ in files):
+                        raise ValueError(f"Output must not replace any batch input: {output}")
+                options = dict(kwargs)
+                options[batch["input"]] = path
+                if combined:
+                    output = os.path.join(staging, str(index) + output_format["extension"])
+                if output is not None:
+                    options["output"] = output
+                globals()[spec["function"]](**options)
+                if combined:
+                    with open(output, encoding="utf-8") as result:
+                        results.append((path, result.read()))
+                succeeded += 1
+            except expected_errors as exc:
+                errors.append((path, str(exc)))
+        if combined and results:
+            try:
+                for path, _, _ in files:
+                    _output_paths(path, output_file, overwrite)
+                root = os.path.commonpath([parent for _, parent, _ in files])
+                content = globals()[output_format["combine"]](results, root)
+                _output_write(content, output_file, overwrite)
+            except (OSError, ValueError) as exc:
+                errors.extend(
+                    (path, f"Cannot write combined output {output_file}: {exc}")
+                    for path, _ in results
+                )
+                succeeded = 0
     for path, message in errors:
         sys.stderr.write(f"{parser.prog}: error: {path}: {message}\n")
     if is_batch:
@@ -5348,10 +5442,11 @@ def _cli(argv=None, command=None):
             command_notes = list(spec["notes"])
             if "batch" in spec:
                 command_notes.extend([
-                    "Multiple files require --output-dir; -o/--output is only for one file.",
+                    "--output-file combines multiple inputs with source headings; --output-dir writes separate files.",
+                    "Multiple files require --output-file or --output-dir; these options are mutually exclusive.",
                     "Output subfolders are relative to the common input root; duplicate files are ignored.",
                     "Failures are reported to stderr; other files continue. Any failure exits nonzero.",
-                    "--force replaces existing outputs, never inputs or colliding batch outputs.",
+                    "--overwrite replaces existing outputs, never source paths or colliding batch outputs.",
                 ])
             notes = "\n".join(
                 f"    {number}. {note}" for number, note in enumerate(command_notes, 1)
@@ -5359,6 +5454,9 @@ def _cli(argv=None, command=None):
             examples = "\n".join(f"    {example}" for example in spec["examples"])
             siblings = [name for name in _CLI_COMMANDS if name != command]
             see_also = "\n\nSee also:\n    " + ", ".join(siblings) if siblings else ""
+            formatter.add_usage(
+                self.usage, self._actions, self._mutually_exclusive_groups, prefix=""
+            )
             return """{description}
 
 Usage:
@@ -5373,11 +5471,13 @@ Example:
 {examples}{see_also}
 """.format(
                 description=spec["description"],
-                usage=self.prog + " " + formatter._format_actions_usage(self._actions, []),
+                usage=formatter.format_help().strip(),
                 arguments=arguments, notes=notes, examples=examples, see_also=see_also,
             )
 
-    parser = CommandParser(prog=command, add_help=False, argument_default=argparse.SUPPRESS)
+    parser = CommandParser(
+        prog=command, add_help=False, allow_abbrev=False, argument_default=argparse.SUPPRESS
+    )
     arguments = list(spec["arguments"])
     for group in spec.get("groups", []):
         arguments.extend(_CLI_ARGUMENT_GROUPS[group])
@@ -8674,200 +8774,119 @@ def pdf2gif(pdf,out='animation.gif',dpi=300,crop=None,duration=300,loop=0):
     print(f"Output gif: {out}")
 #endregion pdf2gif
 
+#region _pdfannot_extract
+def _pdfannot_extract(pdfpath, mode=2, update_metadata=True):
+    """Extract annotation Markdown and optionally mark the source PDF."""
+    import datetime
+    import pymupdf
+    from pdfannots import process_file
+    from pdfminer.pdfexceptions import PDFException
+
+    if type(mode) is not int or mode not in (0, 1, 2):
+        raise ValueError("mode must be 0, 1, or 2.")
+    modification_time = os.path.getmtime(pdfpath)
+    time_difference = modification_time - os.path.getctime(pdfpath)
+    # A near-creation modification time is the legacy unread-PDF heuristic.
+    if -5 < time_difference < 60 and mode < 2:
+        return ""
+
+    with pymupdf.open(pdfpath) as doc:
+        if doc.needs_pass:
+            raise ValueError("Decrypt password-protected PDFs before extracting annotations.")
+        producer = doc.metadata["producer"]
+        if mode == 0 and "PyHighlightExtractor" in producer:
+            return ""
+        if not doc.page_count:
+            raise ValueError("PDF contains no pages.")
+
+        page = doc[(doc.page_count - 1) // 2]
+        xs = [block[0] for block in page.get_text_blocks()]
+        multi_column = bool(xs) and max(xs) - min(xs) > page.mediabox.width / 3
+        try:
+            with open(pdfpath, "rb") as source:
+                document = process_file(source, columns_per_page=2 if multi_column else None)
+        except PDFException as exc:
+            raise ValueError(f"Cannot extract PDF annotations: {exc}") from exc
+
+        bookmarks = {entry[2]: entry[1] for entry in doc.get_toc()}
+        highlights = []
+        for page_idx, page in enumerate(document.pages):
+            for annot in page.annots:
+                text = "".join(annot.text).strip().replace("-\n", "").replace("\n", "")
+                highlights.append((page_idx + 1, bookmarks.get(page_idx + 1, ""), text))
+        if not highlights:
+            return ""
+
+        modification_date = datetime.datetime.fromtimestamp(modification_time).strftime("%Y-%m-%d")
+        md = f"### [{os.path.basename(pdfpath)}](<file://{pdfpath}>)\n"
+        md += f"> [!QUOTE] Highlights (out of {doc.page_count} pages @ {modification_date})\n"
+        for number, bookmark, text in highlights:
+            label = f"{number} {bookmark}".strip()
+            md += f"> {text} (p. {label})\n> \n"
+
+        if update_metadata and "PyHighlightExtractor" not in producer:
+            metadata = doc.metadata
+            metadata["producer"] = f"PyHighlightExtractor; {producer}"
+            try:
+                doc.set_metadata(metadata)
+                doc.save(pdfpath, incremental=True, encryption=pymupdf.PDF_ENCRYPT_KEEP)
+            except (OSError, RuntimeError, ValueError, pymupdf.mupdf.FzErrorBase) as exc:
+                raise OSError(f"Cannot update PDF metadata for {pdfpath}: {exc}") from exc
+    return md
+#endregion _pdfannot_extract
+
+#region _pdfannot_cli
+def _pdfannot_cli(pdfpath, mode=2, update_metadata=True, output=None, overwrite=False):
+    """Extract one PDF's annotations with standard command output options."""
+    pdfpath, output = _output_paths(pdfpath, output, overwrite)
+    markdown = _pdfannot_extract(pdfpath, mode, update_metadata)
+    return _output_write(markdown.rstrip("\n"), output, overwrite)
+#endregion _pdfannot_cli
+
 #region pdfannot
-def pdfannot(pdfpath, mdpath=None, force=1):
+def pdfannot(pdfpath, mdpath=None, mode=2, update_metadata=True):
     """Extract PDF highlights and annotations into Markdown.
 
-    pdfpath: pdfpath_or_pdffolder
-    mdpath:  save output to an md file
-    force:   0/1/2
-             0 skip pdf files that have been processed before
-             1 not skip pdf files
-             2 not skip pdf files and ignore time difference btw modification - creation
+    pdfpath: PDF path or folder.
+    mdpath: optional Markdown file; prepend new annotations to existing contents.
+            Markdown is also printed to stdout. The function returns None.
+    mode: 0 skips timestamp-matched and previously marked PDFs; 1 only applies
+          the timestamp check; 2 (default) bypasses both skip rules.
+          This replaces the former force argument; force= is no longer accepted.
+    update_metadata: mark extracted PDFs as processed (default True). Set False
+                     to leave PDFs unchanged. Marking happens after extraction,
+                     independently of whether output writing later succeeds.
+
+    Installed CLI: pdfannot --help. Its output options use standard overwrite
+    and batch behavior instead of this Python API's prepend behavior.
     """
-    def _process_pdfpath(pdfpath, mdpath=None, force=0):
-        import os, datetime
-        modification_time = os.path.getmtime(pdfpath)
-        creation_time = os.path.getctime(pdfpath)
-        modification_time_dt = datetime.datetime.fromtimestamp(modification_time)
-        creation_time_dt = datetime.datetime.fromtimestamp(creation_time)
-        time_difference = (modification_time_dt - creation_time_dt).total_seconds()
-        # if less than 60s, likely it has never been read/highlighted
-        # in the case of syncthing, time_difference < 0 ??
-        # this will make the processing really fast
-        if time_difference < 60 and time_difference > -5 and force < 2: return None
-            # use the function below to make mtime equal to ctime
-            # def make_mtime_ctime(folder):
-            # fs = fls(folder)
-            # for f in fs:
-            #     creation_time = os.path.getctime(f)
-            #     os.utime(f, (creation_time, creation_time))
+    def process(path):
+        md = _pdfannot_extract(path, mode, update_metadata)
+        if not md:
+            return
+        if mdpath is not None and str(mdpath).title() != "None":
+            data = ""
+            if os.path.exists(mdpath):
+                with open(mdpath, encoding="utf-8") as original:
+                    data = "\n" + original.read()
+            with open(mdpath, "w", encoding="utf-8") as modified:
+                modified.write(md + data)
+        print(md)
 
-        import pymupdf  # PyMuPDF
-        doc = pymupdf.open(pdfpath)
-        producer = doc.metadata["producer"]
-        # file has been extracted before
-        if ( (force==0) and ('PyHighlightExtractor' in producer) ): return None
-
-        def _get_page_bookmark_name(page_idx):
-            name = ''
-            for bookmark in doc.get_toc():
-                # each bookmark consists of [outline level, title, page number and link destination]
-                if bookmark[2] == page_idx+1:
-                    name = bookmark[1]
-            return name  # No bookmark found for the current page
-
-        def _is_multi_column():
+    if type(mode) is not int or mode not in (0, 1, 2):
+        raise ValueError("mode must be 0, 1, or 2.")
+    pdfpath = os.path.abspath(os.path.expanduser(os.fspath(pdfpath)))
+    if pdfpath.lower().endswith(".pdf"):
+        process(pdfpath)
+    else:
+        pdfs = fls(pdfpath, regex=r"\.pdf$")
+        # Newer extractions are prepended, so process modification times ascending.
+        pdfs = sorted(pdfs, key=lambda path: (os.path.dirname(path), os.path.getmtime(path)))
+        for path in pdfs:
             try:
-                import math
-                n = math.ceil(doc.page_count/2) - 1  # the page to try (0 based)
-                page = doc[n]
-                xs = [x[0] for x in page.get_text_blocks()]
-                # if the beginning of lines too far away, then likely multi-column
-                return (max(xs) - min(xs)) > (page.mediabox.width/3)
-            except:
-                return False
-
-        # not use: did not work well
-        # # https://stackoverflow.com/a/63686095/2292993
-        # def _parse_highlight(annot: pymupdf.Annot, wordlist: list) -> str:
-        #     points = annot.vertices
-        #     quad_count = int(len(points) / 4)
-        #     sentences = []
-        #     for i in range(quad_count):
-        #         # where the highlighted part is
-        #         r = pymupdf.Quad(points[i * 4 : i * 4 + 4]).rect
-        #         words = [w for w in wordlist if pymupdf.Rect(w[:4]).intersects(r)]
-        #         sentences.append(" ".join(w[4] for w in words))
-        #     sentence = " ".join(sentences)
-        #     return sentence
-
-        # sometimes extract on text (although _threshold_intersection could be adjusted manually)
-        # # https://github.com/pymupdf/PyMuPDF/issues/318
-        # # https://github.com/pastydev/cmdict/blob/88e6f19d1fd5ea4bdd87b0b06a9d3230ce1eac94/src/cmdict/pdf_tools.py#L20
-        # _threshold_intersection = 0.75  # if the intersection is large enough.
-        # def _check_contain(r_word, points):
-        #     """If `r_word` is contained in the rectangular area.
-        #     The area of the intersection should be large enough compared to the
-        #     area of the given word.
-        #     Args:
-        #         r_word (pymupdf.Rect): rectangular area of a single word.
-        #         points (list): list of points in the rectangular area of the
-        #             given part of a highlight.
-        #     Returns:
-        #         bool: whether `r_word` is contained in the rectangular area.
-        #     """
-        #     # `r` is mutable, so everytime a new `r` should be initiated.
-        #     r = pymupdf.Quad(points).rect
-        #     r.intersect(r_word)
-        #     if r.get_area() >= r_word.get_area() * _threshold_intersection:
-        #         contain = True
-        #     else:
-        #         contain = False
-        #     return contain
-
-        # def _parse_highlight(annot, words_on_page):
-        #     """Extract words in a given highlight.
-        #     Args:
-        #         annot (pymupdf.Annot): [description]
-        #         words_on_page (list): [description]
-        #     Returns:
-        #         str: words in the entire highlight.
-        #     """
-        #     quad_points = annot.vertices
-        #     quad_count = int(len(quad_points) / 4)
-        #     sentences = ['' for i in range(quad_count)]
-        #     for i in range(quad_count):
-        #         points = quad_points[i * 4: i * 4 + 4]
-        #         words = [
-        #             w for w in words_on_page if
-        #             _check_contain(pymupdf.Rect(w[:4]), points)
-        #         ]
-        #         sentences[i] = ' '.join(w[4] for w in words)
-        #     sentence = ' '.join(sentences)
-        #     sentence = sentence.replace('- ','')  # fix (?) hyphen break
-        #     return sentence
-
-        # highlights = []
-        # is_multi_column = _is_multi_column()
-        # for page in doc:
-        #     wordlist = page.get_text("words")  # list of words on page
-        #     annots = list(page.annots())
-        #     # print(annots)
-        #     # remove non-highlights; otherwise vertices may raise subscriptable error
-        #     # 8 means highlight
-        #     annots = [a for a in annots if a.type[0] == 8]
-        #     if is_multi_column: 
-        #         wordlist.sort(key=lambda w: (w[0], w[3]))  # ascending x, then y
-        #         annots.sort(key=lambda w: (w.vertices[0][0], w.vertices[3][0])) # ascending x, then y
-        #     else:
-        #         wordlist.sort(key=lambda w: (w[3], w[0]))  # ascending y, then x
-        #         annots.sort(key=lambda w: (w.vertices[3][0], w.vertices[0][0])) # ascending y, then x
-        #     for annot in annots:
-        #         if annot.type[0] == 8: # 8 means highlight
-        #             highlights.append([page.number+1, _get_page_bookmark_name(page.number), _parse_highlight(annot, wordlist)])
-
-        from pdfannots import process_file
-        highlights = []
-        columns_per_page = 2 if _is_multi_column() else None
-        document = process_file(open(pdfpath, "rb"),columns_per_page=columns_per_page)
-        for page_idx in range(len(document.pages)):
-            annots = document.pages[page_idx].annots
-            bookmark_name = _get_page_bookmark_name(page_idx)
-            for annot in annots:
-                # str(annot.subtype)=='AnnotationType.Highlight'
-                text = "".join(annot.text).strip()
-                text = text.replace("-\n", "").replace("\n", "")
-                highlights.append([page_idx+1, bookmark_name, text])
-
-        md = None
-        if ( len(highlights) > 0 ):
-            modification_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d')
-            md = f'### [{sp(pdfpath)[1]}](<file://{pdfpath}>)\n'
-            md += f'> [!QUOTE] Highlights (out of {doc.page_count} pages @ {modification_date})\n'
-            for h in highlights:
-                tmp = f'{h[0]} {h[1]}'
-                md += f'> {h[2]} (p. {tmp.strip()})\n'
-                md += f'> \n'
-            if str(mdpath).title()!='None':
-                if (not exists(mdpath)):
-                    with open(mdpath, 'w', encoding='utf-8') as modified: modified.write(md)
-                else:
-                    with open(mdpath, 'r', encoding='utf-8') as original: data = original.read()
-                    with open(mdpath, 'w', encoding='utf-8') as modified: modified.write(md + "\n" + data)
-
-        if ( len(highlights) > 0 and ('PyHighlightExtractor' not in producer) ):
-            metadata = {
-                'producer': f'PyHighlightExtractor; {producer}'
-            }
-            doc.set_metadata(metadata)
-            try:
-                doc.save(pdfpath,incremental=True,encryption=pymupdf.PDF_ENCRYPT_KEEP)
-            except:
-                print(f'{pdfpath} could not be saved. Ignoring...')
-
-        doc.close()
-        if md is not None: print(md)
-        return md
-
-    def _process_pdffolder(pdffolder, mdpath=None, force=0):
-        pdfs = fls(pdffolder,regex='\\.pdf$')
-        # pdfs = sorted(pdfs,key=lambda p: (sp(p)[0], -os.path.getmtime(p)))  # first path (asc), then modify time (desc)
-        # also sort mtime asc, because newer ones are added to top of md file
-        pdfs = sorted(pdfs,key=lambda p: (sp(p)[0], os.path.getmtime(p)))  # first path (asc), then modify time (asc)
-        for pdf in pdfs:
-            try:
-                _process_pdfpath(pdf, mdpath, force)
-            except Exception as e:
-                try:
-                    print(f'{pdf} error {e.args[0]}. Skipping...')
-                except:
-                    print(f'{pdf} error unknown. Skipping...')
-
-    if pdfpath.endswith('.pdf'): 
-        _process_pdfpath(fp(pdfpath), mdpath=mdpath, force=force)
-    else: 
-        _process_pdffolder(fp(pdfpath), mdpath=mdpath, force=force)
+                process(path)
+            except (OSError, RuntimeError, ValueError) as exc:
+                sys.stderr.write(f"{path} error {exc}. Skipping...\n")
 #endregion pdfannot
 #endregion Images and PDF Annotations
 

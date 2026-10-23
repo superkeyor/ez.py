@@ -107,6 +107,7 @@ pptx2md = "ez.ez:_cli"
 docx2md = "ez.ez:_cli"
 xlsx2md = "ez.ez:_cli"
 pdf2md = "ez.ez:_cli"
+pdfannot = "ez.ez:_cli"
 # END GENERATED CLI SCRIPTS
 
 [tool.uv.build-backend]

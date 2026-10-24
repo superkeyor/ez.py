@@ -130,7 +130,9 @@ class Pptx2mdTests(unittest.TestCase):
             self.assertNotIn("Recognized picture text", default_markdown)
             recognize.assert_not_called()
 
-            markdown = self.convert(ocr=True, ocr_failed_dir=failed_dir)
+            markdown = self.convert(
+                ocr=True, ocr_failed_dir=failed_dir, overwrite=True
+            )
 
         self.assertIn("<!-- Slide number: 1 -->", markdown)
         self.assertIn("*[Image OCR]*\n\nRecognized picture text\n\n*[End OCR]*", markdown)
@@ -138,8 +140,172 @@ class Pptx2mdTests(unittest.TestCase):
         self.assertEqual(recognize.call_args.args[1], "accurate")
         self.assertEqual(recognize.call_args.args[2], "english")
         self.assertEqual(recognize.call_args.kwargs["failed_dir"], str(failed_dir))
+        self.assertTrue(recognize.call_args.kwargs["overwrite"])
         self.assertIn(str(self.source), recognize.call_args.args[3])
         self.assertFalse(failed_dir.exists())
+
+    def test_pptx_ocr_respects_picture_crop_and_later_opaque_cover(self):
+        from PIL import Image
+        from pptx.dml.color import RGBColor
+        from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE
+
+        image_path = self.source.with_suffix(".png")
+        Image.new("RGB", (100, 80), "white").save(image_path)
+        slide = self.presentation.slides[0]
+        picture = slide.shapes.add_picture(
+            str(image_path), Inches(1), Inches(1), Inches(4), Inches(2)
+        )
+        picture.crop_left = 0.1
+        picture.crop_right = 0.2
+        cover = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            picture.left + picture.width // 2,
+            picture.top,
+            picture.width // 4,
+            picture.height,
+        )
+        cover.fill.solid()
+        cover.fill.fore_color.rgb = RGBColor(255, 255, 255)
+
+        image_data, name, extension = next(
+            iter(self.namespace["_md_pptx_image_blobs"](slide))
+        )
+        with Image.open(io.BytesIO(image_data)) as visible_image:
+            self.assertEqual(visible_image.size, (70, 80))
+            self.assertEqual(visible_image.getpixel((5, 40)), (255, 255, 255, 255))
+            self.assertEqual(visible_image.getpixel((36, 40)), (255, 255, 255, 255))
+            self.assertEqual(visible_image.getpixel((41, 40)), (0, 0, 0, 255))
+            self.assertEqual(visible_image.getpixel((64, 40)), (0, 0, 0, 255))
+            self.assertEqual(visible_image.getpixel((66, 40)), (255, 255, 255, 255))
+        self.assertEqual(name, picture.name)
+        self.assertEqual(extension, "png")
+
+    def test_pptx_ocr_skips_fully_covered_picture(self):
+        from pptx.dml.color import RGBColor
+        from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE
+
+        self.add_image_to_first_slide()
+        slide = self.presentation.slides[0]
+        picture = next(
+            shape for shape in slide.shapes
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        )
+        cover = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            picture.left,
+            picture.top,
+            picture.width,
+            picture.height,
+        )
+        cover.fill.solid()
+        cover.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        self.presentation.save(self.source)
+        recognize = Mock()
+        with patch.dict(self.namespace, {
+                "_md_check_ocr_platform": Mock(),
+                "_md_vision_ocr": recognize,
+        }):
+            self.convert(ocr=True)
+        recognize.assert_not_called()
+
+    def test_pptx_ocr_does_not_mask_transparent_cover_shape(self):
+        from PIL import Image
+        from pptx.dml.color import RGBColor
+        from pptx.enum.shapes import MSO_SHAPE
+        from pptx.oxml.xmlchemy import OxmlElement
+
+        image_path = self.source.with_suffix(".png")
+        Image.new("RGB", (32, 32), "white").save(image_path)
+        slide = self.presentation.slides[0]
+        picture = slide.shapes.add_picture(
+            str(image_path), Inches(1), Inches(1), Inches(2), Inches(2)
+        )
+        cover = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            picture.left,
+            picture.top,
+            picture.width,
+            picture.height,
+        )
+        cover.fill.solid()
+        cover.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        alpha = OxmlElement("a:alpha")
+        alpha.set("val", "50000")
+        cover._element.spPr.solidFill.srgbClr.append(alpha)
+
+        image_data, _, _ = next(
+            iter(self.namespace["_md_pptx_image_blobs"](slide))
+        )
+        self.assertEqual(image_data, picture.image.blob)
+
+    def test_pptx_ocr_masks_only_axis_aligned_rectangles(self):
+        from PIL import Image
+        from pptx.enum.shapes import MSO_SHAPE
+
+        for cover_type, cover_rotation, picture_rotation in (
+                (MSO_SHAPE.OVAL, 0, 0),
+                (MSO_SHAPE.RECTANGLE, 15, 0),
+                (MSO_SHAPE.RECTANGLE, 0, 15)):
+            with self.subTest(
+                    cover_type=cover_type,
+                    cover_rotation=cover_rotation,
+                    picture_rotation=picture_rotation):
+                image_path = self.source.with_suffix(".png")
+                Image.new("RGB", (32, 32), "white").save(image_path)
+                slide = self.presentation.slides.add_slide(
+                    self.presentation.slide_layouts[6]
+                )
+                picture = slide.shapes.add_picture(
+                    str(image_path), Inches(1), Inches(1), Inches(2), Inches(2)
+                )
+                picture.rotation = picture_rotation
+                cover = slide.shapes.add_shape(
+                    cover_type,
+                    picture.left,
+                    picture.top,
+                    picture.width,
+                    picture.height,
+                )
+                cover.fill.solid()
+                cover.rotation = cover_rotation
+
+                image_data, _, _ = next(
+                    iter(self.namespace["_md_pptx_image_blobs"](slide))
+                )
+                self.assertEqual(image_data, picture.image.blob)
+
+    def test_pptx_ocr_skips_unrenderable_images_when_filtering_is_needed(self):
+        from PIL import Image
+        from pptx.dml.color import RGBColor
+        from pptx.enum.shapes import MSO_SHAPE
+
+        image_path = self.source.with_suffix(".png")
+        Image.new("RGB", (32, 32), "white").save(image_path)
+        slide = self.presentation.slides[0]
+        picture = slide.shapes.add_picture(
+            str(image_path), Inches(1), Inches(1), Inches(2), Inches(2)
+        )
+        cover = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            picture.left,
+            picture.top,
+            picture.width // 2,
+            picture.height,
+        )
+        cover.fill.solid()
+        cover.fill.fore_color.rgb = RGBColor(255, 255, 255)
+
+        with (patch.dict(self.namespace, {
+                "_md_rasterize_emf_pdf": Mock(return_value=None),
+        }), patch("PIL.Image.open", side_effect=OSError("unsupported image")),
+              warnings.catch_warnings(record=True) as caught):
+            warnings.simplefilter("always")
+            blobs = list(self.namespace["_md_pptx_image_blobs"](slide))
+
+        self.assertEqual(blobs, [])
+        self.assertEqual(len(caught), 1)
+        self.assertIn("Skipping OCR for PowerPoint picture", str(caught[0].message))
+        self.assertIn("cannot apply crop or cover filtering", str(caught[0].message))
 
     def test_ocr_cli_uses_requested_mode(self):
         self.add_image_to_first_slide()
@@ -151,13 +317,14 @@ class Pptx2mdTests(unittest.TestCase):
         }), redirect_stdout(io.StringIO()) as output):
             status = self.namespace["_cli"](
                 [str(self.source), "--ocr", "--ocr-mode", "fast",
-                 "--ocr-failed-dir", str(failed_dir)],
+                 "--ocr-failed-dir", str(failed_dir), "--overwrite"],
                 command="pptx2md",
             )
         self.assertEqual(status, 0)
         self.assertIn("Fast recognized text", output.getvalue())
         self.assertEqual(recognize.call_args.args[1], "fast")
         self.assertEqual(recognize.call_args.kwargs["failed_dir"], str(failed_dir))
+        self.assertTrue(recognize.call_args.kwargs["overwrite"])
 
     def test_ocr_cli_uses_requested_language(self):
         self.add_image_to_first_slide()
@@ -355,6 +522,19 @@ class Pptx2mdTests(unittest.TestCase):
         self.assertEqual(first.read_bytes(), b"first")
         self.assertEqual(second.read_bytes(), b"second")
 
+    def test_failed_ocr_image_overwrite_replaces_same_named_file(self):
+        failed_dir = self.source.parent / "failed-images"
+        save_failed = self.namespace["_md_save_failed_ocr_image"]
+
+        first = save_failed(b"first", failed_dir, "slide/1", ".PNG")
+        replaced = save_failed(
+            b"replacement", failed_dir, "slide/1", ".PNG", overwrite=True
+        )
+
+        self.assertEqual(first, replaced)
+        self.assertEqual(first.name, "slide_1.png")
+        self.assertEqual(first.read_bytes(), b"replacement")
+
     def test_pptx_with_no_embedded_images_still_converts(self):
         with (patch.dict(self.namespace, {"_md_check_ocr_platform": Mock()}),
               redirect_stdout(io.StringIO()) as output):
@@ -515,6 +695,136 @@ class OfficeOcrTests(unittest.TestCase):
         self.image_path = self.root / "image.png"
         Image.new("RGB", (32, 32), "white").save(self.image_path)
 
+    def test_emf_embedded_pdf_is_rasterized_before_vision(self):
+        import struct
+        import pymupdf
+
+        pdf = pymupdf.open()
+        page = pdf.new_page(width=300, height=200)
+        page.insert_text((20, 60), "Visible title", fontsize=24)
+        pdf_bytes = pdf.tobytes()
+        pdf.close()
+
+        comment_data = b"GDIC" + pdf_bytes
+        padding = bytes(-(12 + len(comment_data)) % 4)
+        comment_size = 12 + len(comment_data) + len(padding)
+        comment = (
+            struct.pack("<III", 70, comment_size, len(comment_data))
+            + comment_data + padding
+        )
+        end = struct.pack("<IIii", 14, 16, 0, 0)
+        header = bytearray(108)
+        total_size = len(header) + len(comment) + len(end)
+        struct.pack_into("<II", header, 0, 1, len(header))
+        struct.pack_into("<4i", header, 8, 0, 0, 300, 200)
+        struct.pack_into("<4i", header, 24, 0, 0, 7620, 5080)
+        struct.pack_into("<5I", header, 40, 0x464D4520, 0x10000, total_size, 3, 1)
+        emf_data = bytes(header) + comment + end
+
+        request = Mock()
+        request.results.return_value = []
+        handler = Mock()
+        handler.performRequests_error_.return_value = (True, None)
+        vision = SimpleNamespace(
+            VNRecognizeTextRequest=Mock(),
+            VNRequestTextRecognitionLevelAccurate=1,
+            VNRequestTextRecognitionLevelFast=2,
+            VNImageRequestHandler=Mock(),
+        )
+        vision.VNRecognizeTextRequest.alloc.return_value.init.return_value = request
+        vision.VNImageRequestHandler.alloc.return_value.initWithData_options_.return_value = handler
+        captured_image = {}
+
+        def make_nsdata(data, length):
+            captured_image["data"] = bytes(data)
+            self.assertEqual(length, len(data))
+            return object()
+
+        foundation = SimpleNamespace(
+            NSData=SimpleNamespace(dataWithBytes_length_=make_nsdata)
+        )
+        with (patch.object(sys, "platform", "darwin"),
+              patch.dict(sys.modules, {
+                  "Vision": vision, "Foundation": foundation
+              })):
+            self.assertEqual(
+                self.namespace["_md_vision_ocr"](
+                    emf_data, context="PowerPoint slide 24"
+                ),
+                "",
+            )
+
+        rasterized = captured_image["data"]
+        self.assertTrue(rasterized.startswith(b"\x89PNG\r\n\x1a\n"))
+        from PIL import Image
+
+        with Image.open(io.BytesIO(rasterized)) as image:
+            self.assertGreater(image.width, 300)
+            self.assertGreater(image.height, 200)
+
+    def test_failed_emf_ocr_image_is_saved_as_rasterized_png(self):
+        import struct
+        import pymupdf
+
+        pdf = pymupdf.open()
+        page = pdf.new_page(width=100, height=80)
+        page.insert_text((12, 30), "Visible title", fontsize=18)
+        pdf_bytes = pdf.tobytes()
+        pdf.close()
+
+        comment_data = b"GDIC" + pdf_bytes
+        padding = bytes(-(12 + len(comment_data)) % 4)
+        comment_size = 12 + len(comment_data) + len(padding)
+        comment = (
+            struct.pack("<III", 70, comment_size, len(comment_data))
+            + comment_data + padding
+        )
+        end = struct.pack("<IIii", 14, 16, 0, 0)
+        header = bytearray(108)
+        total_size = len(header) + len(comment) + len(end)
+        struct.pack_into("<II", header, 0, 1, len(header))
+        struct.pack_into("<4i", header, 8, 0, 0, 100, 80)
+        struct.pack_into("<4i", header, 24, 0, 0, 2540, 2032)
+        struct.pack_into("<5I", header, 40, 0x464D4520, 0x10000, total_size, 3, 1)
+        emf_data = bytes(header) + comment + end
+
+        handler = Mock()
+        handler.performRequests_error_.return_value = (False, "OCR failed")
+        vision = SimpleNamespace(
+            VNRecognizeTextRequest=Mock(),
+            VNRequestTextRecognitionLevelAccurate=1,
+            VNRequestTextRecognitionLevelFast=2,
+            VNImageRequestHandler=Mock(),
+        )
+        vision.VNRecognizeTextRequest.alloc.return_value.init.return_value = Mock()
+        vision.VNImageRequestHandler.alloc.return_value.initWithData_options_.return_value = handler
+        foundation = SimpleNamespace(
+            NSData=SimpleNamespace(
+                dataWithBytes_length_=Mock(return_value=object())
+            )
+        )
+        failed_dir = self.root / "failed-images"
+        with (patch.object(sys, "platform", "darwin"),
+              patch.dict(sys.modules, {
+                  "Vision": vision, "Foundation": foundation
+              })):
+            with self.assertRaisesRegex(OSError, "Apple Vision OCR failed"):
+                self.namespace["_md_vision_ocr"](
+                    emf_data,
+                    context="PowerPoint slide 24",
+                    failed_dir=failed_dir,
+                    failed_name="deck-slide-24-Picture 6",
+                    image_extension=".wmf",
+                )
+
+        saved_image = failed_dir / "deck-slide-24-Picture_6.png"
+        self.assertTrue(saved_image.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
+        from PIL import Image
+
+        with Image.open(saved_image) as image:
+            self.assertGreater(image.width, 100)
+            self.assertGreater(image.height, 80)
+
     def test_docx_ocr_is_inserted_after_embedded_image(self):
         from docx import Document
         from docx.shared import Inches
@@ -530,7 +840,7 @@ class OfficeOcrTests(unittest.TestCase):
                 "_md_vision_ocr": recognize,
         }), redirect_stdout(io.StringIO()) as output:
             markdown = self.namespace["docx2md"](
-                source, ocr=True, ocr_failed_dir=failed_dir
+                source, ocr=True, ocr_failed_dir=failed_dir, overwrite=True
             )
         self.assertEqual(output.getvalue(), markdown)
         self.assertIn("Word image text", markdown)
@@ -538,6 +848,7 @@ class OfficeOcrTests(unittest.TestCase):
         recognize.assert_called_once()
         self.assertIn(str(source), recognize.call_args.args[3])
         self.assertEqual(recognize.call_args.kwargs["failed_dir"], str(failed_dir))
+        self.assertTrue(recognize.call_args.kwargs["overwrite"])
 
     def test_xlsx_ocr_includes_image_anchor_and_sheet_context(self):
         from openpyxl import Workbook
@@ -557,7 +868,7 @@ class OfficeOcrTests(unittest.TestCase):
                 "_md_vision_ocr": recognize,
         }), redirect_stdout(io.StringIO()) as output:
             markdown = self.namespace["xlsx2md"](
-                source, ocr=True, ocr_failed_dir=failed_dir
+                source, ocr=True, ocr_failed_dir=failed_dir, overwrite=True
             )
         self.assertEqual(output.getvalue(), markdown)
         self.assertIn("## Summary", markdown)
@@ -566,6 +877,7 @@ class OfficeOcrTests(unittest.TestCase):
         recognize.assert_called_once()
         self.assertIn(str(source), recognize.call_args.args[3])
         self.assertEqual(recognize.call_args.kwargs["failed_dir"], str(failed_dir))
+        self.assertTrue(recognize.call_args.kwargs["overwrite"])
 
     def test_xlsx_ocr_skips_unreadable_image_with_warning(self):
         from openpyxl import Workbook
@@ -591,6 +903,9 @@ class OfficeOcrTests(unittest.TestCase):
 
         recognize = Mock()
         failed_dir = self.root / "failed-images"
+        failed_dir.mkdir()
+        existing_failed_image = failed_dir / "broken-Sheet-B2.bmp"
+        existing_failed_image.write_bytes(b"old image")
         with (patch.dict(self.namespace, {
                 "_md_check_ocr_platform": Mock(),
                 "_md_vision_ocr": recognize,
@@ -598,7 +913,8 @@ class OfficeOcrTests(unittest.TestCase):
                 redirect_stdout(io.StringIO())):
             warnings.simplefilter("always")
             markdown = self.namespace["xlsx2md"](
-                broken_source, ocr=True, ocr_failed_dir=failed_dir
+                broken_source, ocr=True, ocr_failed_dir=failed_dir,
+                overwrite=True,
             )
         self.assertIn("## Sheet", markdown)
         self.assertEqual(len(caught), 1)

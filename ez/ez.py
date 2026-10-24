@@ -171,11 +171,12 @@ Office-to-Markdown Conversion:
     _md_require_vision - Load Apple's Vision framework on supported macOS systems.
     _md_check_ocr_platform - Require macOS when OCR is explicitly requested.
     _md_validate_ocr_failed_dir - Validate the optional directory for images that OCR cannot process.
-    _md_save_failed_ocr_image - Save failed OCR image bytes without replacing an existing file.
+    _md_save_failed_ocr_image - Save failed OCR image bytes, optionally replacing an existing file.
     _md_validate_ocr_image - Return an error message for malformed or zero-sized image bytes.
+    _md_rasterize_emf_pdf - Rasterize an embedded PDF payload from an Enhanced Metafile to PNG.
     _md_vision_ocr - Recognize text in image bytes with Apple's local Vision framework.
     _md_ocr_block - Format recognized image text as a labeled Markdown block.
-    _md_pptx_image_blobs - Yield embedded picture bytes, skipping externally linked pictures.
+    _md_pptx_image_blobs - Yield visible embedded picture bytes, skipping linked or fully covered pictures.
     pptx2md - Convert a PowerPoint presentation to Markdown using MarkItDown.
     _md_docx_ocr - Insert OCR text after each embedded image run in a python-docx document.
     docx2md - Convert a Word .docx document to Markdown using MarkItDown.
@@ -4856,8 +4857,9 @@ def _md_validate_ocr_failed_dir(ocr, directory):
 
 
 #region _md_save_failed_ocr_image
-def _md_save_failed_ocr_image(image_data, directory, filename, extension):
-    """Save failed OCR image bytes without replacing an existing file."""
+def _md_save_failed_ocr_image(image_data, directory, filename, extension,
+                              overwrite=False):
+    """Save failed OCR image bytes, optionally replacing an existing file."""
     from pathlib import Path
 
     directory = Path(os.fspath(directory)).expanduser()
@@ -4865,6 +4867,10 @@ def _md_save_failed_ocr_image(image_data, directory, filename, extension):
     filename = re.sub(r"[^A-Za-z0-9._-]+", "_", filename).strip("._")[:160]
     extension = re.sub(r"[^A-Za-z0-9]+", "", extension.lstrip(".")).lower() or "img"
     stem = filename or "image"
+    if overwrite:
+        path = directory / f"{stem}.{extension}"
+        path.write_bytes(image_data)
+        return path
     index = 1
     while True:
         suffix = "" if index == 1 else f"-{index}"
@@ -4899,20 +4905,73 @@ def _md_validate_ocr_image(image_data):
 #endregion _md_validate_ocr_image
 
 
+#region _md_rasterize_emf_pdf
+def _md_rasterize_emf_pdf(image_data):
+    """Rasterize an embedded PDF payload from an Enhanced Metafile to PNG."""
+    import math
+    import struct
+
+    if len(image_data) < 44 or struct.unpack_from("<I", image_data, 40)[0] != 0x464D4520:
+        return None
+    pdf_start = image_data.find(b"%PDF-")
+    if pdf_start < 0:
+        return None
+    pdf_end = image_data.rfind(b"%%EOF", pdf_start)
+    if pdf_end < 0:
+        return None
+
+    import pymupdf
+
+    document = None
+    try:
+        document = pymupdf.open(
+            stream=image_data[pdf_start:pdf_end + len(b"%%EOF")],
+            filetype="pdf",
+        )
+        if not len(document):
+            return None
+        page = document[0]
+        bounds = page.rect
+        if (not math.isfinite(bounds.width) or not math.isfinite(bounds.height)
+                or bounds.width <= 0 or bounds.height <= 0):
+            raise ValueError("embedded PDF page has invalid dimensions")
+        scale = min(
+            300 / 72,
+            math.sqrt(20_000_000 / (bounds.width * bounds.height)),
+        )
+        return page.get_pixmap(
+            matrix=pymupdf.Matrix(scale, scale), alpha=False
+        ).tobytes("png")
+    except (pymupdf.FileDataError, RuntimeError, ValueError) as exc:
+        raise OSError(f"Could not rasterize PDF content embedded in EMF: {exc}") from exc
+    finally:
+        if document is not None:
+            document.close()
+#endregion _md_rasterize_emf_pdf
+
+
 #region _md_vision_ocr
 def _md_vision_ocr(image_data, mode="accurate", language="english",
                    context="embedded image", failed_dir=None,
-                   failed_name="image", image_extension="img"):
+                   failed_name="image", image_extension="img",
+                   overwrite=False):
     """Recognize text in image bytes with Apple's local Vision framework."""
     import warnings
 
     _md_validate_ocr_mode(mode)
     _md_validate_ocr_language(language)
+    original_image_data = image_data
+    rasterized = _md_rasterize_emf_pdf(image_data)
+    failed_image_data = rasterized if rasterized is not None else original_image_data
+    failed_image_extension = "png" if rasterized is not None else image_extension
+    if rasterized is not None:
+        image_data = rasterized
     image_error = _md_validate_ocr_image(image_data)
     if image_error is not None:
         saved_path = (
             _md_save_failed_ocr_image(
-                image_data, failed_dir, failed_name, image_extension
+                failed_image_data, failed_dir, failed_name, failed_image_extension,
+                overwrite,
             )
             if failed_dir is not None else None
         )
@@ -4946,7 +5005,8 @@ def _md_vision_ocr(image_data, mode="accurate", language="english",
     if not succeeded:
         saved_path = (
             _md_save_failed_ocr_image(
-                image_data, failed_dir, failed_name, image_extension
+                failed_image_data, failed_dir, failed_name, failed_image_extension,
+                overwrite,
             )
             if failed_dir is not None else None
         )
@@ -4981,11 +5041,130 @@ def _md_ocr_block(text):
 
 #region _md_pptx_image_blobs
 def _md_pptx_image_blobs(slide):
-    """Yield embedded picture bytes, skipping externally linked pictures."""
+    """Yield visible embedded picture bytes, skipping linked or fully covered pictures."""
+    from io import BytesIO
+    import math
+    from PIL import Image, ImageDraw, UnidentifiedImageError
+    from pptx.enum.dml import MSO_FILL
     from pptx.enum.shapes import MSO_SHAPE_TYPE
+    import warnings
+
+    def has_opaque_rectangle_fill(shape):
+        try:
+            if shape.rotation % 360:
+                return False
+            if shape.fill.type != MSO_FILL.SOLID:
+                return False
+            shape_properties = shape._element.spPr
+            geometry = shape_properties.prstGeom
+            solid_fill = shape_properties.solidFill
+        except (AttributeError, ValueError):
+            return False
+        if (geometry is None or geometry.get("prst") != "rect"
+                or solid_fill is None):
+            return False
+        if solid_fill.xpath(
+                ".//a:alphaMod | .//a:alphaOff | .//a:alphaInv | .//a:alphaModFix"):
+            return False
+        try:
+            return all(
+                int(alpha.get("val", "100000")) >= 100000
+                for alpha in solid_fill.xpath(".//a:alpha")
+            )
+        except ValueError:
+            return False
+
+    def visible_image(blob, picture, later_shapes):
+        crop_left = min(max(float(picture.crop_left), 0.0), 1.0)
+        crop_right = min(max(float(picture.crop_right), 0.0), 1.0)
+        crop_top = min(max(float(picture.crop_top), 0.0), 1.0)
+        crop_bottom = min(max(float(picture.crop_bottom), 0.0), 1.0)
+        cropped = any((crop_left, crop_right, crop_top, crop_bottom))
+
+        overlaps = []
+        transform = picture._element.spPr.xfrm
+        picture_is_axis_aligned = (
+            picture.rotation % 360 == 0
+            and transform.get("flipH") not in ("1", "true")
+            and transform.get("flipV") not in ("1", "true")
+        )
+        if picture_is_axis_aligned:
+            for shape in later_shapes:
+                if not has_opaque_rectangle_fill(shape):
+                    continue
+                left = max(picture.left, shape.left)
+                top = max(picture.top, shape.top)
+                right = min(picture.left + picture.width, shape.left + shape.width)
+                bottom = min(picture.top + picture.height, shape.top + shape.height)
+                if left < right and top < bottom:
+                    overlaps.append((left, top, right, bottom))
+
+        if not cropped and not overlaps:
+            return blob, picture.image.ext
+
+        try:
+            with Image.open(BytesIO(blob)) as source:
+                source.load()
+                image = source.convert("RGBA")
+        except (
+                UnidentifiedImageError, OSError, ValueError, SyntaxError,
+                Image.DecompressionBombError,
+        ):
+            rasterized = _md_rasterize_emf_pdf(blob)
+            if rasterized is None:
+                warnings.warn(
+                    f"Skipping OCR for PowerPoint picture {picture.name!r}: "
+                    "cannot apply crop or cover filtering to this image format.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                return None
+            with Image.open(BytesIO(rasterized)) as source:
+                source.load()
+                image = source.convert("RGBA")
+
+        left = math.ceil(image.width * crop_left)
+        top = math.ceil(image.height * crop_top)
+        right = math.floor(image.width * (1 - crop_right))
+        bottom = math.floor(image.height * (1 - crop_bottom))
+        if left >= right or top >= bottom:
+            return None
+        if cropped:
+            image = image.crop((left, top, right, bottom))
+
+        if overlaps:
+            covered = Image.new("L", image.size, 0)
+            draw = ImageDraw.Draw(covered)
+            visible_left = picture.left + picture.width * crop_left
+            visible_top = picture.top + picture.height * crop_top
+            visible_width = picture.width * (1 - crop_left - crop_right)
+            visible_height = picture.height * (1 - crop_top - crop_bottom)
+            for cover_left, cover_top, cover_right, cover_bottom in overlaps:
+                x0 = max(0, math.floor(
+                    (cover_left - visible_left) / visible_width * image.width
+                ))
+                y0 = max(0, math.floor(
+                    (cover_top - visible_top) / visible_height * image.height
+                ))
+                x1 = min(image.width, math.ceil(
+                    (cover_right - visible_left) / visible_width * image.width
+                ))
+                y1 = min(image.height, math.ceil(
+                    (cover_bottom - visible_top) / visible_height * image.height
+                ))
+                if x0 < x1 and y0 < y1:
+                    draw.rectangle((x0, y0, x1 - 1, y1 - 1), fill=255)
+            if covered.getextrema() == (255, 255):
+                return None
+            image.paste((0, 0, 0, 255), mask=covered)
+
+        output = BytesIO()
+        image.save(output, format="PNG")
+        return output.getvalue(), "png"
 
     def visit(shapes):
-        for shape in shapes:
+        shapes = list(shapes)
+        for index, shape in enumerate(shapes):
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                 try:
                     picture = shape.image
@@ -4995,7 +5174,10 @@ def _md_pptx_image_blobs(slide):
                         raise
                     continue
                 else:
-                    yield blob, shape.name, picture.ext
+                    visible = visible_image(blob, shape, shapes[index + 1:])
+                    if visible is not None:
+                        image_data, image_extension = visible
+                        yield image_data, shape.name, image_extension
             elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
                 yield from visit(shape.shapes)
 
@@ -5019,12 +5201,19 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
             Filename references do not extract image files.
     ocr: recognize text in embedded images with Apple's Vision framework.
          Disabled by default; available on macOS with the platform dependency.
+         PowerPoint OCR respects picture cropping and masks unrotated areas
+         covered by later rectangular solid-fill shapes when the picture is
+         unrotated and unflipped. Overlays in other shape groups and group
+         transforms are not resolved. Images that cannot be rendered for
+         required crop/cover filtering are skipped with a warning.
     ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
     ocr_language: "english" (default), "chinese", or "both" when ocr=True.
     ocr_failed_dir: optionally save embedded images that OCR cannot process.
-                    Requires ocr=True; existing files are never replaced.
+                    Requires ocr=True; existing files are not replaced unless
+                    overwrite=True.
     output: write UTF-8 Markdown here, or print to stdout when None.
-    overwrite: allow replacing an existing output file (never the input).
+    overwrite: allow replacing output and same-named failed OCR images, but
+               never the input.
     skip_hidden: skip hidden slides, even when selected; False includes them.
 
     Returns the Markdown string, including a final newline when nonempty.
@@ -5069,6 +5258,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
                             f"slide-{number}-{picture_name}"
                         ),
                         image_extension=image_extension,
+                        overwrite=overwrite,
                     ))
                 ]
                 if blocks:
@@ -5111,7 +5301,8 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
 #endregion pptx2md
 
 #region _md_docx_ocr
-def _md_docx_ocr(docx, ocr_mode, ocr_language, docx_path, ocr_failed_dir):
+def _md_docx_ocr(docx, ocr_mode, ocr_language, docx_path, ocr_failed_dir,
+                 overwrite=False):
     """Insert OCR text after each embedded image run in a python-docx document."""
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
@@ -5130,6 +5321,7 @@ def _md_docx_ocr(docx, ocr_mode, ocr_language, docx_path, ocr_failed_dir):
                 f"image-{image_number}"
             ),
             image_extension=os.path.splitext(str(image_part.partname))[1],
+            overwrite=overwrite,
         )
         if not text:
             continue
@@ -5161,9 +5353,11 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
     ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
     ocr_language: "english" (default), "chinese", or "both" when ocr=True.
     ocr_failed_dir: optionally save embedded images that OCR cannot process.
-                    Requires ocr=True; existing files are never replaced.
+                    Requires ocr=True; existing files are not replaced unless
+                    overwrite=True.
     output: write UTF-8 to this path, or print to stdout when None.
-    overwrite: allow replacing an output file, but never the input document.
+    overwrite: allow replacing an output file and same-named failed OCR images,
+               but never the input document.
 
     Returns the Markdown string, with a final newline when nonempty. Preserves
     supported headings, lists, tables, and links, not exact Word page layout.
@@ -5186,7 +5380,8 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
 
             document = _md_load_office(Document, source)
             _md_docx_ocr(
-                document, ocr_mode, ocr_language, docx_path, ocr_failed_dir
+                document, ocr_mode, ocr_language, docx_path, ocr_failed_dir,
+                overwrite,
             )
             with BytesIO() as converted_source:
                 document.save(converted_source)
@@ -5223,9 +5418,11 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
     ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
     ocr_language: "english" (default), "chinese", or "both" when ocr=True.
     ocr_failed_dir: optionally save embedded images that OCR cannot process.
-                    Requires ocr=True; existing files are never replaced.
+                    Requires ocr=True; existing files are not replaced unless
+                    overwrite=True.
     output: write UTF-8 to this path, or print to stdout when None.
-    overwrite: allow replacing an output file, but never the input workbook.
+    overwrite: allow replacing an output file and same-named failed OCR images,
+               but never the input workbook.
 
     Returns the Markdown string, with a final newline. Each sheet has a heading;
     empty sheets have only a heading. Hidden worksheets are included by default.
@@ -5339,6 +5536,7 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                                 f"{os.path.splitext(os.path.basename(xlsx_path))[0]}-"
                                 f"{name}-{location}",
                                 f".{image.format}",
+                                overwrite,
                             )
                         saved_message = (
                             f" Failed image saved to {saved_path}."
@@ -5363,6 +5561,7 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                             f"{name}-{location}"
                         ),
                         image_extension=f".{image.format}",
+                        overwrite=overwrite,
                     )
                     if text:
                         section += (

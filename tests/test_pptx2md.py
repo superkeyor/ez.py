@@ -121,6 +121,7 @@ class Pptx2mdTests(unittest.TestCase):
     def test_ocr_is_opt_in_and_text_is_added_to_its_slide(self):
         self.add_image_to_first_slide()
         recognize = Mock(return_value="Recognized picture text")
+        failed_dir = self.source.parent / "failed-images"
         with patch.dict(self.namespace, {
                 "_md_require_vision": Mock(),
                 "_md_vision_ocr": recognize,
@@ -129,28 +130,34 @@ class Pptx2mdTests(unittest.TestCase):
             self.assertNotIn("Recognized picture text", default_markdown)
             recognize.assert_not_called()
 
-            markdown = self.convert(ocr=True)
+            markdown = self.convert(ocr=True, ocr_failed_dir=failed_dir)
 
         self.assertIn("<!-- Slide number: 1 -->", markdown)
         self.assertIn("*[Image OCR]*\n\nRecognized picture text\n\n*[End OCR]*", markdown)
         recognize.assert_called_once()
         self.assertEqual(recognize.call_args.args[1], "accurate")
         self.assertEqual(recognize.call_args.args[2], "english")
+        self.assertEqual(recognize.call_args.kwargs["failed_dir"], str(failed_dir))
+        self.assertIn(str(self.source), recognize.call_args.args[3])
+        self.assertFalse(failed_dir.exists())
 
     def test_ocr_cli_uses_requested_mode(self):
         self.add_image_to_first_slide()
         recognize = Mock(return_value="Fast recognized text")
+        failed_dir = self.source.parent / "failed-images"
         with (patch.dict(self.namespace, {
                 "_md_require_vision": Mock(),
                 "_md_vision_ocr": recognize,
         }), redirect_stdout(io.StringIO()) as output):
             status = self.namespace["_cli"](
-                [str(self.source), "--ocr", "--ocr-mode", "fast"],
+                [str(self.source), "--ocr", "--ocr-mode", "fast",
+                 "--ocr-failed-dir", str(failed_dir)],
                 command="pptx2md",
             )
         self.assertEqual(status, 0)
         self.assertIn("Fast recognized text", output.getvalue())
         self.assertEqual(recognize.call_args.args[1], "fast")
+        self.assertEqual(recognize.call_args.kwargs["failed_dir"], str(failed_dir))
 
     def test_ocr_cli_uses_requested_language(self):
         self.add_image_to_first_slide()
@@ -184,6 +191,20 @@ class Pptx2mdTests(unittest.TestCase):
                 )
         self.assertEqual(result.exception.code, 2)
         self.assertIn("--ocr-language", errors.getvalue())
+
+    def test_ocr_failed_dir_requires_ocr_on_cli(self):
+        with redirect_stderr(io.StringIO()) as errors:
+            with self.assertRaises(SystemExit) as result:
+                self.namespace["_cli"](
+                    [str(self.source), "--ocr-failed-dir", "failed-images"],
+                    command="pptx2md",
+                )
+        self.assertEqual(result.exception.code, 2)
+        self.assertIn("--ocr-failed-dir", errors.getvalue())
+
+    def test_ocr_failed_dir_requires_ocr_in_python_api(self):
+        with self.assertRaisesRegex(ValueError, "requires ocr=True"):
+            self.convert(ocr_failed_dir=self.source.parent / "failed-images")
 
     def test_vision_ocr_rejects_non_macos(self):
         with patch.object(sys, "platform", "linux"):
@@ -267,16 +288,72 @@ class Pptx2mdTests(unittest.TestCase):
         from PIL import Image
 
         Image.new("RGB", (4, 4), "white").save(image, format="PNG")
+        failed_dir = self.source.parent / "failed-images"
         with (patch.object(sys, "platform", "darwin"),
               patch.dict(sys.modules, {"Vision": vision, "Foundation": foundation}),
               warnings.catch_warnings(record=True) as caught):
             warnings.simplefilter("always")
             result = self.namespace["_md_vision_ocr"](
-                image.getvalue(), context="PowerPoint slide 3"
+                image.getvalue(), context="PowerPoint slide 3",
+                failed_dir=failed_dir,
+                failed_name="deck-slide-3-Graphic 1",
+                image_extension=".png",
             )
         self.assertEqual(result, "")
         self.assertEqual(len(caught), 1)
         self.assertIn("zero-dimensioned", str(caught[0].message))
+        saved_image = failed_dir / "deck-slide-3-Graphic_1.png"
+        self.assertEqual(saved_image.read_bytes(), image.getvalue())
+        self.assertIn(str(saved_image), str(caught[0].message))
+
+    def test_vision_failure_saves_image_before_raising(self):
+        from PIL import Image
+
+        request = Mock()
+        handler = Mock()
+        handler.performRequests_error_.return_value = (
+            False, "Vision processing failed"
+        )
+        vision = SimpleNamespace(
+            VNRecognizeTextRequest=Mock(),
+            VNRequestTextRecognitionLevelAccurate=1,
+            VNRequestTextRecognitionLevelFast=2,
+            VNImageRequestHandler=Mock(),
+        )
+        vision.VNRecognizeTextRequest.alloc.return_value.init.return_value = request
+        vision.VNImageRequestHandler.alloc.return_value.initWithData_options_.return_value = handler
+        foundation = SimpleNamespace(
+            NSData=SimpleNamespace(dataWithBytes_length_=Mock(return_value=object()))
+        )
+        image = io.BytesIO()
+        Image.new("RGB", (4, 4), "white").save(image, format="PNG")
+        image_data = image.getvalue()
+        failed_dir = self.source.parent / "failed-images"
+        with (patch.object(sys, "platform", "darwin"),
+              patch.dict(sys.modules, {"Vision": vision, "Foundation": foundation})):
+            with self.assertRaisesRegex(OSError, "Apple Vision OCR failed"):
+                self.namespace["_md_vision_ocr"](
+                    image_data,
+                    context="PowerPoint slide 4, picture 'Graphic 1'",
+                    failed_dir=failed_dir,
+                    failed_name="deck-slide-4-Graphic 1",
+                    image_extension=".png",
+                )
+
+        saved_image = failed_dir / "deck-slide-4-Graphic_1.png"
+        self.assertEqual(saved_image.read_bytes(), image_data)
+
+    def test_failed_ocr_image_saves_without_overwriting_existing_files(self):
+        failed_dir = self.source.parent / "failed-images"
+        save_failed = self.namespace["_md_save_failed_ocr_image"]
+
+        first = save_failed(b"first", failed_dir, "slide/1", ".PNG")
+        second = save_failed(b"second", failed_dir, "slide/1", ".PNG")
+
+        self.assertEqual(first.name, "slide_1.png")
+        self.assertEqual(second.name, "slide_1-2.png")
+        self.assertEqual(first.read_bytes(), b"first")
+        self.assertEqual(second.read_bytes(), b"second")
 
     def test_pptx_with_no_embedded_images_still_converts(self):
         with (patch.dict(self.namespace, {"_md_check_ocr_platform": Mock()}),
@@ -286,7 +363,7 @@ class Pptx2mdTests(unittest.TestCase):
         self.assertIn("Visible first", markdown)
         self.assertNotIn("Image OCR", markdown)
 
-    def test_pptx_linked_picture_is_skipped_with_warning(self):
+    def test_pptx_linked_picture_is_silently_skipped(self):
         from pptx.enum.shapes import MSO_SHAPE_TYPE
 
         class LinkedPicture:
@@ -300,14 +377,9 @@ class Pptx2mdTests(unittest.TestCase):
         slide = SimpleNamespace(shapes=[LinkedPicture()])
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            blobs = list(
-                self.namespace["_md_pptx_image_blobs"](slide, "slide 2")
-            )
+            blobs = list(self.namespace["_md_pptx_image_blobs"](slide))
         self.assertEqual(blobs, [])
-        self.assertEqual(len(caught), 1)
-        self.assertIn("Linked Picture", str(caught[0].message))
-        self.assertIn("linked rather than embedded", str(caught[0].message))
-        self.assertIn("slide 2", str(caught[0].message))
+        self.assertEqual(caught, [])
 
     def test_pptx_linked_picture_does_not_fail_conversion(self):
         from pptx.oxml.ns import qn
@@ -328,11 +400,10 @@ class Pptx2mdTests(unittest.TestCase):
             warnings.simplefilter("always")
             markdown = self.convert(ocr=True)
         self.assertIn("Visible first", markdown)
-        self.assertEqual(len(caught), 1)
-        self.assertIn("linked rather than embedded", str(caught[0].message))
+        self.assertEqual(caught, [])
         recognize.assert_not_called()
 
-    def test_cli_pptx_ocr_warning_names_file_slide_and_picture(self):
+    def test_cli_pptx_linked_picture_produces_no_warning(self):
         from pptx.oxml.ns import qn
         from pptx.enum.shapes import MSO_SHAPE_TYPE
 
@@ -344,27 +415,28 @@ class Pptx2mdTests(unittest.TestCase):
         picture._pic.blipFill.blip.attrib.pop(qn("r:embed"))
         self.presentation.save(self.source)
         errors = io.StringIO()
-        with (patch.dict(self.namespace, {"_md_check_ocr_platform": Mock()}),
+        recognize = Mock()
+        with (patch.dict(self.namespace, {
+                "_md_check_ocr_platform": Mock(),
+                "_md_vision_ocr": recognize,
+        }),
               redirect_stderr(errors), redirect_stdout(io.StringIO())):
             status = self.namespace["_cli"](
                 [str(self.source), "--ocr"], command="pptx2md"
             )
 
         self.assertEqual(status, 0)
-        warning = errors.getvalue()
-        self.assertIn("pptx2md: warning:", warning)
-        self.assertIn(str(self.source), warning)
-        self.assertIn("slide 1", warning)
-        self.assertIn(picture.name, warning)
-        self.assertIn("linked rather than embedded", warning)
-        self.assertNotIn("site-packages", warning)
-        self.assertNotRegex(warning, r"ez\.py:\d+")
+        self.assertEqual(errors.getvalue(), "")
+        recognize.assert_not_called()
 
     def test_cli_pptx_vision_warning_names_file_slide_and_picture(self):
         self.add_image_to_first_slide()
         self.presentation.save(self.source)
 
-        def skip_vision(image_data, mode, language, context):
+        def skip_vision(image_data, mode, language, context, **kwargs):
+            return skip_vision_with_warning(context)
+
+        def skip_vision_with_warning(context):
             warnings.warn(
                 f"Skipping OCR for {context}: Vision reports a zero-dimensioned image.",
                 UserWarning,
@@ -419,6 +491,7 @@ class Pptx2mdTests(unittest.TestCase):
                         self.assertIn("--ocr", help_text)
                         self.assertIn("--ocr-mode", help_text)
                         self.assertIn("--ocr-language", help_text)
+                        self.assertIn("--ocr-failed-dir", help_text)
 
     def test_cli_without_arguments_shows_help(self):
         for command in self.namespace["_CLI_COMMANDS"]:
@@ -451,16 +524,20 @@ class OfficeOcrTests(unittest.TestCase):
         document.add_paragraph().add_run().add_picture(str(self.image_path), width=Inches(1))
         document.save(source)
         recognize = Mock(return_value="Word image text")
+        failed_dir = self.root / "failed-images"
         with patch.dict(self.namespace, {
                 "_md_require_vision": Mock(),
                 "_md_vision_ocr": recognize,
         }), redirect_stdout(io.StringIO()) as output:
-            markdown = self.namespace["docx2md"](source, ocr=True)
+            markdown = self.namespace["docx2md"](
+                source, ocr=True, ocr_failed_dir=failed_dir
+            )
         self.assertEqual(output.getvalue(), markdown)
         self.assertIn("Word image text", markdown)
         self.assertIn("\n[Image OCR]", markdown)
         recognize.assert_called_once()
         self.assertIn(str(source), recognize.call_args.args[3])
+        self.assertEqual(recognize.call_args.kwargs["failed_dir"], str(failed_dir))
 
     def test_xlsx_ocr_includes_image_anchor_and_sheet_context(self):
         from openpyxl import Workbook
@@ -474,17 +551,21 @@ class OfficeOcrTests(unittest.TestCase):
         worksheet.add_image(SpreadsheetImage(str(self.image_path)), "B2")
         workbook.save(source)
         recognize = Mock(return_value="Spreadsheet image text")
+        failed_dir = self.root / "failed-images"
         with patch.dict(self.namespace, {
                 "_md_require_vision": Mock(),
                 "_md_vision_ocr": recognize,
         }), redirect_stdout(io.StringIO()) as output:
-            markdown = self.namespace["xlsx2md"](source, ocr=True)
+            markdown = self.namespace["xlsx2md"](
+                source, ocr=True, ocr_failed_dir=failed_dir
+            )
         self.assertEqual(output.getvalue(), markdown)
         self.assertIn("## Summary", markdown)
         self.assertIn("### OCR from image near B2", markdown)
         self.assertIn("Spreadsheet image text", markdown)
         recognize.assert_called_once()
         self.assertIn(str(source), recognize.call_args.args[3])
+        self.assertEqual(recognize.call_args.kwargs["failed_dir"], str(failed_dir))
 
     def test_xlsx_ocr_skips_unreadable_image_with_warning(self):
         from openpyxl import Workbook
@@ -509,18 +590,24 @@ class OfficeOcrTests(unittest.TestCase):
                 broken.writestr(item, data)
 
         recognize = Mock()
+        failed_dir = self.root / "failed-images"
         with (patch.dict(self.namespace, {
                 "_md_check_ocr_platform": Mock(),
                 "_md_vision_ocr": recognize,
         }), warnings.catch_warnings(record=True) as caught,
                 redirect_stdout(io.StringIO())):
             warnings.simplefilter("always")
-            markdown = self.namespace["xlsx2md"](broken_source, ocr=True)
+            markdown = self.namespace["xlsx2md"](
+                broken_source, ocr=True, ocr_failed_dir=failed_dir
+            )
         self.assertIn("## Sheet", markdown)
         self.assertEqual(len(caught), 1)
         self.assertIn(str(broken_source), str(caught[0].message))
         self.assertIn("worksheet 'Sheet', image near B2", str(caught[0].message))
         self.assertIn("invalid or unreadable", str(caught[0].message))
+        saved_image = failed_dir / "broken-Sheet-B2.bmp"
+        self.assertEqual(saved_image.read_bytes(), image_path.read_bytes()[:60])
+        self.assertIn(str(saved_image), str(caught[0].message))
         recognize.assert_not_called()
 
 

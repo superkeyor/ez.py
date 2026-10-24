@@ -170,10 +170,12 @@ Office-to-Markdown Conversion:
     _md_validate_ocr_language - Validate the Apple Vision OCR language selection.
     _md_require_vision - Load Apple's Vision framework on supported macOS systems.
     _md_check_ocr_platform - Require macOS when OCR is explicitly requested.
-    _md_validate_ocr_image - Skip malformed or zero-sized embedded images with a visible warning.
+    _md_validate_ocr_failed_dir - Validate the optional directory for images that OCR cannot process.
+    _md_save_failed_ocr_image - Save failed OCR image bytes without replacing an existing file.
+    _md_validate_ocr_image - Return an error message for malformed or zero-sized image bytes.
     _md_vision_ocr - Recognize text in image bytes with Apple's local Vision framework.
     _md_ocr_block - Format recognized image text as a labeled Markdown block.
-    _md_pptx_image_blobs - Yield picture bytes, including pictures nested in grouped shapes.
+    _md_pptx_image_blobs - Yield embedded picture bytes, skipping externally linked pictures.
     pptx2md - Convert a PowerPoint presentation to Markdown using MarkItDown.
     _md_docx_ocr - Insert OCR text after each embedded image run in a python-docx document.
     docx2md - Convert a Word .docx document to Markdown using MarkItDown.
@@ -4839,11 +4841,48 @@ def _md_check_ocr_platform():
 #endregion _md_check_ocr_platform
 
 
+#region _md_validate_ocr_failed_dir
+def _md_validate_ocr_failed_dir(ocr, directory):
+    """Validate the optional directory for images that OCR cannot process."""
+    if directory is None:
+        return None
+    if not ocr:
+        raise ValueError("ocr_failed_dir requires ocr=True.")
+    directory = os.fsdecode(os.fspath(directory))
+    if not directory.strip():
+        raise ValueError("ocr_failed_dir must be a nonempty path.")
+    return directory
+#endregion _md_validate_ocr_failed_dir
+
+
+#region _md_save_failed_ocr_image
+def _md_save_failed_ocr_image(image_data, directory, filename, extension):
+    """Save failed OCR image bytes without replacing an existing file."""
+    from pathlib import Path
+
+    directory = Path(os.fspath(directory)).expanduser()
+    directory.mkdir(parents=True, exist_ok=True)
+    filename = re.sub(r"[^A-Za-z0-9._-]+", "_", filename).strip("._")[:160]
+    extension = re.sub(r"[^A-Za-z0-9]+", "", extension.lstrip(".")).lower() or "img"
+    stem = filename or "image"
+    index = 1
+    while True:
+        suffix = "" if index == 1 else f"-{index}"
+        path = directory / f"{stem}{suffix}.{extension}"
+        try:
+            with path.open("xb") as image_file:
+                image_file.write(image_data)
+        except FileExistsError:
+            index += 1
+            continue
+        return path
+#endregion _md_save_failed_ocr_image
+
+
 #region _md_validate_ocr_image
-def _md_validate_ocr_image(image_data, context):
-    """Skip malformed or zero-sized embedded images with a visible warning."""
+def _md_validate_ocr_image(image_data):
+    """Return an error message for malformed or zero-sized image bytes."""
     from io import BytesIO
-    import warnings
     from PIL import Image, UnidentifiedImageError
 
     try:
@@ -4855,23 +4894,35 @@ def _md_validate_ocr_image(image_data, context):
             UnidentifiedImageError, OSError, ValueError, SyntaxError,
             Image.DecompressionBombError,
     ) as exc:
-        warnings.warn(
-            f"Skipping OCR for {context}: embedded image is invalid or unreadable ({exc}).",
-            UserWarning,
-            stacklevel=2,
-        )
-        return False
-    return True
+        return str(exc)
+    return None
 #endregion _md_validate_ocr_image
 
 
 #region _md_vision_ocr
 def _md_vision_ocr(image_data, mode="accurate", language="english",
-                   context="embedded image"):
+                   context="embedded image", failed_dir=None,
+                   failed_name="image", image_extension="img"):
     """Recognize text in image bytes with Apple's local Vision framework."""
+    import warnings
+
     _md_validate_ocr_mode(mode)
     _md_validate_ocr_language(language)
-    if not _md_validate_ocr_image(image_data, context):
+    image_error = _md_validate_ocr_image(image_data)
+    if image_error is not None:
+        saved_path = (
+            _md_save_failed_ocr_image(
+                image_data, failed_dir, failed_name, image_extension
+            )
+            if failed_dir is not None else None
+        )
+        saved_message = f" Failed image saved to {saved_path}." if saved_path else ""
+        warnings.warn(
+            f"Skipping OCR for {context}: embedded image is invalid or unreadable "
+            f"({image_error}).{saved_message}",
+            UserWarning,
+            stacklevel=2,
+        )
         return ""
     Vision = _md_require_vision()
     import Foundation
@@ -4893,16 +4944,22 @@ def _md_vision_ocr(image_data, mode="accurate", language="english",
     handler = Vision.VNImageRequestHandler.alloc().initWithData_options_(image, None)
     succeeded, error = handler.performRequests_error_([request], None)
     if not succeeded:
+        saved_path = (
+            _md_save_failed_ocr_image(
+                image_data, failed_dir, failed_name, image_extension
+            )
+            if failed_dir is not None else None
+        )
+        saved_message = f" Failed image saved to {saved_path}." if saved_path else ""
         if "zero-dimension" in str(error).lower():
-            import warnings
-
             warnings.warn(
-                f"Skipping OCR for {context}: Vision reports a zero-dimensioned image.",
+                f"Skipping OCR for {context}: Vision reports a zero-dimensioned "
+                f"image.{saved_message}",
                 UserWarning,
                 stacklevel=2,
             )
             return ""
-        raise OSError(f"Apple Vision OCR failed: {error}")
+        raise OSError(f"Apple Vision OCR failed: {error}.{saved_message}")
 
     lines = []
     for observation in request.results() or ():
@@ -4923,27 +4980,22 @@ def _md_ocr_block(text):
 
 
 #region _md_pptx_image_blobs
-def _md_pptx_image_blobs(slide, context):
-    """Yield picture bytes, including pictures nested in grouped shapes."""
+def _md_pptx_image_blobs(slide):
+    """Yield embedded picture bytes, skipping externally linked pictures."""
     from pptx.enum.shapes import MSO_SHAPE_TYPE
-    import warnings
 
     def visit(shapes):
         for shape in shapes:
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                 try:
-                    blob = shape.image.blob
+                    picture = shape.image
+                    blob = picture.blob
                 except ValueError as exc:
                     if str(exc) != "no embedded image":
                         raise
-                    warnings.warn(
-                        f"Skipping OCR for {context}, picture {shape.name!r}: "
-                        "the image is linked rather than embedded in the presentation.",
-                        UserWarning,
-                        stacklevel=2,
-                    )
+                    continue
                 else:
-                    yield blob, shape.name
+                    yield blob, shape.name, picture.ext
             elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
                 yield from visit(shape.shapes)
 
@@ -4953,7 +5005,7 @@ def _md_pptx_image_blobs(slide, context):
 #region pptx2md
 def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
             output=None, overwrite=False, skip_hidden=True, ocr=False,
-            ocr_mode="accurate", ocr_language="english"):
+            ocr_mode="accurate", ocr_language="english", ocr_failed_dir=None):
     """
     Convert a PowerPoint presentation to Markdown using MarkItDown.
 
@@ -4969,6 +5021,8 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
          Disabled by default; available on macOS with the platform dependency.
     ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
     ocr_language: "english" (default), "chinese", or "both" when ocr=True.
+    ocr_failed_dir: optionally save embedded images that OCR cannot process.
+                    Requires ocr=True; existing files are never replaced.
     output: write UTF-8 Markdown here, or print to stdout when None.
     overwrite: allow replacing an existing output file (never the input).
     skip_hidden: skip hidden slides, even when selected; False includes them.
@@ -4985,6 +5039,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
     pptx_path, output = _output_paths(pptx_path, output, overwrite)
     _md_validate_ocr_mode(ocr_mode)
     _md_validate_ocr_language(ocr_language)
+    ocr_failed_dir = _md_validate_ocr_failed_dir(ocr, ocr_failed_dir)
     if ocr:
         _md_check_ocr_platform()
     with open(pptx_path, "rb") as source:
@@ -5003,13 +5058,17 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
             if number in selected:
                 blocks = [
                     _md_ocr_block(text)
-                    for blob, picture_name in _md_pptx_image_blobs(
-                        slide, f"PowerPoint file {pptx_path!r}, slide {number}"
-                    )
+                    for blob, picture_name, image_extension in _md_pptx_image_blobs(slide)
                     if (text := _md_vision_ocr(
                         blob, ocr_mode, ocr_language,
                         f"PowerPoint file {pptx_path!r}, slide {number}, "
                         f"picture {picture_name!r}",
+                        failed_dir=ocr_failed_dir,
+                        failed_name=(
+                            f"{os.path.splitext(os.path.basename(pptx_path))[0]}-"
+                            f"slide-{number}-{picture_name}"
+                        ),
+                        image_extension=image_extension,
                     ))
                 ]
                 if blocks:
@@ -5052,7 +5111,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
 #endregion pptx2md
 
 #region _md_docx_ocr
-def _md_docx_ocr(docx, ocr_mode, ocr_language, docx_path):
+def _md_docx_ocr(docx, ocr_mode, ocr_language, docx_path, ocr_failed_dir):
     """Insert OCR text after each embedded image run in a python-docx document."""
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
@@ -5065,6 +5124,12 @@ def _md_docx_ocr(docx, ocr_mode, ocr_language, docx_path):
         text = _md_vision_ocr(
             image_part.blob, ocr_mode, ocr_language,
             f"Word file {docx_path!r}, image {image_number}",
+            failed_dir=ocr_failed_dir,
+            failed_name=(
+                f"{os.path.splitext(os.path.basename(docx_path))[0]}-"
+                f"image-{image_number}"
+            ),
+            image_extension=os.path.splitext(str(image_part.partname))[1],
         )
         if not text:
             continue
@@ -5085,7 +5150,7 @@ def _md_docx_ocr(docx, ocr_mode, ocr_language, docx_path):
 
 #region docx2md
 def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
-            ocr_mode="accurate", ocr_language="english"):
+            ocr_mode="accurate", ocr_language="english", ocr_failed_dir=None):
     """
     Convert a Word .docx document to Markdown using MarkItDown.
 
@@ -5095,6 +5160,8 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
          Disabled by default; available on macOS with the platform dependency.
     ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
     ocr_language: "english" (default), "chinese", or "both" when ocr=True.
+    ocr_failed_dir: optionally save embedded images that OCR cannot process.
+                    Requires ocr=True; existing files are never replaced.
     output: write UTF-8 to this path, or print to stdout when None.
     overwrite: allow replacing an output file, but never the input document.
 
@@ -5110,6 +5177,7 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
     docx_path, output = _output_paths(docx_path, output, overwrite)
     _md_validate_ocr_mode(ocr_mode)
     _md_validate_ocr_language(ocr_language)
+    ocr_failed_dir = _md_validate_ocr_failed_dir(ocr, ocr_failed_dir)
     if ocr:
         _md_check_ocr_platform()
     with open(docx_path, "rb") as source:
@@ -5117,7 +5185,9 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
             from io import BytesIO
 
             document = _md_load_office(Document, source)
-            _md_docx_ocr(document, ocr_mode, ocr_language, docx_path)
+            _md_docx_ocr(
+                document, ocr_mode, ocr_language, docx_path, ocr_failed_dir
+            )
             with BytesIO() as converted_source:
                 document.save(converted_source)
                 converted_source.seek(0)
@@ -5136,7 +5206,7 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
 #region xlsx2md
 def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
             output=None, overwrite=False, ocr=False, ocr_mode="accurate",
-            ocr_language="english"):
+            ocr_language="english", ocr_failed_dir=None):
     """
     Convert Excel .xlsx worksheets to Markdown tables using openpyxl.
 
@@ -5152,6 +5222,8 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
          platform dependency.
     ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
     ocr_language: "english" (default), "chinese", or "both" when ocr=True.
+    ocr_failed_dir: optionally save embedded images that OCR cannot process.
+                    Requires ocr=True; existing files are never replaced.
     output: write UTF-8 to this path, or print to stdout when None.
     overwrite: allow replacing an output file, but never the input workbook.
 
@@ -5172,6 +5244,7 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
     xlsx_path, output = _output_paths(xlsx_path, output, overwrite)
     _md_validate_ocr_mode(ocr_mode)
     _md_validate_ocr_language(ocr_language)
+    ocr_failed_dir = _md_validate_ocr_failed_dir(ocr, ocr_failed_dir)
     if ocr:
         _md_check_ocr_platform()
     if sheets is not None and (
@@ -5258,10 +5331,24 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                             OSError, ValueError, SyntaxError,
                             PILImage.DecompressionBombError,
                     ) as exc:
+                        saved_path = None
+                        raw_image = getattr(image, "ref", None)
+                        if ocr_failed_dir is not None and hasattr(raw_image, "getvalue"):
+                            saved_path = _md_save_failed_ocr_image(
+                                raw_image.getvalue(), ocr_failed_dir,
+                                f"{os.path.splitext(os.path.basename(xlsx_path))[0]}-"
+                                f"{name}-{location}",
+                                f".{image.format}",
+                            )
+                        saved_message = (
+                            f" Failed image saved to {saved_path}."
+                            if saved_path else ""
+                        )
                         warnings.warn(
                             f"Skipping OCR for file {xlsx_path!r}, worksheet {name!r}, "
                             f"image near {location}: "
-                            f"embedded image is invalid or unreadable ({exc}).",
+                            f"embedded image is invalid or unreadable ({exc})."
+                            f"{saved_message}",
                             UserWarning,
                             stacklevel=2,
                         )
@@ -5270,6 +5357,12 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                         image_data, ocr_mode, ocr_language,
                         f"Excel file {xlsx_path!r}, worksheet {name!r}, "
                         f"image near {location}",
+                        failed_dir=ocr_failed_dir,
+                        failed_name=(
+                            f"{os.path.splitext(os.path.basename(xlsx_path))[0]}-"
+                            f"{name}-{location}"
+                        ),
+                        image_extension=f".{image.format}",
                     )
                     if text:
                         section += (
@@ -5343,6 +5436,8 @@ _CLI_ARGUMENT_GROUPS = {
         (["--ocr-language"], {"choices": ("english", "chinese", "both"),
                               "metavar": "LANGUAGE",
                               "help": "OCR language (default: english)."}),
+        (["--ocr-failed-dir"], {"metavar": "DIR",
+                                "help": "Save embedded images that OCR cannot process."}),
     ],
 }
 
@@ -5832,8 +5927,16 @@ Example:
         parser.print_help()
         return 0
     args = parser.parse_args(argv)
-    if any(hasattr(args, name) for name in ("ocr_mode", "ocr_language")) and not getattr(args, "ocr", False):
-        parser.error("--ocr-mode and --ocr-language require --ocr.")
+    ocr_options = [
+        (name, flag) for name, flag in (
+            ("ocr_mode", "--ocr-mode"),
+            ("ocr_language", "--ocr-language"),
+            ("ocr_failed_dir", "--ocr-failed-dir"),
+        )
+        if hasattr(args, name)
+    ]
+    if ocr_options and not getattr(args, "ocr", False):
+        parser.error(f"{' and '.join(flag for _, flag in ocr_options)} require --ocr.")
     if "batch" in spec:
         return _cli_batch(parser, spec, vars(args))
     try:

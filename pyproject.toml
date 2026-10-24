@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "ez"
-version = "11.9.9"
+version = "12.0.0"
 description = "easy stuff"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -41,6 +41,7 @@ dependencies = [
 
     # Office documents and Markdown conversion
     "markitdown[pdf,docx,pptx]",
+    'pyobjc-framework-Vision>=10; sys_platform == "darwin"',
     "openpyxl",
     "xlsxwriter",
     "xlwt",

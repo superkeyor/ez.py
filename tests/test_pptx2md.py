@@ -1,5 +1,5 @@
 import ast
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import io
 import os
 from pathlib import Path
@@ -8,8 +8,11 @@ import sys
 import tempfile
 import unittest
 import warnings
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from pptx import Presentation
+from pptx.util import Inches
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +69,16 @@ class Pptx2mdTests(unittest.TestCase):
         self.assertEqual(output.getvalue(), markdown)
         return markdown
 
+    def add_image_to_first_slide(self):
+        from PIL import Image
+
+        image_path = self.source.with_suffix(".png")
+        Image.new("RGB", (32, 32), "white").save(image_path)
+        self.presentation.slides[0].shapes.add_picture(
+            str(image_path), Inches(1), Inches(1)
+        )
+        self.presentation.save(self.source)
+
     def test_default_skips_hidden_and_preserves_original_numbers(self):
         markdown = self.convert()
         self.assertEqual(re.findall(r"Slide number: (\d+)", markdown), ["1", "4", "5"])
@@ -105,6 +118,118 @@ class Pptx2mdTests(unittest.TestCase):
         self.assertNotIn("Hidden", markdown)
         self.assertEqual(markdown.count("\n\n---\n\n"), 2)
 
+    def test_ocr_is_opt_in_and_text_is_added_to_its_slide(self):
+        self.add_image_to_first_slide()
+        recognize = Mock(return_value="Recognized picture text")
+        with patch.dict(self.namespace, {
+                "_md_require_vision": Mock(),
+                "_md_vision_ocr": recognize,
+        }):
+            default_markdown = self.convert()
+            self.assertNotIn("Recognized picture text", default_markdown)
+            recognize.assert_not_called()
+
+            markdown = self.convert(ocr=True)
+
+        self.assertIn("<!-- Slide number: 1 -->", markdown)
+        self.assertIn("*[Image OCR]*\n\nRecognized picture text\n\n*[End OCR]*", markdown)
+        recognize.assert_called_once()
+        self.assertEqual(recognize.call_args.args[1], "accurate")
+        self.assertEqual(recognize.call_args.args[2], "english")
+
+    def test_ocr_cli_uses_requested_mode(self):
+        self.add_image_to_first_slide()
+        recognize = Mock(return_value="Fast recognized text")
+        with (patch.dict(self.namespace, {
+                "_md_require_vision": Mock(),
+                "_md_vision_ocr": recognize,
+        }), redirect_stdout(io.StringIO()) as output):
+            status = self.namespace["_cli"](
+                [str(self.source), "--ocr", "--ocr-mode", "fast"],
+                command="pptx2md",
+            )
+        self.assertEqual(status, 0)
+        self.assertIn("Fast recognized text", output.getvalue())
+        self.assertEqual(recognize.call_args.args[1], "fast")
+
+    def test_ocr_cli_uses_requested_language(self):
+        self.add_image_to_first_slide()
+        recognize = Mock(return_value="Chinese recognized text")
+        with (patch.dict(self.namespace, {
+                "_md_require_vision": Mock(),
+                "_md_vision_ocr": recognize,
+        }), redirect_stdout(io.StringIO())):
+            status = self.namespace["_cli"](
+                [str(self.source), "--ocr", "--ocr-language", "chinese"],
+                command="pptx2md",
+            )
+        self.assertEqual(status, 0)
+        self.assertEqual(recognize.call_args.args[2], "chinese")
+
+    def test_ocr_mode_requires_ocr_on_cli(self):
+        with redirect_stderr(io.StringIO()) as errors:
+            with self.assertRaises(SystemExit) as result:
+                self.namespace["_cli"](
+                    [str(self.source), "--ocr-mode", "fast"], command="pptx2md"
+                )
+        self.assertEqual(result.exception.code, 2)
+        self.assertIn("require --ocr", errors.getvalue())
+
+    def test_ocr_language_requires_ocr_on_cli(self):
+        with redirect_stderr(io.StringIO()) as errors:
+            with self.assertRaises(SystemExit) as result:
+                self.namespace["_cli"](
+                    [str(self.source), "--ocr-language", "chinese"],
+                    command="pptx2md",
+                )
+        self.assertEqual(result.exception.code, 2)
+        self.assertIn("--ocr-language", errors.getvalue())
+
+    def test_vision_ocr_rejects_non_macos(self):
+        with patch.object(sys, "platform", "linux"):
+            with self.assertRaisesRegex(OSError, "only on macOS"):
+                self.namespace["_md_require_vision"]()
+
+    def test_vision_ocr_uses_requested_level_and_languages(self):
+        for mode, level in (("accurate", 1), ("fast", 2)):
+            for language, languages in (
+                    ("english", ["en-US"]),
+                    ("chinese", ["zh-Hans"]),
+                    ("both", ["zh-Hans", "en-US"])):
+                request = Mock()
+                request.results.return_value = []
+                handler = Mock()
+                handler.performRequests_error_.return_value = (True, None)
+                vision = SimpleNamespace(
+                    VNRecognizeTextRequest=Mock(),
+                    VNRequestTextRecognitionLevelAccurate=1,
+                    VNRequestTextRecognitionLevelFast=2,
+                    VNImageRequestHandler=Mock(),
+                )
+                vision.VNRecognizeTextRequest.alloc.return_value.init.return_value = request
+                vision.VNImageRequestHandler.alloc.return_value.initWithData_options_.return_value = handler
+                foundation = SimpleNamespace(
+                    NSData=SimpleNamespace(
+                        dataWithBytes_length_=Mock(return_value=object())
+                    )
+                )
+                with (patch.object(sys, "platform", "darwin"),
+                      patch.dict(sys.modules, {
+                          "Vision": vision, "Foundation": foundation
+                      })):
+                    self.assertEqual(
+                        self.namespace["_md_vision_ocr"](b"image", mode, language),
+                        "",
+                    )
+                request.setRecognitionLevel_.assert_called_once_with(level)
+                request.setRecognitionLanguages_.assert_called_once_with(languages)
+
+    def test_vision_ocr_reports_missing_binding(self):
+        with (patch.object(sys, "platform", "darwin"),
+              patch.dict(sys.modules, {"Vision": None})):
+            with self.assertRaisesRegex(ImportError, "pyobjc-framework-Vision"):
+                self.namespace["_md_require_vision"]()
+
     def test_cli_default_and_include_hidden(self):
         for flags, expected in (([], ["1", "4", "5"]),
                                 (["--include-hidden"], ["1", "2", "3", "4", "5"])):
@@ -131,6 +256,10 @@ class Pptx2mdTests(unittest.TestCase):
                         self.assertIn("Slides are 1-based", help_text)
                         self.assertIn("original order and numbering", help_text)
                         self.assertIn("even when selected", help_text)
+                    if command in ("pptx2md", "docx2md", "xlsx2md"):
+                        self.assertIn("--ocr", help_text)
+                        self.assertIn("--ocr-mode", help_text)
+                        self.assertIn("--ocr-language", help_text)
 
     def test_cli_without_arguments_shows_help(self):
         for command in self.namespace["_CLI_COMMANDS"]:
@@ -138,6 +267,63 @@ class Pptx2mdTests(unittest.TestCase):
                 status = self.namespace["_cli"]([], command=command)
             self.assertEqual(status, 0)
             self.assertIn(f"Usage:\n    {command} ", output.getvalue())
+
+
+class OfficeOcrTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.namespace = load_cli()
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        from PIL import Image
+
+        self.image_path = self.root / "image.png"
+        Image.new("RGB", (32, 32), "white").save(self.image_path)
+
+    def test_docx_ocr_is_inserted_after_embedded_image(self):
+        from docx import Document
+        from docx.shared import Inches
+
+        source = self.root / "document.docx"
+        document = Document()
+        document.add_paragraph().add_run().add_picture(str(self.image_path), width=Inches(1))
+        document.save(source)
+        recognize = Mock(return_value="Word image text")
+        with patch.dict(self.namespace, {
+                "_md_require_vision": Mock(),
+                "_md_vision_ocr": recognize,
+        }), redirect_stdout(io.StringIO()) as output:
+            markdown = self.namespace["docx2md"](source, ocr=True)
+        self.assertEqual(output.getvalue(), markdown)
+        self.assertIn("Word image text", markdown)
+        self.assertIn("\n[Image OCR]", markdown)
+        recognize.assert_called_once()
+
+    def test_xlsx_ocr_includes_image_anchor_and_sheet_context(self):
+        from openpyxl import Workbook
+        from openpyxl.drawing.image import Image as SpreadsheetImage
+
+        source = self.root / "workbook.xlsx"
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.title = "Summary"
+        worksheet["A1"] = "Report"
+        worksheet.add_image(SpreadsheetImage(str(self.image_path)), "B2")
+        workbook.save(source)
+        recognize = Mock(return_value="Spreadsheet image text")
+        with patch.dict(self.namespace, {
+                "_md_require_vision": Mock(),
+                "_md_vision_ocr": recognize,
+        }), redirect_stdout(io.StringIO()) as output:
+            markdown = self.namespace["xlsx2md"](source, ocr=True)
+        self.assertEqual(output.getvalue(), markdown)
+        self.assertIn("## Summary", markdown)
+        self.assertIn("### OCR from image near B2", markdown)
+        self.assertIn("Spreadsheet image text", markdown)
+        recognize.assert_called_once()
 
 
 if __name__ == "__main__":

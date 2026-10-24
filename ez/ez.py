@@ -166,7 +166,14 @@ Office-to-Markdown Conversion:
     _md_combine - Combine document Markdown with source headings in input order.
     _parse_ranges - Parse a one-based comma-separated list of values and ranges.
     _md_load_office - Load an Office document and normalize missing-member errors.
+    _md_validate_ocr_mode - Validate the Apple Vision text recognition mode.
+    _md_validate_ocr_language - Validate the Apple Vision OCR language selection.
+    _md_require_vision - Load Apple's Vision framework on supported macOS systems.
+    _md_vision_ocr - Recognize text in image bytes with Apple's local Vision framework.
+    _md_ocr_block - Format recognized image text as a labeled Markdown block.
+    _md_pptx_image_blobs - Yield picture bytes, including pictures nested in grouped shapes.
     pptx2md - Convert a PowerPoint presentation to Markdown using MarkItDown.
+    _md_docx_ocr - Insert OCR text after each embedded image run in a python-docx document.
     docx2md - Convert a Word .docx document to Markdown using MarkItDown.
     xlsx2md - Convert Excel .xlsx worksheets to Markdown tables using openpyxl.
     pdf2md - Convert text-based PDF pages to Markdown using PyMuPDF and MarkItDown.
@@ -4787,11 +4794,106 @@ def _md_load_office(loader, *args, **kwargs):
         return loader(*args, **kwargs)
     except KeyError as exc:
         raise ValueError(f"Invalid Office document: missing package member {exc}") from exc
+
+
 #endregion _md_load_office
+
+#region _md_validate_ocr_mode
+def _md_validate_ocr_mode(mode):
+    """Validate the Apple Vision text recognition mode."""
+    if mode not in ("accurate", "fast"):
+        raise ValueError("ocr_mode must be 'accurate' or 'fast'.")
+#endregion _md_validate_ocr_mode
+
+
+#region _md_validate_ocr_language
+def _md_validate_ocr_language(language):
+    """Validate the Apple Vision OCR language selection."""
+    if language not in ("english", "chinese", "both"):
+        raise ValueError("ocr_language must be 'english', 'chinese', or 'both'.")
+#endregion _md_validate_ocr_language
+
+
+#region _md_require_vision
+def _md_require_vision():
+    """Load Apple's Vision framework on supported macOS systems."""
+    if sys.platform != "darwin":
+        raise OSError("Apple Vision OCR is available only on macOS.")
+    try:
+        import Vision
+    except ImportError as exc:
+        raise ImportError(
+            "Apple Vision OCR requires pyobjc-framework-Vision; "
+            "install the project dependencies with `uv sync`."
+        ) from exc
+    return Vision
+#endregion _md_require_vision
+
+
+#region _md_vision_ocr
+def _md_vision_ocr(image_data, mode="accurate", language="english"):
+    """Recognize text in image bytes with Apple's local Vision framework."""
+    _md_validate_ocr_mode(mode)
+    _md_validate_ocr_language(language)
+    Vision = _md_require_vision()
+    import Foundation
+
+    request = Vision.VNRecognizeTextRequest.alloc().init()
+    level = (
+        Vision.VNRequestTextRecognitionLevelAccurate
+        if mode == "accurate" else Vision.VNRequestTextRecognitionLevelFast
+    )
+    request.setRecognitionLevel_(level)
+    request.setUsesLanguageCorrection_(True)
+    recognition_languages = {
+        "english": ["en-US"],
+        "chinese": ["zh-Hans"],
+        "both": ["zh-Hans", "en-US"],
+    }[language]
+    request.setRecognitionLanguages_(recognition_languages)
+    image = Foundation.NSData.dataWithBytes_length_(image_data, len(image_data))
+    handler = Vision.VNImageRequestHandler.alloc().initWithData_options_(image, None)
+    succeeded, error = handler.performRequests_error_([request], None)
+    if not succeeded:
+        raise OSError(f"Apple Vision OCR failed: {error}")
+
+    lines = []
+    for observation in request.results() or ():
+        candidates = observation.topCandidates_(1)
+        if candidates:
+            text = candidates[0].string()
+            if text:
+                lines.append(text)
+    return "\n".join(lines).strip()
+#endregion _md_vision_ocr
+
+
+#region _md_ocr_block
+def _md_ocr_block(text):
+    """Format recognized image text as a labeled Markdown block."""
+    return f"*[Image OCR]*\n\n{text.strip()}\n\n*[End OCR]*"
+#endregion _md_ocr_block
+
+
+#region _md_pptx_image_blobs
+def _md_pptx_image_blobs(slide):
+    """Yield picture bytes, including pictures nested in grouped shapes."""
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    def visit(shapes):
+        for shape in shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                yield shape.image.blob
+            elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                yield from visit(shape.shapes)
+
+    yield from visit(slide.shapes)
+#endregion _md_pptx_image_blobs
 
 #region pptx2md
 def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
-            output=None, overwrite=False, skip_hidden=True):
+            output=None, overwrite=False, skip_hidden=True, ocr=False,
+            ocr_mode="accurate", ocr_language="english"):
     """
     Convert a PowerPoint presentation to Markdown using MarkItDown.
 
@@ -4803,6 +4905,10 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
              If False, separate slides with Markdown horizontal rules.
     images: embed pictures as base64 data URIs instead of filename references.
             Filename references do not extract image files.
+    ocr: recognize text in embedded images with Apple's Vision framework.
+         Disabled by default; available on macOS with the platform dependency.
+    ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
+    ocr_language: "english" (default), "chinese", or "both" when ocr=True.
     output: write UTF-8 Markdown here, or print to stdout when None.
     overwrite: allow replacing an existing output file (never the input).
     skip_hidden: skip hidden slides, even when selected; False includes them.
@@ -4817,6 +4923,10 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
     from pptx import Presentation
 
     pptx_path, output = _output_paths(pptx_path, output, overwrite)
+    _md_validate_ocr_mode(ocr_mode)
+    _md_validate_ocr_language(ocr_language)
+    if ocr:
+        _md_require_vision()
     with open(pptx_path, "rb") as source:
         presentation = _md_load_office(Presentation, source)
     slide_count = len(presentation.slides)
@@ -4827,6 +4937,17 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
             if presentation.slides[number - 1]._element.get("show") not in ("0", "false")
         ]
     selected = set(original_numbers)
+    image_text = {}
+    if ocr:
+        for number, slide in enumerate(presentation.slides, 1):
+            if number in selected:
+                blocks = [
+                    _md_ocr_block(text)
+                    for blob in _md_pptx_image_blobs(slide)
+                    if (text := _md_vision_ocr(blob, ocr_mode, ocr_language))
+                ]
+                if blocks:
+                    image_text[number] = blocks
     for number, slide in enumerate(presentation.slides, 1):
         if number in selected and not note and slide.has_notes_slide:
             notes_frame = slide.notes_slide.notes_text_frame
@@ -4855,6 +4976,8 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(converted)
         content = converted[match.end():end].strip()
+        if image_text.get(original_numbers[index]):
+            content = "\n\n".join([content, *image_text[original_numbers[index]]]).strip()
         if markers:
             content = f"<!-- Slide number: {original_numbers[index]} -->\n{content}"
         sections.append(content.rstrip())
@@ -4862,13 +4985,47 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
     return _output_write(markdown, output, overwrite)
 #endregion pptx2md
 
+#region _md_docx_ocr
+def _md_docx_ocr(docx, ocr_mode, ocr_language):
+    """Insert OCR text after each embedded image run in a python-docx document."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    for blip in docx._element.xpath(".//a:blip"):
+        relationship_id = blip.get(qn("r:embed"))
+        if not relationship_id:
+            continue
+        image_part = docx.part.related_parts[relationship_id]
+        text = _md_vision_ocr(image_part.blob, ocr_mode, ocr_language)
+        if not text:
+            continue
+        drawing_run = blip
+        while drawing_run is not None and drawing_run.tag != qn("w:r"):
+            drawing_run = drawing_run.getparent()
+        if drawing_run is None or drawing_run.getparent() is None:
+            raise ValueError("Cannot place OCR text next to an embedded Word image.")
+        ocr_run = OxmlElement("w:r")
+        for line in ("[Image OCR]", *text.splitlines(), "[End OCR]"):
+            ocr_run.append(OxmlElement("w:br"))
+            text_element = OxmlElement("w:t")
+            text_element.text = line
+            ocr_run.append(text_element)
+        drawing_run.addnext(ocr_run)
+#endregion _md_docx_ocr
+
+
 #region docx2md
-def docx2md(docx_path, images=False, output=None, overwrite=False):
+def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
+            ocr_mode="accurate", ocr_language="english"):
     """
     Convert a Word .docx document to Markdown using MarkItDown.
 
     images: retain complete base64 data URIs for embedded images. By default,
             MarkItDown abbreviates data URIs; these are not usable image links.
+    ocr: recognize text in embedded images with Apple's Vision framework.
+         Disabled by default; available on macOS with the platform dependency.
+    ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
+    ocr_language: "english" (default), "chinese", or "both" when ocr=True.
     output: write UTF-8 to this path, or print to stdout when None.
     overwrite: allow replacing an output file, but never the input document.
 
@@ -4878,19 +5035,39 @@ def docx2md(docx_path, images=False, output=None, overwrite=False):
     """
     from markitdown import StreamInfo
     from markitdown.converters import DocxConverter
+    if ocr:
+        from docx import Document
 
     docx_path, output = _output_paths(docx_path, output, overwrite)
+    _md_validate_ocr_mode(ocr_mode)
+    _md_validate_ocr_language(ocr_language)
+    if ocr:
+        _md_require_vision()
     with open(docx_path, "rb") as source:
-        markdown = _md_load_office(
-            DocxConverter().convert, source, StreamInfo(extension=".docx"),
-            keep_data_uris=images,
-        ).text_content
+        if ocr:
+            from io import BytesIO
+
+            document = _md_load_office(Document, source)
+            _md_docx_ocr(document, ocr_mode, ocr_language)
+            with BytesIO() as converted_source:
+                document.save(converted_source)
+                converted_source.seek(0)
+                markdown = _md_load_office(
+                    DocxConverter().convert, converted_source,
+                    StreamInfo(extension=".docx"), keep_data_uris=images,
+                ).text_content
+        else:
+            markdown = _md_load_office(
+                DocxConverter().convert, source, StreamInfo(extension=".docx"),
+                keep_data_uris=images,
+            ).text_content
     return _output_write(markdown.rstrip("\r\n"), output, overwrite)
 #endregion docx2md
 
 #region xlsx2md
 def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
-            output=None, overwrite=False):
+            output=None, overwrite=False, ocr=False, ocr_mode="accurate",
+            ocr_language="english"):
     """
     Convert Excel .xlsx worksheets to Markdown tables using openpyxl.
 
@@ -4901,6 +5078,11 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
               and empty cells; calculate and save in Excel/LibreOffice first.
     headers: use the first row as headers; if False, generate column letters
              and include the first row as data.
+    ocr: recognize text in embedded worksheet images with Apple's Vision
+         framework. Disabled by default; available on macOS with the optional
+         platform dependency.
+    ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
+    ocr_language: "english" (default), "chinese", or "both" when ocr=True.
     output: write UTF-8 to this path, or print to stdout when None.
     overwrite: allow replacing an output file, but never the input workbook.
 
@@ -4917,6 +5099,10 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
     from openpyxl.utils import get_column_letter
 
     xlsx_path, output = _output_paths(xlsx_path, output, overwrite)
+    _md_validate_ocr_mode(ocr_mode)
+    _md_validate_ocr_language(ocr_language)
+    if ocr:
+        _md_require_vision()
     if sheets is not None and (
             not isinstance(sheets, (list, tuple)) or not sheets
             or any(not isinstance(name, str) or not name for name in sheets)):
@@ -4934,6 +5120,10 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
     with ExitStack() as resources:
         source = _md_load_office(load_workbook, xlsx_path, read_only=True, data_only=False)
         resources.callback(source.close)
+        image_workbook = None
+        if ocr:
+            image_workbook = _md_load_office(load_workbook, xlsx_path, data_only=False)
+            resources.callback(image_workbook.close)
         values = source
         if not formulas:
             values = _md_load_office(load_workbook, xlsx_path, read_only=True, data_only=True)
@@ -4975,6 +5165,28 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                          "| " + " | ".join(["---"] * width) + " |"]
                 table.extend("| " + " | ".join(row) + " |" for row in rows)
                 section += "\n\n" + "\n".join(table)
+            if image_workbook is not None:
+                worksheet = image_workbook[name]
+                images = sorted(
+                    enumerate(worksheet._images, 1),
+                    key=lambda item: (
+                        getattr(getattr(item[1].anchor, "_from", None), "row", 0),
+                        getattr(getattr(item[1].anchor, "_from", None), "col", 0),
+                        item[0],
+                    ),
+                )
+                for image_number, image in images:
+                    anchor = getattr(image.anchor, "_from", None)
+                    location = (
+                        f"{get_column_letter(anchor.col + 1)}{anchor.row + 1}"
+                        if anchor is not None else f"image {image_number}"
+                    )
+                    text = _md_vision_ocr(image._data(), ocr_mode, ocr_language)
+                    if text:
+                        section += (
+                            f"\n\n### OCR from image near {location}\n\n"
+                            f"{_md_ocr_block(text)}"
+                        )
             sections.append(section)
     return _output_write("\n\n".join(sections), output, overwrite)
 #endregion xlsx2md
@@ -5034,6 +5246,15 @@ _CLI_ARGUMENT_GROUPS = {
         (["--recursive"], {"action": "store_true",
                            "help": "Scan nested folders and enable ** wildcard patterns."}),
     ],
+    "ocr": [
+        (["--ocr"], {"action": "store_true",
+                     "help": "Recognize text in embedded images with Apple Vision (macOS only)."}),
+        (["--ocr-mode"], {"choices": ("accurate", "fast"), "metavar": "MODE",
+                          "help": "OCR recognition mode (default: accurate)."}),
+        (["--ocr-language"], {"choices": ("english", "chinese", "both"),
+                              "metavar": "LANGUAGE",
+                              "help": "OCR language (default: english)."}),
+    ],
 }
 
 _CLI_OUTPUT_FORMATS = {
@@ -5057,7 +5278,7 @@ _CLI_COMMANDS = {
             (["--include-hidden"], {"dest": "skip_hidden", "action": "store_false",
                                    "help": "Include hidden slides (skipped by default)."}),
         ],
-        "groups": ["output", "batch"],
+        "groups": ["output", "batch", "ocr"],
         "batch": {
             "input": "pptx_path", "extension": ".pptx",
             "errors": [("pptx.exc", "PythonPptxError"), ("lxml.etree", "XMLSyntaxError"),
@@ -5069,9 +5290,13 @@ _CLI_COMMANDS = {
             "Slides are 1-based; selections retain original order and numbering.",
             "Hidden slides are skipped, even when selected, unless --include-hidden is used.",
             "Without --images, filename references do not extract image files.",
+            "OCR is off by default; --ocr requires macOS and the pyobjc-framework-Vision dependency.",
+            "OCR language defaults to English; use --ocr-language chinese or both.",
             "The input is never overwritten. Output defaults to stdout.",
         ],
         "examples": ['pptx2md talk.pptx -n -s 1-3,5 --images -o talk.md',
+                     "pptx2md talk.pptx --ocr --ocr-mode accurate",
+                     "pptx2md talk.pptx --ocr --ocr-language chinese",
                      "pptx2md *.pptx --output-dir markdown --images"],
     },
     "docx2md": {
@@ -5083,7 +5308,7 @@ _CLI_COMMANDS = {
                             "help": "Input .docx files, folders, or wildcard patterns."}),
             (["--images"], {"action": "store_true", "help": "Embed images as base64 data URIs."}),
         ],
-        "groups": ["output", "batch"],
+        "groups": ["output", "batch", "ocr"],
         "batch": {
             "input": "docx_path", "extension": ".docx",
             "errors": [("lxml.etree", "XMLSyntaxError"),
@@ -5095,9 +5320,13 @@ _CLI_COMMANDS = {
         "notes": [
             "Supported headings, lists, tables, and links are converted, not exact page layout.",
             "Without --images, embedded-image data URIs are abbreviated and unusable.",
+            "OCR is off by default; --ocr requires macOS and the pyobjc-framework-Vision dependency.",
+            "OCR language defaults to English; use --ocr-language chinese or both.",
             "The input is never overwritten. Output defaults to stdout.",
         ],
         "examples": ["docx2md report.docx --images -o report.md",
+                     "docx2md report.docx --ocr --ocr-mode fast",
+                     "docx2md report.docx --ocr --ocr-language both",
                      "docx2md reports --recursive --output-dir markdown"],
     },
     "xlsx2md": {
@@ -5113,7 +5342,7 @@ _CLI_COMMANDS = {
             (["--no-headers"], {"dest": "headers", "action": "store_false",
                                "help": "Generate column labels; keep the first row as data."}),
         ],
-        "groups": ["output", "batch"],
+        "groups": ["output", "batch", "ocr"],
         "batch": {
             "input": "xlsx_path", "extension": ".xlsx",
             "errors": [("openpyxl.utils.exceptions", "InvalidFileException"),
@@ -5124,10 +5353,14 @@ _CLI_COMMANDS = {
             "All worksheets, including hidden ones, are included unless selected; workbook order is retained.",
             "The first row supplies headers by default. Empty sheets have only a heading.",
             "Formulas are not evaluated. Missing cached values warn and produce empty cells.",
-            "Images/charts are not extracted. The input is never overwritten.",
+            "Embedded image OCR is optional with --ocr on macOS; charts are not extracted.",
+            "OCR language defaults to English; use --ocr-language chinese or both.",
+            "The input is never overwritten.",
         ],
         "examples": ['xlsx2md data.xlsx --sheets "Annual Sales" Summary -o data.md',
                      "xlsx2md data.xlsx --formulas --no-headers",
+                     "xlsx2md data.xlsx --ocr",
+                     "xlsx2md data.xlsx --ocr --ocr-language chinese",
                      "xlsx2md *.xlsx --output-dir markdown"],
     },
     "pdf2md": {
@@ -5494,6 +5727,8 @@ Example:
         parser.print_help()
         return 0
     args = parser.parse_args(argv)
+    if any(hasattr(args, name) for name in ("ocr_mode", "ocr_language")) and not getattr(args, "ocr", False):
+        parser.error("--ocr-mode and --ocr-language require --ocr.")
     if "batch" in spec:
         return _cli_batch(parser, spec, vars(args))
     try:

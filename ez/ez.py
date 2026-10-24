@@ -4923,7 +4923,7 @@ def _md_ocr_block(text):
 
 
 #region _md_pptx_image_blobs
-def _md_pptx_image_blobs(slide):
+def _md_pptx_image_blobs(slide, context):
     """Yield picture bytes, including pictures nested in grouped shapes."""
     from pptx.enum.shapes import MSO_SHAPE_TYPE
     import warnings
@@ -4937,13 +4937,13 @@ def _md_pptx_image_blobs(slide):
                     if str(exc) != "no embedded image":
                         raise
                     warnings.warn(
-                        f"Skipping OCR for linked PowerPoint picture {shape.name!r}: "
-                        "the image is not embedded in the presentation.",
+                        f"Skipping OCR for {context}, picture {shape.name!r}: "
+                        "the image is linked rather than embedded in the presentation.",
                         UserWarning,
                         stacklevel=2,
                     )
                 else:
-                    yield blob
+                    yield blob, shape.name
             elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
                 yield from visit(shape.shapes)
 
@@ -5003,9 +5003,13 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
             if number in selected:
                 blocks = [
                     _md_ocr_block(text)
-                    for blob in _md_pptx_image_blobs(slide)
+                    for blob, picture_name in _md_pptx_image_blobs(
+                        slide, f"PowerPoint file {pptx_path!r}, slide {number}"
+                    )
                     if (text := _md_vision_ocr(
-                        blob, ocr_mode, ocr_language, f"PowerPoint slide {number}"
+                        blob, ocr_mode, ocr_language,
+                        f"PowerPoint file {pptx_path!r}, slide {number}, "
+                        f"picture {picture_name!r}",
                     ))
                 ]
                 if blocks:
@@ -5048,7 +5052,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
 #endregion pptx2md
 
 #region _md_docx_ocr
-def _md_docx_ocr(docx, ocr_mode, ocr_language):
+def _md_docx_ocr(docx, ocr_mode, ocr_language, docx_path):
     """Insert OCR text after each embedded image run in a python-docx document."""
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
@@ -5059,7 +5063,8 @@ def _md_docx_ocr(docx, ocr_mode, ocr_language):
             continue
         image_part = docx.part.related_parts[relationship_id]
         text = _md_vision_ocr(
-            image_part.blob, ocr_mode, ocr_language, f"Word image {image_number}"
+            image_part.blob, ocr_mode, ocr_language,
+            f"Word file {docx_path!r}, image {image_number}",
         )
         if not text:
             continue
@@ -5112,7 +5117,7 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
             from io import BytesIO
 
             document = _md_load_office(Document, source)
-            _md_docx_ocr(document, ocr_mode, ocr_language)
+            _md_docx_ocr(document, ocr_mode, ocr_language, docx_path)
             with BytesIO() as converted_source:
                 document.save(converted_source)
                 converted_source.seek(0)
@@ -5254,7 +5259,8 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                             PILImage.DecompressionBombError,
                     ) as exc:
                         warnings.warn(
-                            f"Skipping OCR for worksheet {name!r}, image near {location}: "
+                            f"Skipping OCR for file {xlsx_path!r}, worksheet {name!r}, "
+                            f"image near {location}: "
                             f"embedded image is invalid or unreadable ({exc}).",
                             UserWarning,
                             stacklevel=2,
@@ -5262,7 +5268,8 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                         continue
                     text = _md_vision_ocr(
                         image_data, ocr_mode, ocr_language,
-                        f"worksheet {name!r}, image near {location}",
+                        f"Excel file {xlsx_path!r}, worksheet {name!r}, "
+                        f"image near {location}",
                     )
                     if text:
                         section += (
@@ -5645,6 +5652,7 @@ def _cli_batch(parser, spec, kwargs):
     """Run a registered tool with separate or combined output files."""
     from importlib import import_module
     import tempfile
+    import warnings
     from zipfile import BadZipFile
 
     batch = spec["batch"]
@@ -5689,6 +5697,7 @@ def _cli_batch(parser, spec, kwargs):
     results = []
     with tempfile.TemporaryDirectory(prefix="ez-output-") as staging:
         for index, (path, output) in enumerate(jobs):
+            caught = []
             try:
                 if output_dir is not None:
                     os.makedirs(os.path.dirname(output), exist_ok=True)
@@ -5703,13 +5712,27 @@ def _cli_batch(parser, spec, kwargs):
                     output = os.path.join(staging, str(index) + output_format["extension"])
                 if output is not None:
                     options["output"] = output
-                globals()[spec["function"]](**options)
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.filterwarnings("always", message=r"Skipping OCR for ")
+                    globals()[spec["function"]](**options)
                 if combined:
                     with open(output, encoding="utf-8") as result:
                         results.append((path, result.read()))
                 succeeded += 1
             except expected_errors as exc:
                 errors.append((path, str(exc)))
+            finally:
+                for warning in caught:
+                    if str(warning.message).startswith("Skipping OCR for "):
+                        print(
+                            f"{parser.prog}: warning: {warning.message}",
+                            file=sys.stderr,
+                        )
+                    else:
+                        warnings.showwarning(
+                            warning.message, warning.category,
+                            warning.filename, warning.lineno, line=warning.line,
+                        )
         if combined and results:
             try:
                 for path, _, _ in files:

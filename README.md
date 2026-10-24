@@ -480,7 +480,9 @@ OCR reports that Apple Vision is unavailable. A document with no embedded
 images is converted normally; invalid or zero-sized embedded images produce a
 warning and are skipped rather than failing the whole conversion. PowerPoint
 pictures linked to external files rather than embedded in the presentation
-cannot be OCRed and produce a warning.
+cannot be OCRed and produce a warning. CLI OCR warnings use a concise
+`<command>: warning: ...` format without Python source locations. They identify
+the source file and the embedded image's slide, worksheet, or document context.
 
 #### PowerPoint
 

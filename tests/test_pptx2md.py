@@ -300,11 +300,14 @@ class Pptx2mdTests(unittest.TestCase):
         slide = SimpleNamespace(shapes=[LinkedPicture()])
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            blobs = list(self.namespace["_md_pptx_image_blobs"](slide))
+            blobs = list(
+                self.namespace["_md_pptx_image_blobs"](slide, "slide 2")
+            )
         self.assertEqual(blobs, [])
         self.assertEqual(len(caught), 1)
         self.assertIn("Linked Picture", str(caught[0].message))
-        self.assertIn("not embedded", str(caught[0].message))
+        self.assertIn("linked rather than embedded", str(caught[0].message))
+        self.assertIn("slide 2", str(caught[0].message))
 
     def test_pptx_linked_picture_does_not_fail_conversion(self):
         from pptx.oxml.ns import qn
@@ -326,8 +329,65 @@ class Pptx2mdTests(unittest.TestCase):
             markdown = self.convert(ocr=True)
         self.assertIn("Visible first", markdown)
         self.assertEqual(len(caught), 1)
-        self.assertIn("not embedded", str(caught[0].message))
+        self.assertIn("linked rather than embedded", str(caught[0].message))
         recognize.assert_not_called()
+
+    def test_cli_pptx_ocr_warning_names_file_slide_and_picture(self):
+        from pptx.oxml.ns import qn
+        from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+        self.add_image_to_first_slide()
+        picture = next(
+            shape for shape in self.presentation.slides[0].shapes
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        )
+        picture._pic.blipFill.blip.attrib.pop(qn("r:embed"))
+        self.presentation.save(self.source)
+        errors = io.StringIO()
+        with (patch.dict(self.namespace, {"_md_check_ocr_platform": Mock()}),
+              redirect_stderr(errors), redirect_stdout(io.StringIO())):
+            status = self.namespace["_cli"](
+                [str(self.source), "--ocr"], command="pptx2md"
+            )
+
+        self.assertEqual(status, 0)
+        warning = errors.getvalue()
+        self.assertIn("pptx2md: warning:", warning)
+        self.assertIn(str(self.source), warning)
+        self.assertIn("slide 1", warning)
+        self.assertIn(picture.name, warning)
+        self.assertIn("linked rather than embedded", warning)
+        self.assertNotIn("site-packages", warning)
+        self.assertNotRegex(warning, r"ez\.py:\d+")
+
+    def test_cli_pptx_vision_warning_names_file_slide_and_picture(self):
+        self.add_image_to_first_slide()
+        self.presentation.save(self.source)
+
+        def skip_vision(image_data, mode, language, context):
+            warnings.warn(
+                f"Skipping OCR for {context}: Vision reports a zero-dimensioned image.",
+                UserWarning,
+            )
+            return ""
+
+        errors = io.StringIO()
+        with (patch.dict(self.namespace, {
+                "_md_check_ocr_platform": Mock(),
+                "_md_vision_ocr": skip_vision,
+        }), redirect_stderr(errors), redirect_stdout(io.StringIO())):
+            status = self.namespace["_cli"](
+                [str(self.source), "--ocr"], command="pptx2md"
+            )
+
+        self.assertEqual(status, 0)
+        warning = errors.getvalue()
+        self.assertIn("pptx2md: warning:", warning)
+        self.assertIn(str(self.source), warning)
+        self.assertIn("slide 1", warning)
+        self.assertIn("picture 'Picture 3'", warning)
+        self.assertIn("zero-dimensioned image", warning)
+        self.assertNotRegex(warning, r"ez\.py:\d+")
 
     def test_cli_default_and_include_hidden(self):
         for flags, expected in (([], ["1", "4", "5"]),
@@ -400,6 +460,7 @@ class OfficeOcrTests(unittest.TestCase):
         self.assertIn("Word image text", markdown)
         self.assertIn("\n[Image OCR]", markdown)
         recognize.assert_called_once()
+        self.assertIn(str(source), recognize.call_args.args[3])
 
     def test_xlsx_ocr_includes_image_anchor_and_sheet_context(self):
         from openpyxl import Workbook
@@ -423,6 +484,7 @@ class OfficeOcrTests(unittest.TestCase):
         self.assertIn("### OCR from image near B2", markdown)
         self.assertIn("Spreadsheet image text", markdown)
         recognize.assert_called_once()
+        self.assertIn(str(source), recognize.call_args.args[3])
 
     def test_xlsx_ocr_skips_unreadable_image_with_warning(self):
         from openpyxl import Workbook
@@ -456,6 +518,7 @@ class OfficeOcrTests(unittest.TestCase):
             markdown = self.namespace["xlsx2md"](broken_source, ocr=True)
         self.assertIn("## Sheet", markdown)
         self.assertEqual(len(caught), 1)
+        self.assertIn(str(broken_source), str(caught[0].message))
         self.assertIn("worksheet 'Sheet', image near B2", str(caught[0].message))
         self.assertIn("invalid or unreadable", str(caught[0].message))
         recognize.assert_not_called()

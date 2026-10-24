@@ -169,6 +169,8 @@ Office-to-Markdown Conversion:
     _md_validate_ocr_mode - Validate the Apple Vision text recognition mode.
     _md_validate_ocr_language - Validate the Apple Vision OCR language selection.
     _md_require_vision - Load Apple's Vision framework on supported macOS systems.
+    _md_check_ocr_platform - Require macOS when OCR is explicitly requested.
+    _md_validate_ocr_image - Skip malformed or zero-sized embedded images with a visible warning.
     _md_vision_ocr - Recognize text in image bytes with Apple's local Vision framework.
     _md_ocr_block - Format recognized image text as a labeled Markdown block.
     _md_pptx_image_blobs - Yield picture bytes, including pictures nested in grouped shapes.
@@ -4817,8 +4819,7 @@ def _md_validate_ocr_language(language):
 #region _md_require_vision
 def _md_require_vision():
     """Load Apple's Vision framework on supported macOS systems."""
-    if sys.platform != "darwin":
-        raise OSError("Apple Vision OCR is available only on macOS.")
+    _md_check_ocr_platform()
     try:
         import Vision
     except ImportError as exc:
@@ -4830,11 +4831,48 @@ def _md_require_vision():
 #endregion _md_require_vision
 
 
+#region _md_check_ocr_platform
+def _md_check_ocr_platform():
+    """Require macOS when OCR is explicitly requested."""
+    if sys.platform != "darwin":
+        raise OSError("Apple Vision OCR is available only on macOS.")
+#endregion _md_check_ocr_platform
+
+
+#region _md_validate_ocr_image
+def _md_validate_ocr_image(image_data, context):
+    """Skip malformed or zero-sized embedded images with a visible warning."""
+    from io import BytesIO
+    import warnings
+    from PIL import Image, UnidentifiedImageError
+
+    try:
+        with Image.open(BytesIO(image_data)) as image:
+            if image.width <= 0 or image.height <= 0:
+                raise ValueError("image dimensions are zero")
+            image.verify()
+    except (
+            UnidentifiedImageError, OSError, ValueError, SyntaxError,
+            Image.DecompressionBombError,
+    ) as exc:
+        warnings.warn(
+            f"Skipping OCR for {context}: embedded image is invalid or unreadable ({exc}).",
+            UserWarning,
+            stacklevel=2,
+        )
+        return False
+    return True
+#endregion _md_validate_ocr_image
+
+
 #region _md_vision_ocr
-def _md_vision_ocr(image_data, mode="accurate", language="english"):
+def _md_vision_ocr(image_data, mode="accurate", language="english",
+                   context="embedded image"):
     """Recognize text in image bytes with Apple's local Vision framework."""
     _md_validate_ocr_mode(mode)
     _md_validate_ocr_language(language)
+    if not _md_validate_ocr_image(image_data, context):
+        return ""
     Vision = _md_require_vision()
     import Foundation
 
@@ -4855,6 +4893,15 @@ def _md_vision_ocr(image_data, mode="accurate", language="english"):
     handler = Vision.VNImageRequestHandler.alloc().initWithData_options_(image, None)
     succeeded, error = handler.performRequests_error_([request], None)
     if not succeeded:
+        if "zero-dimension" in str(error).lower():
+            import warnings
+
+            warnings.warn(
+                f"Skipping OCR for {context}: Vision reports a zero-dimensioned image.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return ""
         raise OSError(f"Apple Vision OCR failed: {error}")
 
     lines = []
@@ -4879,11 +4926,24 @@ def _md_ocr_block(text):
 def _md_pptx_image_blobs(slide):
     """Yield picture bytes, including pictures nested in grouped shapes."""
     from pptx.enum.shapes import MSO_SHAPE_TYPE
+    import warnings
 
     def visit(shapes):
         for shape in shapes:
             if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-                yield shape.image.blob
+                try:
+                    blob = shape.image.blob
+                except ValueError as exc:
+                    if str(exc) != "no embedded image":
+                        raise
+                    warnings.warn(
+                        f"Skipping OCR for linked PowerPoint picture {shape.name!r}: "
+                        "the image is not embedded in the presentation.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                else:
+                    yield blob
             elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
                 yield from visit(shape.shapes)
 
@@ -4926,7 +4986,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
     _md_validate_ocr_mode(ocr_mode)
     _md_validate_ocr_language(ocr_language)
     if ocr:
-        _md_require_vision()
+        _md_check_ocr_platform()
     with open(pptx_path, "rb") as source:
         presentation = _md_load_office(Presentation, source)
     slide_count = len(presentation.slides)
@@ -4944,7 +5004,9 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
                 blocks = [
                     _md_ocr_block(text)
                     for blob in _md_pptx_image_blobs(slide)
-                    if (text := _md_vision_ocr(blob, ocr_mode, ocr_language))
+                    if (text := _md_vision_ocr(
+                        blob, ocr_mode, ocr_language, f"PowerPoint slide {number}"
+                    ))
                 ]
                 if blocks:
                     image_text[number] = blocks
@@ -4991,12 +5053,14 @@ def _md_docx_ocr(docx, ocr_mode, ocr_language):
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
 
-    for blip in docx._element.xpath(".//a:blip"):
+    for image_number, blip in enumerate(docx._element.xpath(".//a:blip"), 1):
         relationship_id = blip.get(qn("r:embed"))
         if not relationship_id:
             continue
         image_part = docx.part.related_parts[relationship_id]
-        text = _md_vision_ocr(image_part.blob, ocr_mode, ocr_language)
+        text = _md_vision_ocr(
+            image_part.blob, ocr_mode, ocr_language, f"Word image {image_number}"
+        )
         if not text:
             continue
         drawing_run = blip
@@ -5042,7 +5106,7 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
     _md_validate_ocr_mode(ocr_mode)
     _md_validate_ocr_language(ocr_language)
     if ocr:
-        _md_require_vision()
+        _md_check_ocr_platform()
     with open(docx_path, "rb") as source:
         if ocr:
             from io import BytesIO
@@ -5097,12 +5161,14 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
     from datetime import date, datetime
     from openpyxl import load_workbook
     from openpyxl.utils import get_column_letter
+    if ocr:
+        from PIL import Image as PILImage
 
     xlsx_path, output = _output_paths(xlsx_path, output, overwrite)
     _md_validate_ocr_mode(ocr_mode)
     _md_validate_ocr_language(ocr_language)
     if ocr:
-        _md_require_vision()
+        _md_check_ocr_platform()
     if sheets is not None and (
             not isinstance(sheets, (list, tuple)) or not sheets
             or any(not isinstance(name, str) or not name for name in sheets)):
@@ -5181,7 +5247,23 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                         f"{get_column_letter(anchor.col + 1)}{anchor.row + 1}"
                         if anchor is not None else f"image {image_number}"
                     )
-                    text = _md_vision_ocr(image._data(), ocr_mode, ocr_language)
+                    try:
+                        image_data = image._data()
+                    except (
+                            OSError, ValueError, SyntaxError,
+                            PILImage.DecompressionBombError,
+                    ) as exc:
+                        warnings.warn(
+                            f"Skipping OCR for worksheet {name!r}, image near {location}: "
+                            f"embedded image is invalid or unreadable ({exc}).",
+                            UserWarning,
+                            stacklevel=2,
+                        )
+                        continue
+                    text = _md_vision_ocr(
+                        image_data, ocr_mode, ocr_language,
+                        f"worksheet {name!r}, image near {location}",
+                    )
                     if text:
                         section += (
                             f"\n\n### OCR from image near {location}\n\n"

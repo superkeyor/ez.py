@@ -191,6 +191,11 @@ class Pptx2mdTests(unittest.TestCase):
                 self.namespace["_md_require_vision"]()
 
     def test_vision_ocr_uses_requested_level_and_languages(self):
+        from PIL import Image
+
+        image = io.BytesIO()
+        Image.new("RGB", (4, 4), "white").save(image, format="PNG")
+        image_data = image.getvalue()
         for mode, level in (("accurate", 1), ("fast", 2)):
             for language, languages in (
                     ("english", ["en-US"]),
@@ -218,7 +223,7 @@ class Pptx2mdTests(unittest.TestCase):
                           "Vision": vision, "Foundation": foundation
                       })):
                     self.assertEqual(
-                        self.namespace["_md_vision_ocr"](b"image", mode, language),
+                        self.namespace["_md_vision_ocr"](image_data, mode, language),
                         "",
                     )
                 request.setRecognitionLevel_.assert_called_once_with(level)
@@ -229,6 +234,100 @@ class Pptx2mdTests(unittest.TestCase):
               patch.dict(sys.modules, {"Vision": None})):
             with self.assertRaisesRegex(ImportError, "pyobjc-framework-Vision"):
                 self.namespace["_md_require_vision"]()
+
+    def test_vision_ocr_skips_invalid_image_with_warning(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            result = self.namespace["_md_vision_ocr"](
+                b"not an image", context="PowerPoint slide 2"
+            )
+        self.assertEqual(result, "")
+        self.assertEqual(len(caught), 1)
+        self.assertIn("PowerPoint slide 2", str(caught[0].message))
+
+    def test_vision_zero_dimension_error_skips_only_that_image(self):
+        request = Mock()
+        request.results.return_value = []
+        handler = Mock()
+        handler.performRequests_error_.return_value = (
+            False, "Error: zero-dimensioned image (0 x 0)"
+        )
+        vision = SimpleNamespace(
+            VNRecognizeTextRequest=Mock(),
+            VNRequestTextRecognitionLevelAccurate=1,
+            VNRequestTextRecognitionLevelFast=2,
+            VNImageRequestHandler=Mock(),
+        )
+        vision.VNRecognizeTextRequest.alloc.return_value.init.return_value = request
+        vision.VNImageRequestHandler.alloc.return_value.initWithData_options_.return_value = handler
+        foundation = SimpleNamespace(
+            NSData=SimpleNamespace(dataWithBytes_length_=Mock(return_value=object()))
+        )
+        image = io.BytesIO()
+        from PIL import Image
+
+        Image.new("RGB", (4, 4), "white").save(image, format="PNG")
+        with (patch.object(sys, "platform", "darwin"),
+              patch.dict(sys.modules, {"Vision": vision, "Foundation": foundation}),
+              warnings.catch_warnings(record=True) as caught):
+            warnings.simplefilter("always")
+            result = self.namespace["_md_vision_ocr"](
+                image.getvalue(), context="PowerPoint slide 3"
+            )
+        self.assertEqual(result, "")
+        self.assertEqual(len(caught), 1)
+        self.assertIn("zero-dimensioned", str(caught[0].message))
+
+    def test_pptx_with_no_embedded_images_still_converts(self):
+        with (patch.dict(self.namespace, {"_md_check_ocr_platform": Mock()}),
+              redirect_stdout(io.StringIO()) as output):
+            markdown = self.namespace["pptx2md"](self.source, ocr=True)
+        self.assertEqual(output.getvalue(), markdown)
+        self.assertIn("Visible first", markdown)
+        self.assertNotIn("Image OCR", markdown)
+
+    def test_pptx_linked_picture_is_skipped_with_warning(self):
+        from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+        class LinkedPicture:
+            shape_type = MSO_SHAPE_TYPE.PICTURE
+            name = "Linked Picture"
+
+            @property
+            def image(self):
+                raise ValueError("no embedded image")
+
+        slide = SimpleNamespace(shapes=[LinkedPicture()])
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            blobs = list(self.namespace["_md_pptx_image_blobs"](slide))
+        self.assertEqual(blobs, [])
+        self.assertEqual(len(caught), 1)
+        self.assertIn("Linked Picture", str(caught[0].message))
+        self.assertIn("not embedded", str(caught[0].message))
+
+    def test_pptx_linked_picture_does_not_fail_conversion(self):
+        from pptx.oxml.ns import qn
+        from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+        self.add_image_to_first_slide()
+        picture = next(
+            shape for shape in self.presentation.slides[0].shapes
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        )
+        picture._pic.blipFill.blip.attrib.pop(qn("r:embed"))
+        self.presentation.save(self.source)
+        recognize = Mock()
+        with (patch.dict(self.namespace, {
+                "_md_check_ocr_platform": Mock(),
+                "_md_vision_ocr": recognize,
+        }), warnings.catch_warnings(record=True) as caught):
+            warnings.simplefilter("always")
+            markdown = self.convert(ocr=True)
+        self.assertIn("Visible first", markdown)
+        self.assertEqual(len(caught), 1)
+        self.assertIn("not embedded", str(caught[0].message))
+        recognize.assert_not_called()
 
     def test_cli_default_and_include_hidden(self):
         for flags, expected in (([], ["1", "4", "5"]),
@@ -324,6 +423,42 @@ class OfficeOcrTests(unittest.TestCase):
         self.assertIn("### OCR from image near B2", markdown)
         self.assertIn("Spreadsheet image text", markdown)
         recognize.assert_called_once()
+
+    def test_xlsx_ocr_skips_unreadable_image_with_warning(self):
+        from openpyxl import Workbook
+        from openpyxl.drawing.image import Image as SpreadsheetImage
+        from zipfile import ZIP_DEFLATED, ZipFile
+        from PIL import Image
+
+        image_path = self.root / "image.bmp"
+        Image.new("RGB", (32, 32), "white").save(image_path)
+        source = self.root / "workbook.xlsx"
+        workbook = Workbook()
+        workbook.active.add_image(SpreadsheetImage(str(image_path)), "B2")
+        workbook.save(source)
+
+        broken_source = self.root / "broken.xlsx"
+        with ZipFile(source) as original, ZipFile(
+                broken_source, "w", ZIP_DEFLATED) as broken:
+            for item in original.infolist():
+                data = original.read(item.filename)
+                if item.filename == "xl/media/image1.bmp":
+                    data = image_path.read_bytes()[:60]
+                broken.writestr(item, data)
+
+        recognize = Mock()
+        with (patch.dict(self.namespace, {
+                "_md_check_ocr_platform": Mock(),
+                "_md_vision_ocr": recognize,
+        }), warnings.catch_warnings(record=True) as caught,
+                redirect_stdout(io.StringIO())):
+            warnings.simplefilter("always")
+            markdown = self.namespace["xlsx2md"](broken_source, ocr=True)
+        self.assertIn("## Sheet", markdown)
+        self.assertEqual(len(caught), 1)
+        self.assertIn("worksheet 'Sheet', image near B2", str(caught[0].message))
+        self.assertIn("invalid or unreadable", str(caught[0].message))
+        recognize.assert_not_called()
 
 
 if __name__ == "__main__":

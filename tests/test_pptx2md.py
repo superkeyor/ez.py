@@ -355,6 +355,20 @@ class Pptx2mdTests(unittest.TestCase):
             self.first_blob_pixels(slide), ((0, 0, 0, 255), (0, 0, 0, 255))
         )
 
+    def test_pptx_ocr_skips_movies(self):
+        from PIL import Image
+
+        image_path = self.source.with_suffix(".png")
+        Image.new("RGB", (32, 32), "white").save(image_path)
+        video_path = self.source.with_suffix(".mp4")
+        video_path.write_bytes(b"\x00\x00\x00\x18ftypmp42")
+        slide = self.presentation.slides[0]
+        slide.shapes.add_movie(
+            str(video_path), Inches(1), Inches(1), Inches(2), Inches(2),
+            poster_frame_image=str(image_path),
+        )
+        self.assertEqual(list(self.namespace["_md_pptx_image_blobs"](slide)), [])
+
     def test_pptx_ocr_includes_picture_placeholders(self):
         from PIL import Image
 

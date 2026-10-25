@@ -5252,11 +5252,12 @@ def _md_pptx_image_blobs(slide):
     picture and cover are unrotated and unflipped, including inside groups
     that are not rotated or flipped. Picture placeholders are included.
     """
-    from pptx.oxml.ns import qn
+    from pptx.shapes.picture import Picture, PlaceholderPicture
 
     shapes = list(_md_pptx_flatten(slide.shapes))
     for index, (shape, bounds, aligned, hidden) in enumerate(shapes):
-        if hidden or shape._element.tag != qn("p:pic"):
+        # Movies are also p:pic elements but have no embedded image to OCR.
+        if hidden or not isinstance(shape, (Picture, PlaceholderPicture)):
             continue
         try:
             shape.image

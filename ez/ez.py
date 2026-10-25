@@ -5252,7 +5252,8 @@ def _md_pptx_image_blobs(slide):
     picture and cover are unrotated and unflipped, including inside groups
     that are not rotated or flipped. Picture placeholders are included.
     """
-    from pptx.shapes.picture import Picture, PlaceholderPicture
+    from pptx.shapes.picture import Picture
+    from pptx.shapes.placeholder import PlaceholderPicture
 
     shapes = list(_md_pptx_flatten(slide.shapes))
     for index, (shape, bounds, aligned, hidden) in enumerate(shapes):

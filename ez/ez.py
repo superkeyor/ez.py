@@ -5165,13 +5165,15 @@ def _md_pptx_is_opaque_cover(shape):
 
 
 #region _md_pptx_visible_image
-def _md_pptx_visible_image(picture, bounds, covers):
+def _md_pptx_visible_image(picture, bounds, covers, clip=None):
     """Return (image bytes, extension) of the visible part of a picture, or None.
 
     The picture frame (bounds, slide EMUs) shows the cropped image, so covers
-    map onto the cropped pixels in proportion to the frame. Returns the
-    original blob when nothing is cropped or covered, and None when the
-    picture is fully covered, empty after cropping, or cannot be rendered.
+    map onto the cropped pixels in proportion to the frame. clip, if given,
+    is the part of the frame inside the slide; the rest is cut away. Returns
+    the original blob when nothing is cropped, clipped or covered, and None
+    when the picture is fully covered, empty after cropping, or cannot be
+    rendered.
     """
     from io import BytesIO
     import math
@@ -5186,7 +5188,7 @@ def _md_pptx_visible_image(picture, bounds, covers):
     crop_left, crop_right, crop_top, crop_bottom = crops
     image_part = picture.image
     blob = image_part.blob
-    if not any(crops) and not covers:
+    if not any(crops) and not covers and clip is None:
         return blob, image_part.ext
 
     try:
@@ -5218,6 +5220,17 @@ def _md_pptx_visible_image(picture, bounds, covers):
         return None
     if any(crops):
         image = image.crop((left, top, right, bottom))
+
+    if clip is not None:
+        frame_width, frame_height = bounds[2] - bounds[0], bounds[3] - bounds[1]
+        left = math.ceil((clip[0] - bounds[0]) / frame_width * image.width)
+        top = math.ceil((clip[1] - bounds[1]) / frame_height * image.height)
+        right = math.floor((clip[2] - bounds[0]) / frame_width * image.width)
+        bottom = math.floor((clip[3] - bounds[1]) / frame_height * image.height)
+        if left >= right or top >= bottom:
+            return None
+        image = image.crop((left, top, right, bottom))
+        bounds = clip
 
     if covers:
         covered = Image.new("L", image.size, 0)
@@ -5251,10 +5264,14 @@ def _md_pptx_image_blobs(slide):
     covered by later opaque rectangles (see _md_pptx_is_opaque_cover) when the
     picture and cover are unrotated and unflipped, including inside groups
     that are not rotated or flipped. Picture placeholders are included.
+    Unrotated pictures are clipped to the slide area; those fully outside it
+    are skipped.
     """
     from pptx.shapes.picture import Picture
     from pptx.shapes.placeholder import PlaceholderPicture
 
+    presentation = slide.part.package.presentation_part.presentation
+    slide_bounds = (0, 0, presentation.slide_width, presentation.slide_height)
     shapes = list(_md_pptx_flatten(slide.shapes))
     for index, (shape, bounds, aligned, hidden) in enumerate(shapes):
         # Movies are also p:pic elements but have no embedded image to OCR.
@@ -5267,7 +5284,16 @@ def _md_pptx_image_blobs(slide):
                 raise
             continue
         covers = []
+        clip = None
         if aligned:
+            clip = (
+                max(bounds[0], slide_bounds[0]), max(bounds[1], slide_bounds[1]),
+                min(bounds[2], slide_bounds[2]), min(bounds[3], slide_bounds[3]),
+            )
+            if clip[0] >= clip[2] or clip[1] >= clip[3]:
+                continue
+            if clip == tuple(bounds):
+                clip = None
             for other, other_bounds, other_aligned, other_hidden in shapes[index + 1:]:
                 if not other_aligned or other_hidden:
                     continue
@@ -5279,7 +5305,7 @@ def _md_pptx_image_blobs(slide):
                 )
                 if overlap[0] < overlap[2] and overlap[1] < overlap[3]:
                     covers.append(overlap)
-        visible = _md_pptx_visible_image(shape, bounds, covers)
+        visible = _md_pptx_visible_image(shape, bounds, covers, clip)
         if visible is not None:
             yield visible[0], shape.name, visible[1]
 #endregion _md_pptx_image_blobs
@@ -5305,8 +5331,9 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
          covered by later opaque solid-fill rectangles (including square
          round-rect text boxes, and covers in other unrotated groups) when
          the picture is unrotated and unflipped. Hidden pictures and covers
-         are ignored. Images that cannot be rendered for required crop/cover
-         filtering are skipped with a warning.
+         are ignored, and unrotated pictures are clipped to the slide area
+         (pictures fully off-slide are skipped). Images that cannot be
+         rendered for required crop/cover filtering are skipped with a warning.
     ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
     ocr_language: "english" (default), "chinese", or "both" when ocr=True.
     ocr_failed_dir: optionally save embedded images that OCR cannot process.

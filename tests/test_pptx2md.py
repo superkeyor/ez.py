@@ -369,6 +369,25 @@ class Pptx2mdTests(unittest.TestCase):
         )
         self.assertEqual(list(self.namespace["_md_pptx_image_blobs"](slide)), [])
 
+    def test_pptx_ocr_clips_pictures_to_slide_area(self):
+        from PIL import Image
+
+        image_path = self.source.with_suffix(".png")
+        Image.new("RGB", (40, 40), "white").save(image_path)
+        slide = self.presentation.slides[0]
+        width = self.presentation.slide_width
+        # Half of the picture hangs off the right edge; another is fully off.
+        slide.shapes.add_picture(
+            str(image_path), width - Inches(1), Inches(1), Inches(2), Inches(2)
+        )
+        slide.shapes.add_picture(
+            str(image_path), width + Inches(1), Inches(1), Inches(2), Inches(2)
+        )
+        blobs = list(self.namespace["_md_pptx_image_blobs"](slide))
+        self.assertEqual(len(blobs), 1)
+        with Image.open(io.BytesIO(blobs[0][0])) as visible:
+            self.assertEqual(visible.size, (20, 40))
+
     def test_pptx_ocr_includes_picture_placeholders(self):
         from PIL import Image
 

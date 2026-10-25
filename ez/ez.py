@@ -172,11 +172,17 @@ Office-to-Markdown Conversion:
     _md_check_ocr_platform - Require macOS when OCR is explicitly requested.
     _md_validate_ocr_failed_dir - Validate the optional directory for images that OCR cannot process.
     _md_save_failed_ocr_image - Save failed OCR image bytes, optionally replacing an existing file.
+    _md_failed_image_note - Save failed OCR image bytes if a directory is set; return a message suffix.
+    _md_prepare_ocr - Validate shared OCR options; return the normalized failed-image directory.
     _md_validate_ocr_image - Return an error message for malformed or zero-sized image bytes.
     _md_rasterize_emf_pdf - Rasterize an embedded PDF payload from an Enhanced Metafile to PNG.
     _md_vision_ocr - Recognize text in image bytes with Apple's local Vision framework.
     _md_ocr_block - Format recognized image text as a labeled Markdown block.
-    _md_pptx_image_blobs - Yield visible embedded picture bytes, skipping linked or fully covered pictures.
+    _md_pptx_placement - Return (bounds, axis_aligned) of a shape in slide EMUs, or None if unplaced.
+    _md_pptx_flatten - Yield (shape, bounds, axis_aligned, hidden) for leaf shapes in paint order.
+    _md_pptx_is_opaque_cover - True for an unrotated shape that is an opaque solid-filled rectangle.
+    _md_pptx_visible_image - Return (image bytes, extension) of the visible part of a picture, or None.
+    _md_pptx_image_blobs - Yield (bytes, name, extension) of visible embedded pictures on a slide.
     pptx2md - Convert a PowerPoint presentation to Markdown using MarkItDown.
     _md_docx_ocr - Insert OCR text after each embedded image run in a python-docx document.
     docx2md - Convert a Word .docx document to Markdown using MarkItDown.
@@ -4885,6 +4891,30 @@ def _md_save_failed_ocr_image(image_data, directory, filename, extension,
 #endregion _md_save_failed_ocr_image
 
 
+#region _md_failed_image_note
+def _md_failed_image_note(image_data, directory, filename, extension, overwrite=False):
+    """Save failed OCR image bytes if a directory is set; return a message suffix."""
+    if directory is None:
+        return ""
+    path = _md_save_failed_ocr_image(
+        image_data, directory, filename, extension, overwrite
+    )
+    return f" Failed image saved to {path}."
+#endregion _md_failed_image_note
+
+
+#region _md_prepare_ocr
+def _md_prepare_ocr(ocr, mode, language, failed_dir):
+    """Validate shared OCR options; return the normalized failed-image directory."""
+    _md_validate_ocr_mode(mode)
+    _md_validate_ocr_language(language)
+    failed_dir = _md_validate_ocr_failed_dir(ocr, failed_dir)
+    if ocr:
+        _md_check_ocr_platform()
+    return failed_dir
+#endregion _md_prepare_ocr
+
+
 #region _md_validate_ocr_image
 def _md_validate_ocr_image(image_data):
     """Return an error message for malformed or zero-sized image bytes."""
@@ -4968,14 +4998,10 @@ def _md_vision_ocr(image_data, mode="accurate", language="english",
         image_data = rasterized
     image_error = _md_validate_ocr_image(image_data)
     if image_error is not None:
-        saved_path = (
-            _md_save_failed_ocr_image(
-                failed_image_data, failed_dir, failed_name, failed_image_extension,
-                overwrite,
-            )
-            if failed_dir is not None else None
+        saved_message = _md_failed_image_note(
+            failed_image_data, failed_dir, failed_name, failed_image_extension,
+            overwrite,
         )
-        saved_message = f" Failed image saved to {saved_path}." if saved_path else ""
         warnings.warn(
             f"Skipping OCR for {context}: embedded image is invalid or unreadable "
             f"({image_error}).{saved_message}",
@@ -5003,14 +5029,10 @@ def _md_vision_ocr(image_data, mode="accurate", language="english",
     handler = Vision.VNImageRequestHandler.alloc().initWithData_options_(image, None)
     succeeded, error = handler.performRequests_error_([request], None)
     if not succeeded:
-        saved_path = (
-            _md_save_failed_ocr_image(
-                failed_image_data, failed_dir, failed_name, failed_image_extension,
-                overwrite,
-            )
-            if failed_dir is not None else None
+        saved_message = _md_failed_image_note(
+            failed_image_data, failed_dir, failed_name, failed_image_extension,
+            overwrite,
         )
-        saved_message = f" Failed image saved to {saved_path}." if saved_path else ""
         if "zero-dimension" in str(error).lower():
             warnings.warn(
                 f"Skipping OCR for {context}: Vision reports a zero-dimensioned "
@@ -5039,149 +5061,225 @@ def _md_ocr_block(text):
 #endregion _md_ocr_block
 
 
-#region _md_pptx_image_blobs
-def _md_pptx_image_blobs(slide):
-    """Yield visible embedded picture bytes, skipping linked or fully covered pictures."""
+#region _md_pptx_placement
+def _md_pptx_placement(shape, transform):
+    """Return (bounds, axis_aligned) of a shape in slide EMUs, or None if unplaced.
+
+    transform is (x_offset, y_offset, x_scale, y_scale, axis_aligned) mapping
+    the shape's parent coordinate space onto the slide. Bounds come from
+    python-pptx properties so placeholders inherit layout positions.
+    """
+    offset_x, offset_y, scale_x, scale_y, parent_aligned = transform
+    if None in (shape.left, shape.top, shape.width, shape.height):
+        return None
+    bounds = (
+        offset_x + shape.left * scale_x,
+        offset_y + shape.top * scale_y,
+        offset_x + (shape.left + shape.width) * scale_x,
+        offset_y + (shape.top + shape.height) * scale_y,
+    )
+    aligned = parent_aligned
+    for xfrm in shape._element.xpath("./p:spPr/a:xfrm | ./p:grpSpPr/a:xfrm"):
+        if (int(xfrm.get("rot", "0")) % 21600000
+                or xfrm.get("flipH") in ("1", "true")
+                or xfrm.get("flipV") in ("1", "true")):
+            aligned = False
+    return bounds, aligned
+#endregion _md_pptx_placement
+
+
+#region _md_pptx_flatten
+def _md_pptx_flatten(shapes, transform=(0, 0, 1, 1, True), hidden=False):
+    """Yield (shape, bounds, axis_aligned, hidden) for leaf shapes in paint order.
+
+    Descends into groups, mapping child coordinates onto the slide. Rotated or
+    flipped groups make their descendants not axis aligned.
+    """
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    for shape in shapes:
+        placement = _md_pptx_placement(shape, transform)
+        if placement is None:
+            continue
+        bounds, aligned = placement
+        shape_hidden = hidden or any(
+            value in ("1", "true")
+            for value in shape._element.xpath("./*[1]/p:cNvPr/@hidden")
+        )
+        if shape.shape_type != MSO_SHAPE_TYPE.GROUP:
+            yield shape, bounds, aligned, shape_hidden
+            continue
+        xfrm = shape._element.grpSpPr.xfrm
+        child_offset, child_extent = xfrm.chOff, xfrm.chExt
+        if child_offset is None or child_extent is None or not (
+                child_extent.cx and child_extent.cy):
+            continue
+        offset_x, offset_y, scale_x, scale_y, _ = transform
+        child_scale_x = scale_x * shape.width / child_extent.cx
+        child_scale_y = scale_y * shape.height / child_extent.cy
+        yield from _md_pptx_flatten(
+            shape.shapes,
+            (
+                bounds[0] - child_offset.x * child_scale_x,
+                bounds[1] - child_offset.y * child_scale_y,
+                child_scale_x, child_scale_y, aligned,
+            ),
+            shape_hidden,
+        )
+#endregion _md_pptx_flatten
+
+
+#region _md_pptx_is_opaque_cover
+def _md_pptx_is_opaque_cover(shape):
+    """True for an unrotated shape that is an opaque solid-filled rectangle.
+
+    Accepts rect and roundRect with a zero corner radius (PowerPoint text
+    boxes are often saved as the latter).
+    """
+    from pptx.oxml.ns import qn
+
+    if shape._element.tag != qn("p:sp"):
+        return False
+    properties = shape._element.spPr
+    geometry, solid_fill = properties.prstGeom, properties.solidFill
+    if geometry is None or solid_fill is None:
+        return False
+    preset = geometry.get("prst")
+    if preset == "roundRect":
+        radius = geometry.xpath("a:avLst/a:gd[@name='adj']/@fmla")
+        if radius != ["val 0"]:
+            return False
+    elif preset != "rect":
+        return False
+    if solid_fill.xpath(
+            ".//a:alphaMod | .//a:alphaOff | .//a:alphaInv | .//a:alphaModFix"):
+        return False
+    try:
+        return all(
+            int(alpha.get("val", "100000")) >= 100000
+            for alpha in solid_fill.xpath(".//a:alpha")
+        )
+    except ValueError:
+        return False
+#endregion _md_pptx_is_opaque_cover
+
+
+#region _md_pptx_visible_image
+def _md_pptx_visible_image(picture, bounds, covers):
+    """Return (image bytes, extension) of the visible part of a picture, or None.
+
+    The picture frame (bounds, slide EMUs) shows the cropped image, so covers
+    map onto the cropped pixels in proportion to the frame. Returns the
+    original blob when nothing is cropped or covered, and None when the
+    picture is fully covered, empty after cropping, or cannot be rendered.
+    """
     from io import BytesIO
     import math
     from PIL import Image, ImageDraw, UnidentifiedImageError
-    from pptx.enum.dml import MSO_FILL
-    from pptx.enum.shapes import MSO_SHAPE_TYPE
     import warnings
 
-    def has_opaque_rectangle_fill(shape):
-        try:
-            if shape.rotation % 360:
-                return False
-            if shape.fill.type != MSO_FILL.SOLID:
-                return False
-            shape_properties = shape._element.spPr
-            geometry = shape_properties.prstGeom
-            solid_fill = shape_properties.solidFill
-        except (AttributeError, ValueError):
-            return False
-        if (geometry is None or geometry.get("prst") != "rect"
-                or solid_fill is None):
-            return False
-        if solid_fill.xpath(
-                ".//a:alphaMod | .//a:alphaOff | .//a:alphaInv | .//a:alphaModFix"):
-            return False
-        try:
-            return all(
-                int(alpha.get("val", "100000")) >= 100000
-                for alpha in solid_fill.xpath(".//a:alpha")
+    crops = [
+        min(max(float(value), 0.0), 1.0)
+        for value in (picture.crop_left, picture.crop_right,
+                      picture.crop_top, picture.crop_bottom)
+    ]
+    crop_left, crop_right, crop_top, crop_bottom = crops
+    image_part = picture.image
+    blob = image_part.blob
+    if not any(crops) and not covers:
+        return blob, image_part.ext
+
+    try:
+        with Image.open(BytesIO(blob)) as source:
+            source.load()
+            image = source.convert("RGBA")
+    except (
+            UnidentifiedImageError, OSError, ValueError, SyntaxError,
+            Image.DecompressionBombError,
+    ):
+        rasterized = _md_rasterize_emf_pdf(blob)
+        if rasterized is None:
+            warnings.warn(
+                f"Skipping OCR for PowerPoint picture {picture.name!r}: "
+                "cannot apply crop or cover filtering to this image format.",
+                UserWarning,
+                stacklevel=2,
             )
-        except ValueError:
-            return False
-
-    def visible_image(blob, picture, later_shapes):
-        crop_left = min(max(float(picture.crop_left), 0.0), 1.0)
-        crop_right = min(max(float(picture.crop_right), 0.0), 1.0)
-        crop_top = min(max(float(picture.crop_top), 0.0), 1.0)
-        crop_bottom = min(max(float(picture.crop_bottom), 0.0), 1.0)
-        cropped = any((crop_left, crop_right, crop_top, crop_bottom))
-
-        overlaps = []
-        transform = picture._element.spPr.xfrm
-        picture_is_axis_aligned = (
-            picture.rotation % 360 == 0
-            and transform.get("flipH") not in ("1", "true")
-            and transform.get("flipV") not in ("1", "true")
-        )
-        if picture_is_axis_aligned:
-            for shape in later_shapes:
-                if not has_opaque_rectangle_fill(shape):
-                    continue
-                left = max(picture.left, shape.left)
-                top = max(picture.top, shape.top)
-                right = min(picture.left + picture.width, shape.left + shape.width)
-                bottom = min(picture.top + picture.height, shape.top + shape.height)
-                if left < right and top < bottom:
-                    overlaps.append((left, top, right, bottom))
-
-        if not cropped and not overlaps:
-            return blob, picture.image.ext
-
-        try:
-            with Image.open(BytesIO(blob)) as source:
-                source.load()
-                image = source.convert("RGBA")
-        except (
-                UnidentifiedImageError, OSError, ValueError, SyntaxError,
-                Image.DecompressionBombError,
-        ):
-            rasterized = _md_rasterize_emf_pdf(blob)
-            if rasterized is None:
-                warnings.warn(
-                    f"Skipping OCR for PowerPoint picture {picture.name!r}: "
-                    "cannot apply crop or cover filtering to this image format.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                return None
-            with Image.open(BytesIO(rasterized)) as source:
-                source.load()
-                image = source.convert("RGBA")
-
-        left = math.ceil(image.width * crop_left)
-        top = math.ceil(image.height * crop_top)
-        right = math.floor(image.width * (1 - crop_right))
-        bottom = math.floor(image.height * (1 - crop_bottom))
-        if left >= right or top >= bottom:
             return None
-        if cropped:
-            image = image.crop((left, top, right, bottom))
+        with Image.open(BytesIO(rasterized)) as source:
+            source.load()
+            image = source.convert("RGBA")
 
-        if overlaps:
-            covered = Image.new("L", image.size, 0)
-            draw = ImageDraw.Draw(covered)
-            visible_left = picture.left + picture.width * crop_left
-            visible_top = picture.top + picture.height * crop_top
-            visible_width = picture.width * (1 - crop_left - crop_right)
-            visible_height = picture.height * (1 - crop_top - crop_bottom)
-            for cover_left, cover_top, cover_right, cover_bottom in overlaps:
-                x0 = max(0, math.floor(
-                    (cover_left - visible_left) / visible_width * image.width
-                ))
-                y0 = max(0, math.floor(
-                    (cover_top - visible_top) / visible_height * image.height
-                ))
-                x1 = min(image.width, math.ceil(
-                    (cover_right - visible_left) / visible_width * image.width
-                ))
-                y1 = min(image.height, math.ceil(
-                    (cover_bottom - visible_top) / visible_height * image.height
-                ))
-                if x0 < x1 and y0 < y1:
-                    draw.rectangle((x0, y0, x1 - 1, y1 - 1), fill=255)
-            if covered.getextrema() == (255, 255):
-                return None
-            image.paste((0, 0, 0, 255), mask=covered)
+    left = math.ceil(image.width * crop_left)
+    top = math.ceil(image.height * crop_top)
+    right = math.floor(image.width * (1 - crop_right))
+    bottom = math.floor(image.height * (1 - crop_bottom))
+    if left >= right or top >= bottom:
+        return None
+    if any(crops):
+        image = image.crop((left, top, right, bottom))
 
-        output = BytesIO()
-        image.save(output, format="PNG")
-        return output.getvalue(), "png"
+    if covers:
+        covered = Image.new("L", image.size, 0)
+        draw = ImageDraw.Draw(covered)
+        frame_left, frame_top, frame_right, frame_bottom = bounds
+        frame_width, frame_height = frame_right - frame_left, frame_bottom - frame_top
+        for cover_left, cover_top, cover_right, cover_bottom in covers:
+            x0 = max(0, math.floor((cover_left - frame_left) / frame_width * image.width))
+            y0 = max(0, math.floor((cover_top - frame_top) / frame_height * image.height))
+            x1 = min(image.width, math.ceil(
+                (cover_right - frame_left) / frame_width * image.width))
+            y1 = min(image.height, math.ceil(
+                (cover_bottom - frame_top) / frame_height * image.height))
+            if x0 < x1 and y0 < y1:
+                draw.rectangle((x0, y0, x1 - 1, y1 - 1), fill=255)
+        if covered.getextrema() == (255, 255):
+            return None
+        image.paste((0, 0, 0, 255), mask=covered)
 
-    def visit(shapes):
-        shapes = list(shapes)
-        for index, shape in enumerate(shapes):
-            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
-                try:
-                    picture = shape.image
-                    blob = picture.blob
-                except ValueError as exc:
-                    if str(exc) != "no embedded image":
-                        raise
+    output = BytesIO()
+    image.save(output, format="PNG")
+    return output.getvalue(), "png"
+#endregion _md_pptx_visible_image
+
+
+#region _md_pptx_image_blobs
+def _md_pptx_image_blobs(slide):
+    """Yield (bytes, name, extension) of visible embedded pictures on a slide.
+
+    Skips hidden and linked pictures. Applies cropping and blacks out areas
+    covered by later opaque rectangles (see _md_pptx_is_opaque_cover) when the
+    picture and cover are unrotated and unflipped, including inside groups
+    that are not rotated or flipped. Picture placeholders are included.
+    """
+    from pptx.oxml.ns import qn
+
+    shapes = list(_md_pptx_flatten(slide.shapes))
+    for index, (shape, bounds, aligned, hidden) in enumerate(shapes):
+        if hidden or shape._element.tag != qn("p:pic"):
+            continue
+        try:
+            shape.image
+        except ValueError as exc:
+            if str(exc) != "no embedded image":
+                raise
+            continue
+        covers = []
+        if aligned:
+            for other, other_bounds, other_aligned, other_hidden in shapes[index + 1:]:
+                if not other_aligned or other_hidden:
                     continue
-                else:
-                    visible = visible_image(blob, shape, shapes[index + 1:])
-                    if visible is not None:
-                        image_data, image_extension = visible
-                        yield image_data, shape.name, image_extension
-            elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
-                yield from visit(shape.shapes)
-
-    yield from visit(slide.shapes)
+                if not _md_pptx_is_opaque_cover(other):
+                    continue
+                overlap = (
+                    max(bounds[0], other_bounds[0]), max(bounds[1], other_bounds[1]),
+                    min(bounds[2], other_bounds[2]), min(bounds[3], other_bounds[3]),
+                )
+                if overlap[0] < overlap[2] and overlap[1] < overlap[3]:
+                    covers.append(overlap)
+        visible = _md_pptx_visible_image(shape, bounds, covers)
+        if visible is not None:
+            yield visible[0], shape.name, visible[1]
 #endregion _md_pptx_image_blobs
 
 #region pptx2md
@@ -5202,10 +5300,11 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
     ocr: recognize text in embedded images with Apple's Vision framework.
          Disabled by default; available on macOS with the platform dependency.
          PowerPoint OCR respects picture cropping and masks unrotated areas
-         covered by later rectangular solid-fill shapes when the picture is
-         unrotated and unflipped. Overlays in other shape groups and group
-         transforms are not resolved. Images that cannot be rendered for
-         required crop/cover filtering are skipped with a warning.
+         covered by later opaque solid-fill rectangles (including square
+         round-rect text boxes, and covers in other unrotated groups) when
+         the picture is unrotated and unflipped. Hidden pictures and covers
+         are ignored. Images that cannot be rendered for required crop/cover
+         filtering are skipped with a warning.
     ocr_mode: "accurate" (default) or "fast" recognition when ocr=True.
     ocr_language: "english" (default), "chinese", or "both" when ocr=True.
     ocr_failed_dir: optionally save embedded images that OCR cannot process.
@@ -5226,11 +5325,7 @@ def pptx2md(pptx_path, note=False, slides=None, markers=True, images=False,
     from pptx import Presentation
 
     pptx_path, output = _output_paths(pptx_path, output, overwrite)
-    _md_validate_ocr_mode(ocr_mode)
-    _md_validate_ocr_language(ocr_language)
-    ocr_failed_dir = _md_validate_ocr_failed_dir(ocr, ocr_failed_dir)
-    if ocr:
-        _md_check_ocr_platform()
+    ocr_failed_dir = _md_prepare_ocr(ocr, ocr_mode, ocr_language, ocr_failed_dir)
     with open(pptx_path, "rb") as source:
         presentation = _md_load_office(Presentation, source)
     slide_count = len(presentation.slides)
@@ -5369,11 +5464,7 @@ def docx2md(docx_path, images=False, output=None, overwrite=False, ocr=False,
         from docx import Document
 
     docx_path, output = _output_paths(docx_path, output, overwrite)
-    _md_validate_ocr_mode(ocr_mode)
-    _md_validate_ocr_language(ocr_language)
-    ocr_failed_dir = _md_validate_ocr_failed_dir(ocr, ocr_failed_dir)
-    if ocr:
-        _md_check_ocr_platform()
+    ocr_failed_dir = _md_prepare_ocr(ocr, ocr_mode, ocr_language, ocr_failed_dir)
     with open(docx_path, "rb") as source:
         if ocr:
             from io import BytesIO
@@ -5439,11 +5530,7 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
         from PIL import Image as PILImage
 
     xlsx_path, output = _output_paths(xlsx_path, output, overwrite)
-    _md_validate_ocr_mode(ocr_mode)
-    _md_validate_ocr_language(ocr_language)
-    ocr_failed_dir = _md_validate_ocr_failed_dir(ocr, ocr_failed_dir)
-    if ocr:
-        _md_check_ocr_platform()
+    ocr_failed_dir = _md_prepare_ocr(ocr, ocr_mode, ocr_language, ocr_failed_dir)
     if sheets is not None and (
             not isinstance(sheets, (list, tuple)) or not sheets
             or any(not isinstance(name, str) or not name for name in sheets)):
@@ -5528,19 +5615,16 @@ def xlsx2md(xlsx_path, sheets=None, formulas=False, headers=True,
                             OSError, ValueError, SyntaxError,
                             PILImage.DecompressionBombError,
                     ) as exc:
-                        saved_path = None
                         raw_image = getattr(image, "ref", None)
-                        if ocr_failed_dir is not None and hasattr(raw_image, "getvalue"):
-                            saved_path = _md_save_failed_ocr_image(
+                        saved_message = (
+                            _md_failed_image_note(
                                 raw_image.getvalue(), ocr_failed_dir,
                                 f"{os.path.splitext(os.path.basename(xlsx_path))[0]}-"
                                 f"{name}-{location}",
                                 f".{image.format}",
                                 overwrite,
                             )
-                        saved_message = (
-                            f" Failed image saved to {saved_path}."
-                            if saved_path else ""
+                            if hasattr(raw_image, "getvalue") else ""
                         )
                         warnings.warn(
                             f"Skipping OCR for file {xlsx_path!r}, worksheet {name!r}, "

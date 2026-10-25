@@ -173,10 +173,11 @@ class Pptx2mdTests(unittest.TestCase):
         with Image.open(io.BytesIO(image_data)) as visible_image:
             self.assertEqual(visible_image.size, (70, 80))
             self.assertEqual(visible_image.getpixel((5, 40)), (255, 255, 255, 255))
-            self.assertEqual(visible_image.getpixel((36, 40)), (255, 255, 255, 255))
-            self.assertEqual(visible_image.getpixel((41, 40)), (0, 0, 0, 255))
-            self.assertEqual(visible_image.getpixel((64, 40)), (0, 0, 0, 255))
-            self.assertEqual(visible_image.getpixel((66, 40)), (255, 255, 255, 255))
+            # The frame shows the cropped image; the cover spans 2-3 in of 4 in.
+            self.assertEqual(visible_image.getpixel((30, 40)), (255, 255, 255, 255))
+            self.assertEqual(visible_image.getpixel((36, 40)), (0, 0, 0, 255))
+            self.assertEqual(visible_image.getpixel((52, 40)), (0, 0, 0, 255))
+            self.assertEqual(visible_image.getpixel((54, 40)), (255, 255, 255, 255))
         self.assertEqual(name, picture.name)
         self.assertEqual(extension, "png")
 
@@ -273,6 +274,100 @@ class Pptx2mdTests(unittest.TestCase):
                     iter(self.namespace["_md_pptx_image_blobs"](slide))
                 )
                 self.assertEqual(image_data, picture.image.blob)
+
+    def add_picture_with_cover(self, slide, cover_geometry="roundRect", radius="0"):
+        """Add a 32x32 white picture and a white cover over its left half."""
+        from PIL import Image
+        from pptx.dml.color import RGBColor
+        from pptx.enum.shapes import MSO_SHAPE
+
+        image_path = self.source.with_suffix(".png")
+        Image.new("RGB", (32, 32), "white").save(image_path)
+        picture = slide.shapes.add_picture(
+            str(image_path), Inches(1), Inches(1), Inches(2), Inches(2)
+        )
+        cover = slide.shapes.add_textbox(
+            picture.left, picture.top, picture.width // 2, picture.height
+        )
+        cover.fill.solid()
+        cover.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        geometry = cover._element.spPr.get_or_add_prstGeom()
+        geometry.set("prst", cover_geometry)
+        if radius is not None:
+            from pptx.oxml import parse_xml
+            geometry.append(parse_xml(
+                '<a:avLst xmlns:a="http://schemas.openxmlformats.org/'
+                'drawingml/2006/main"><a:gd name="adj" fmla="val %s"/></a:avLst>'
+                % radius
+            ))
+        return picture, cover
+
+    def first_blob_pixels(self, slide):
+        from PIL import Image
+
+        image_data, _, _ = next(iter(self.namespace["_md_pptx_image_blobs"](slide)))
+        with Image.open(io.BytesIO(image_data)) as image:
+            return image.getpixel((4, 16)), image.getpixel((28, 16))
+
+    def test_pptx_ocr_masks_square_round_rect_text_box_cover(self):
+        slide = self.presentation.slides[0]
+        self.add_picture_with_cover(slide, "roundRect", "0")
+        self.assertEqual(
+            self.first_blob_pixels(slide), ((0, 0, 0, 255), (255, 255, 255, 255))
+        )
+
+    def test_pptx_ocr_ignores_rounded_round_rect_cover(self):
+        slide = self.presentation.slides[0]
+        picture, _ = self.add_picture_with_cover(slide, "roundRect", "16667")
+        image_data, _, _ = next(iter(self.namespace["_md_pptx_image_blobs"](slide)))
+        self.assertEqual(image_data, picture.image.blob)
+
+    def test_pptx_ocr_ignores_hidden_cover_and_skips_hidden_picture(self):
+        slide = self.presentation.slides[0]
+        picture, cover = self.add_picture_with_cover(slide)
+        cover._element.xpath("./p:nvSpPr/p:cNvPr")[0].set("hidden", "1")
+        image_data, _, _ = next(iter(self.namespace["_md_pptx_image_blobs"](slide)))
+        self.assertEqual(image_data, picture.image.blob)
+        picture._element.xpath("./p:nvPicPr/p:cNvPr")[0].set("hidden", "1")
+        self.assertEqual(list(self.namespace["_md_pptx_image_blobs"](slide)), [])
+
+    def test_pptx_ocr_resolves_cover_in_scaled_group_and_later_top_level_cover(self):
+        from pptx.dml.color import RGBColor
+
+        slide = self.presentation.slides[0]
+        picture, cover = self.add_picture_with_cover(slide)
+        # Move picture and cover into a group that scales child space 2x.
+        group = slide.shapes.add_group_shape([picture, cover])
+        xfrm = group._element.grpSpPr.xfrm
+        xfrm.ext.cx *= 2
+        xfrm.ext.cy *= 2
+        self.assertEqual(
+            self.first_blob_pixels(slide), ((0, 0, 0, 255), (255, 255, 255, 255))
+        )
+        # A later top-level cover over the right quarter of the grouped picture.
+        late = slide.shapes.add_shape(
+            1, group.left + group.width * 3 // 4, group.top,
+            group.width // 4, group.height,
+        )
+        late.fill.solid()
+        late.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        self.assertEqual(
+            self.first_blob_pixels(slide), ((0, 0, 0, 255), (0, 0, 0, 255))
+        )
+
+    def test_pptx_ocr_includes_picture_placeholders(self):
+        from PIL import Image
+
+        image_path = self.source.with_suffix(".png")
+        Image.new("RGB", (32, 32), "white").save(image_path)
+        slide = self.presentation.slides.add_slide(self.presentation.slide_layouts[8])
+        placeholder = next(
+            shape for shape in slide.placeholders
+            if shape.placeholder_format.type == 18
+        )
+        placeholder.insert_picture(str(image_path))
+        blobs = list(self.namespace["_md_pptx_image_blobs"](slide))
+        self.assertEqual(len(blobs), 1)
 
     def test_pptx_ocr_skips_unrenderable_images_when_filtering_is_needed(self):
         from PIL import Image
@@ -546,15 +641,15 @@ class Pptx2mdTests(unittest.TestCase):
     def test_pptx_linked_picture_is_silently_skipped(self):
         from pptx.enum.shapes import MSO_SHAPE_TYPE
 
-        class LinkedPicture:
-            shape_type = MSO_SHAPE_TYPE.PICTURE
-            name = "Linked Picture"
+        from pptx.oxml.ns import qn
 
-            @property
-            def image(self):
-                raise ValueError("no embedded image")
-
-        slide = SimpleNamespace(shapes=[LinkedPicture()])
+        self.add_image_to_first_slide()
+        slide = self.presentation.slides[0]
+        picture = next(
+            shape for shape in slide.shapes
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        )
+        picture._pic.blipFill.blip.attrib.pop(qn("r:embed"))
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             blobs = list(self.namespace["_md_pptx_image_blobs"](slide))

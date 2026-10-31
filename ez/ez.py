@@ -27,7 +27,7 @@ Paths:
     parentdir (aliases: pr) - Return the parent directory of a path.
     joinpath (aliases: jp) - Join path components, supporting vectorized arguments.
     splitpath (aliases: sp) - Split a path into directory, filename, and extension.
-    extpath (aliases: ep) - Replace a path's filename extension, supporting vectorized arguments.
+    extpath - Replace a path's filename extension, supporting vectorized arguments.
     cleanpath (aliases: xp) - Clean the filename component of a path.
 
 Strings and Regular Expressions:
@@ -246,6 +246,9 @@ Password Management:
     setpassword - Store an account password in the km.py keyring service.
     getpassword - Read an account password from the km.py keyring service.
     getpasswordbw - Retrieve a Bitwarden item or selected field using its CLI.
+    _ep_exe - Find the ep program; cron and sudo have a short PATH.
+    _ep_load - Run ep on the vault file once and keep the keys it added or changed.
+    ep - Return a secret by name: a local pysecrets.py first, then the ep vault, then the environment.
 
 Keyboard and Mouse:
     send - Send keyboard keys or text with configurable delays and repetitions.
@@ -317,10 +320,15 @@ debug = ShellDebug
 #endregion Runtime and Errors
 
 # secretes
+# ep(name) looks in a local pysecrets.py first, then in the ep vault ("ep run ez"), then in the environment
+_PYSECRETS_ERROR = ''  # why a local pysecrets.py failed to load (a missing file is normal and not an error)
 try: # local
-    from . pysecrets import *
-except:
-    pass
+    from . import pysecrets as _pysecrets
+except ImportError:
+    _pysecrets = None
+except Exception as _e:
+    _pysecrets = None
+    _PYSECRETS_ERROR = f"{type(_e).__name__}: {_e}"
     # try: # heroku
     #     if '/app/fz' in sys.path: sys.path.remove('/app/fz')
     #     sys.path.insert(0,'/app/fz')
@@ -328,6 +336,9 @@ except:
     # except:
     #     pass
 
+_EP_FILE = 'ez'  # the vault file ep reads (ez.env)
+_EP_CACHE = None  # what ep returned for it, read once per process; never copied into os.environ
+_EP_ERROR = ''    # why ep returned nothing, shown when a secret is missing
 
 # ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 #region HTTP and Retries
@@ -614,7 +625,6 @@ def extpath(path,newext):
 
     [pth, fname, ext] = splitpath(path)
     return joinpath(pth,fname+newext)
-ep=extpath
 #endregion extpath
 
 #region cleanpath
@@ -7286,7 +7296,7 @@ Mail(to, subject=None, body=None, text=None, attachments=None, bcc=None, cc=None
     body: html code or text
     text: specified for weird text that is incompatible with html; when set, body is ignored
     attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
-    email, password: ignored if pysecrets exists
+    email, password: used when given; otherwise ep('EMAIL') and ep('PASSWORD')
     """
     import traceback
     msg = f'{sys.argv[0][:-3]} Error!'
@@ -7306,7 +7316,7 @@ Mail(to, subject=None, body=None, text=None, attachments=None, bcc=None, cc=None
             # sys.path.insert(0, HERE)
             
             # EMAIL = "someone@gmail.com", PASSWORD = "abcdefghijkl"
-            gclient = SMTP(EMAIL,PASSWORD)
+            gclient = SMTP(ep('EMAIL'),ep('PASSWORD'))
         except:
             gclient = SMTP(email,password)
     contents=None
@@ -7458,7 +7468,7 @@ ymailget.__doc__ = imapget.__doc__
 def o365auth(id=None, secret=None):
     """Authenticate to Microsoft 365 and return the account."""
     try:
-        credentials = (O365ID, O365SECRET)
+        credentials = (ep('O365ID'), ep('O365SECRET'))
     except:
         credentials = (id, secret)
     # https://stackoverflow.com/questions/8469122 
@@ -7486,7 +7496,7 @@ outlook(to, subject, body, attachments=None, bcc=None, cc=None, reply_to=None, i
     body: html code or text. Best practice: three quotes f string (\\n will be auto replaced with <br>) or write/format in Outlook/Word, then Paste as text, Wrap text with <pre></pre>
     attachments: 'file_in_working_dir.txt' or ['a.txt','b.py','c.pdf']
     draft: True/False save as draft or send out
-    id, secret: ignored if pysecrets exists
+    id, secret: ignored if ep('O365ID') and ep('O365SECRET') are found
     """
     account = o365auth(id,secret)
     m = account.new_message()
@@ -7822,9 +7832,9 @@ def getpasswordbw(item, what='usrpwd', sync=False, debug=False):
     
     # ------- Fetch global credentials -------
     try:
-        _EMAIL = EMAIL
-        _PASSWORD = PASSWORD + '+'
-    except NameError:
+        _EMAIL = ep('EMAIL')
+        _PASSWORD = ep('PASSWORD') + '+'
+    except KeyError:
         _EMAIL = os.environ.get('BW_EMAIL', '')
         _PASSWORD = os.environ.get('BW_PASSWORD', '')
 
@@ -7902,6 +7912,63 @@ def getpasswordbw(item, what='usrpwd', sync=False, debug=False):
     
     return out
 #endregion getpasswordbw
+#region _ep_exe
+def _ep_exe():
+    """Find the ep program; cron and sudo have a short PATH."""
+    return shutil.which('ep') or next((p for p in ('/usr/local/bin/ep', expanduser('~/.local/bin/ep')) if isfile(p)), None)
+#endregion _ep_exe
+#region _ep_load
+def _ep_load():
+    """Run ep on the vault file once and keep the keys it added or changed."""
+    global _EP_CACHE, _EP_ERROR
+    if _EP_CACHE is None:
+        import json
+        _EP_CACHE = {}
+        exe = _ep_exe()
+        if exe is None:
+            _EP_ERROR = 'ep was not found'
+        else:
+            code = 'import json, os, sys; json.dump(dict(os.environ), sys.stdout)'
+            try:
+                result = subprocess.run([exe, 'run', _EP_FILE, '--', sys.executable, '-c', code],
+                                        capture_output=True, text=True, timeout=60)
+                if result.returncode == 0:
+                    _EP_CACHE = {k: v for k, v in json.loads(result.stdout).items() if os.environ.get(k) != v}
+                else:
+                    _EP_ERROR = (result.stderr.strip().splitlines() or ['ep run failed'])[0]
+            except Exception as e:
+                _EP_ERROR = str(e)
+    return _EP_CACHE
+#endregion _ep_load
+#region ep
+def ep(name=None):
+    """Return a secret by name: a local pysecrets.py first, then the ep vault, then the environment.
+
+    ep('EMAIL')  the value; JSON text (GSHEET_KEY, GDRIVE_KEY, GCAL_KEY) comes back as a dict
+    ep()         show what the vault file holds, values hidden (needs ep)
+    ep is only run when pysecrets.py lacks the name; it reads the vault file once per process,
+    and its values are not copied into os.environ, so child processes do not inherit them.
+    A missing secret raises KeyError.
+    """
+    if name is None:
+        exe = _ep_exe()
+        if exe is None:
+            raise FileNotFoundError('ep was not found')
+        subprocess.run([exe, 'run', '--print', _EP_FILE], check=True)
+        return None
+    value = getattr(_pysecrets, name, None) or _ep_load().get(name) or os.environ.get(name)
+    if not value:
+        raise KeyError(f"{name} is not set: not in a local pysecrets.py"
+                       + (f" ({_PYSECRETS_ERROR})" if _PYSECRETS_ERROR else "") + ", in the ep vault"
+                       + (f" ({_EP_ERROR})" if _EP_ERROR else "") + ", or in the environment")
+    if isinstance(value, str) and value.lstrip().startswith('{'):
+        import json
+        try:
+            value = json.loads(value)
+        except ValueError:
+            pass  # a password that merely starts with {
+    return value
+#endregion ep
 #endregion Password Management
 
 # ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
@@ -8298,12 +8365,9 @@ class GSheet():
     .ws (worksheet), .wb (workbook) return the orginal google sheet/sheets objects
     """
     def __init__(self,url,sheet_name=None):
-        try:
-            import gspread
-            # not sure where I got these json file (maybe downloaded from google?)
-            client = gspread.service_account_from_dict(GSHEET_KEY)
-        except:
-            pass
+        import gspread
+        # not sure where I got these json file (maybe downloaded from google?)
+        client = gspread.service_account_from_dict(ep('GSHEET_KEY'))
 
         sheets = client.open_by_url(url)
         if sheet_name is None:
@@ -8482,7 +8546,7 @@ except:
 def dropbox_spaceusage():
     # returns in GB [left, used, total (individual)]
     """Return available, used, and total Dropbox space in gigabytes."""
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    dbx = dropbox.Dropbox(ep('DROPBOX_ACCESS_TOKEN'))
     usage = dbx.users_get_space_usage()
     usage = [usage.used/1024/1024/1024, usage.allocation.get_individual().allocated/1024/1024/1024]
     return [round(usage[1]-usage[0],2), round(usage[0],2), round(usage[1],2)]
@@ -8497,7 +8561,7 @@ def upload(localfile,cloudfile=None):
         path,file= os.path.split(localfile)
         cloudfile=localfile
         localfile=file
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    dbx = dropbox.Dropbox(ep('DROPBOX_ACCESS_TOKEN'))
     with open(localfile, "rb") as f:
         dbx.files_upload(f.read(),cloudfile,dropbox.files.WriteMode.overwrite,mute=True)
 #endregion upload
@@ -8511,7 +8575,7 @@ def download(cloudfile,localfile=None):
     if localfile is None:
         path,file= os.path.split(cloudfile)
         localfile=file
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    dbx = dropbox.Dropbox(ep('DROPBOX_ACCESS_TOKEN'))
     dbx.files_download_to_file(localfile,cloudfile)
     return localfile
 #endregion download
@@ -8530,7 +8594,7 @@ def _files_list_folder_all(dbx,folder,recursive=False,limit=2000):
 #region lsfile
 def lsfile(folder,recursive=False):
     """List Dropbox files in a folder, optionally recursively."""
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    dbx = dropbox.Dropbox(ep('DROPBOX_ACCESS_TOKEN'))
     items = _files_list_folder_all(dbx,folder,recursive=recursive,limit=2000)
     files = []
     for item in items:
@@ -8543,7 +8607,7 @@ def lsfile(folder,recursive=False):
 #region lsfolder
 def lsfolder(folder,recursive=False):
     """List Dropbox subfolders, optionally recursively."""
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    dbx = dropbox.Dropbox(ep('DROPBOX_ACCESS_TOKEN'))
     items = _files_list_folder_all(dbx,folder,recursive=recursive,limit=2000)
     files = []
     for item in items:
@@ -8557,7 +8621,7 @@ def lsfolder(folder,recursive=False):
 def delfilefolder(file):
     # Delete the file or folder at a given path. If the path is a folder, all its contents will be deleted too. A successful response indicates that the file or folder was deleted
     """Delete a Dropbox file or folder."""
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    dbx = dropbox.Dropbox(ep('DROPBOX_ACCESS_TOKEN'))
     return dbx.files_delete(file)
 #endregion delfilefolder
 #endregion Dropbox
@@ -8579,7 +8643,7 @@ class GCal():
                 If user's email or "primary" is specified, then primary calendar of the user is used.
                 You don't need to specify this parameter in this case as it is a default behaviour.
 
-        Use GCAL_KEY imported from ez.pysecrets. Cache authorization in
+        Use GCAL_KEY from ep('GCAL_KEY'). Cache authorization in
         gcal_token.pickle beside this module; do not create a client-settings
         JSON file or change the working directory.
         """
@@ -8590,8 +8654,10 @@ class GCal():
         from google_auth_oauthlib.flow import InstalledAppFlow
         from gcsa.google_calendar import GoogleCalendar
 
-        if 'GCAL_KEY' not in globals():
-            raise ValueError("Configure GCAL_KEY in ez.pysecrets before authenticating to Google Calendar.")
+        try:
+            gcal_key = ep('GCAL_KEY')
+        except KeyError:
+            raise ValueError("Configure GCAL_KEY (pysecrets.py, ep vault or environment) before authenticating to Google Calendar.") from None
         token_path = Path(__file__).resolve().parent / "gcal_token.pickle"
         scopes = ["https://www.googleapis.com/auth/calendar"]
         credentials = None
@@ -8603,7 +8669,7 @@ class GCal():
             if not credentials.has_scopes(scopes):
                 raise ValueError("Cached Google Calendar credentials lack Calendar access; remove the token to reauthorize.")
         if credentials is None:
-            flow = InstalledAppFlow.from_client_config(GCAL_KEY, scopes)
+            flow = InstalledAppFlow.from_client_config(gcal_key, scopes)
             credentials = flow.run_local_server(port=8080, access_type="offline", prompt="consent")
             _gdrive_save_private(token_path, pickle.dumps(credentials))
         elif not credentials.valid:
@@ -8798,7 +8864,7 @@ def _gdrive_parent_changes(service, file_id: str, destination: str) -> dict[str,
 def gauth():
     """Authenticate to Google Drive and return the native Drive API v3 service.
 
-    Use GDRIVE_KEY imported from ez.pysecrets for OAuth client settings.
+    Use GDRIVE_KEY from ep('GDRIVE_KEY') for OAuth client settings.
     Without a cached token, open the browser for login and consent, then save
     gdrive_token.json beside this module. Reuse and refresh that token
     on subsequent calls. Legacy credential formats require one-time browser
@@ -8810,9 +8876,11 @@ def gauth():
     """
     from pathlib import Path
 
-    if 'GDRIVE_KEY' not in globals():
-        raise ValueError("Configure GDRIVE_KEY in ez.pysecrets before authenticating to Google Drive.")
-    return _gdrive_authenticate(GDRIVE_KEY, Path(__file__).resolve().parent)
+    try:
+        gdrive_key = ep('GDRIVE_KEY')
+    except KeyError:
+        raise ValueError("Configure GDRIVE_KEY (pysecrets.py, ep vault or environment) before authenticating to Google Drive.") from None
+    return _gdrive_authenticate(gdrive_key, Path(__file__).resolve().parent)
 #endregion gauth
 
 #region gdownload

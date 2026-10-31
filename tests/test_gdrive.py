@@ -21,6 +21,17 @@ helpers = [node for node in source.body if isinstance(node, ast.FunctionDef)
 exec(compile(ast.Module(body=helpers, type_ignores=[]), "ez/ez.py", "exec"), vars(drive))
 
 
+def with_ep(namespace):
+    """Give functions run from ez.py the ep lookup, answering from the namespace itself."""
+    def ep(name):
+        try:
+            return namespace[name]
+        except KeyError:
+            raise KeyError(name) from None
+    namespace["ep"] = ep
+    return namespace
+
+
 def fake_modules(attributes):
     modules = {}
     for name, values in attributes.items():
@@ -162,8 +173,8 @@ class AuthenticationTests(unittest.TestCase):
 
     def test_gauth_reuses_token_with_configured_key_without_secrets_file(self):
         self.token.write_text('{"refresh_token": "test-placeholder"}')
-        namespace = {**vars(drive), "__file__": str(self.root / "ez.py"),
-                     "GDRIVE_KEY": self.config}
+        namespace = with_ep({**vars(drive), "__file__": str(self.root / "ez.py"),
+                             "GDRIVE_KEY": self.config})
         function = next(node for node in source.body
                         if isinstance(node, ast.FunctionDef) and node.name == "gauth")
         exec(compile(ast.Module(body=[function], type_ignores=[]), "ez/ez.py", "exec"),
@@ -298,10 +309,10 @@ class CalendarAuthenticationTests(unittest.TestCase):
         self.addCleanup(loads.stop)
         node = next(node for node in source.body
                     if isinstance(node, ast.ClassDef) and node.name == "GCal")
-        self.namespace = {
+        self.namespace = with_ep({
             "__file__": str(self.root / "ez.py"), "GCAL_KEY": self.config,
             "_gdrive_save_private": drive._gdrive_save_private,
-        }
+        })
         exec(compile(ast.Module(body=[node], type_ignores=[]), "calendar", "exec"),
              self.namespace)
         self.cwd = Path.cwd()
@@ -397,14 +408,14 @@ class DriveFunctionTests(unittest.TestCase):
         names = {"gauth", "gdownload", "gupload", "gdelete", "gcopy", "gmove", "gls", "gfileid"}
         functions = [node for node in source.body
                      if isinstance(node, ast.FunctionDef) and node.name in names]
-        self.namespace = {
+        self.namespace = with_ep({
             "__file__": str(self.root / "ez.py"), "__package__": "ez",
             "joinpath": os.path.join, "pwd": os.getcwd,
             "splitpath": lambda value: (
                 os.path.dirname(value), *os.path.splitext(os.path.basename(value)),
             ),
             **{node.name: getattr(drive, node.name) for node in helpers},
-        }
+        })
         exec(compile(ast.Module(body=functions, type_ignores=[]), "drive_functions", "exec"),
              self.namespace)
         self.original_auth = self.namespace["gauth"]

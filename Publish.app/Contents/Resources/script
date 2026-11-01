@@ -53,6 +53,8 @@ if [[ -f "$HOME/.bash_profile" ]]; then
         exit 1
     fi
 fi
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONUNBUFFERED=1
 shopt -s expand_aliases
 export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin"
 

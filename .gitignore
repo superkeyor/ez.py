@@ -1,0 +1,180 @@
+# .gitignore decides what is tracked:
+#     Keep secrets and generated/junk files out of the repo and git history,
+#     while tracking real source and config changes.
+
+# ====================================
+# Secrets
+# ====================================
+# ".env" without trailing / matches both .env file and .env/ folder at any depth
+.env
+.env.*
+!.env.example
+archive/
+vault/
+secret/
+secrets/
+secret.py
+pysecrets.py
+
+# ====================================
+# Editors / IDEs
+# ====================================
+# vscode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ====================================
+# OS files
+# ====================================
+# macOS specific
+.DS_Store
+# Custom folder icon file: "Icon" + a carriage return (\r); "?" matches that one char
+Icon?
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+Thumbs.db
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ====================================
+# Logs
+# ====================================
+*.log
+
+# ====================================
+# Node
+# ====================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.yarn/cache/
+.yarn/install-state.gz
+.eslintcache
+*.tsbuildinfo
+.parcel-cache/
+.next/
+.nuxt/
+coverage/
+*.tgz
+
+# ====================================
+# Compiled artifacts (Go, Python C extensions, etc.)
+# ====================================
+*.exe
+*.exe~
+*.dll
+*.dylib
+*.so
+
+# ====================================
+# Go
+# ====================================
+*.test
+*.out
+# leading / anchors to repo root
+/bin/
+go.work
+go.work.sum
+
+# ====================================
+# Python
+# ====================================
+# Environments
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Translations
+*.mo
+*.pot
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Sphinx documentation
+docs/_build/
+build/docs/
+
+# PyBuilder
+target/
+
+# Cython debug symbols
+cython_debug/
